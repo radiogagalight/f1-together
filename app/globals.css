@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface-hover: #222222;
+  --border: #2a2a2a;
+  --foreground: #f0f0f0;
+  --muted: #888888;
+  --f1-red: #e10600;
+  --f1-red-dark: #b00500;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-f1-red: var(--f1-red);
+  --color-f1-red-dark: var(--f1-red-dark);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@keyframes speed-rush {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(200%); }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
