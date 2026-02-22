@@ -1,11 +1,68 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { RACES, formatDate } from "@/lib/data";
+import { RACE_FACTS } from "@/lib/raceFacts";
+import type { RaceFact } from "@/lib/raceFacts";
 import { useRacePick } from "@/hooks/useRacePick";
 import DriverSelect from "@/components/DriverSelect";
 import type { RacePick } from "@/lib/types";
+
+function FactCard({ facts }: { facts: RaceFact[] }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden mb-6"
+      style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}
+    >
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: open ? "1px solid var(--border)" : "none" }}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block h-px w-4 rounded-full"
+            style={{ backgroundColor: "var(--f1-red)" }}
+          />
+          <span
+            className="text-xs font-bold uppercase tracking-widest"
+            style={{ color: "var(--muted)" }}
+          >
+            Track Facts
+          </span>
+        </div>
+        <span style={{ color: "var(--muted)", fontSize: "11px" }}>
+          {open ? "▲ Hide" : "▼ Show"}
+        </span>
+      </button>
+
+      {open && (
+        <div>
+          {facts.map((fact, i) => (
+            <div
+              key={fact.label}
+              className="px-4 py-3"
+              style={{ borderTop: i > 0 ? "1px solid var(--border)" : "none" }}
+            >
+              <div
+                className="text-[10px] font-bold uppercase tracking-wider mb-0.5"
+                style={{ color: "var(--f1-red)" }}
+              >
+                {fact.label}
+              </div>
+              <div className="text-sm" style={{ color: "var(--foreground)" }}>
+                {fact.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function RaceDetailPage({
   params,
@@ -27,6 +84,7 @@ export default function RaceDetailPage({
   }
 
   const isLocked = new Date(race.date + "T14:00:00Z").getTime() < Date.now();
+  const facts = RACE_FACTS[round];
 
   function pick(field: keyof RacePick, value: string | boolean) {
     if (!isLocked) setPick(field, value);
@@ -63,6 +121,9 @@ export default function RaceDetailPage({
         </h1>
         <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>{race.circuit}</p>
       </div>
+
+      {/* Track fact card */}
+      {facts && <FactCard facts={facts} />}
 
       {isLocked && (
         <div
