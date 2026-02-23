@@ -45,6 +45,10 @@ export const RACE_FACTS: Record<number, RacePageData> = {
         value: "56 laps × 5.451 km = 305.066 km total",
       },
       {
+        label: "Most recent winner",
+        value: "Max Verstappen (Red Bull) — 2024",
+      },
+      {
         label: "Sprint weekend",
         value: "China hosts a Sprint race in 2026 — the only format where Saturday features a Sprint Shootout and Sprint race instead of regular qualifying.",
       },
@@ -90,6 +94,10 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       {
         label: "Race distance",
         value: "58 laps × 5.278 km = 306.124 km total",
+      },
+      {
+        label: "Most recent winner",
+        value: "Carlos Sainz (Ferrari) — 2024",
       },
       {
         label: "Average speed",
