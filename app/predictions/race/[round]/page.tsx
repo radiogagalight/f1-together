@@ -10,7 +10,7 @@ import { useRacePick } from "@/hooks/useRacePick";
 import DriverSelect from "@/components/DriverSelect";
 import type { RacePick } from "@/lib/types";
 
-function CountdownCard({ targetUtc, label }: { targetUtc: string; label: string }) {
+function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label: string; target: string }) {
   const [timeLeft, setTimeLeft] = useState(() =>
     Math.max(0, new Date(targetUtc).getTime() - Date.now())
   );
@@ -45,6 +45,9 @@ function CountdownCard({ targetUtc, label }: { targetUtc: string; label: string 
         <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
         <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
           {label}
+        </span>
+        <span className="ml-auto text-xs font-semibold" style={{ color: "var(--f1-red)" }}>
+          Until {target}
         </span>
       </div>
 
@@ -278,6 +281,7 @@ export default function RaceDetailPage({
           <CountdownCard
             targetUtc={race.weekendStartUtc}
             label="Race Weekend Countdown"
+            target="Practice 1"
           />
         )}
 
