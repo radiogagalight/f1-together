@@ -9,7 +9,7 @@ interface Props {
   value: string | null;
   isSaved: boolean;
   disabled: boolean;
-  onPick: (value: string) => void;
+  onPick: (value: string | null) => void;
 }
 
 export default function DriverSelect({ label, value, isSaved, disabled, onPick }: Props) {
@@ -23,7 +23,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick }
     : null;
 
   function handlePick(id: string) {
-    onPick(id);
+    onPick(value === id ? null : id);
     setOpen(false);
   }
 
