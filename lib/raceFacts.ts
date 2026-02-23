@@ -19,6 +19,13 @@ export const RACE_FACTS: Record<number, RacePageData> = {
   2: {
     heroImage: "/images/china-flag.png",
     trackImage: "/images/china-gp-track.webp",
+    sessions: [
+      { name: "Practice 1",       utc: "2026-03-13T03:30:00Z" },
+      { name: "Sprint Shootout",  utc: "2026-03-14T03:00:00Z" },
+      { name: "Sprint Race",      utc: "2026-03-14T07:00:00Z" },
+      { name: "Qualifying",       utc: "2026-03-15T03:00:00Z" },
+      { name: "Race",             utc: "2026-03-15T07:00:00Z" },
+    ],
     facts: [
       {
         label: "First F1 race",
