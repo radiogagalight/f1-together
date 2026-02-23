@@ -41,6 +41,7 @@ export default function SettingsPage() {
   const [confirming, setConfirming] = useState(false);
   const [tzOffset, setTzOffset] = useState(timezoneOffset);
   const [tzSaved, setTzSaved] = useState(false);
+  const [tzError, setTzError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -50,8 +51,13 @@ export default function SettingsPage() {
   async function handleTzChange(value: number) {
     setTzOffset(value);
     setTzSaved(false);
+    setTzError(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({ id: user.id, timezone_offset: value });
+    const { error } = await supabase.from("profiles").upsert({ id: user.id, timezone_offset: value });
+    if (error) {
+      setTzError("Save failed: " + error.message);
+      return;
+    }
     await refreshFavorites();
     setTzSaved(true);
     setTimeout(() => setTzSaved(false), 2000);
@@ -137,6 +143,9 @@ export default function SettingsPage() {
             </div>
             {tzSaved && (
               <span className="text-xs text-green-500 font-medium">Saved ✓</span>
+            )}
+            {tzError && (
+              <span className="text-xs text-red-500 font-medium">{tzError}</span>
             )}
           </div>
 
