@@ -153,7 +153,7 @@ export default function HomePage() {
         {currentTeamName && currentTeamColor ? (
           <div className="flex items-center gap-2 mt-1">
             <span className="inline-block h-0.5 w-4 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
-            <p style={{ color: "var(--muted)", fontWeight: 300, fontSize: "15px", lineHeight: 1.3 }}>
+            <p style={{ color: "var(--muted)", fontWeight: 300, fontSize: "19px", lineHeight: 1.3 }}>
               {"Let's go "}
               <span
                 style={{
@@ -170,7 +170,7 @@ export default function HomePage() {
               >
                 {currentTeamName}
               </span>
-              <span style={{ fontWeight: 300 }}>!</span>
+              <span style={{ fontWeight: 300 }}>{"\u2009"}!</span>
             </p>
           </div>
         ) : (
