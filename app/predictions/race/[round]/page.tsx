@@ -305,9 +305,9 @@ export default function RaceDetailPage({
           <div className="flex flex-col gap-6">
 
             {/* ── Qualifying ── */}
-            <div>
+            <div className="rounded-xl p-4" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
+                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--team-accent)" }} />
                 <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
                   Qualifying
                 </h2>
@@ -339,9 +339,9 @@ export default function RaceDetailPage({
             </div>
 
             {/* ── Race ── */}
-            <div>
+            <div className="rounded-xl p-4" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
+                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--team-accent)" }} />
                 <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
                   Race
                 </h2>
@@ -380,52 +380,47 @@ export default function RaceDetailPage({
             </div>
 
             {/* ── Safety Car ── */}
-            <div>
+            <div className="rounded-xl p-4" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
+                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--team-accent)" }} />
                 <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
                   Safety Car
                 </h2>
                 <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
               </div>
-              <div
-                className="rounded-xl px-4 py-4"
-                style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}
-              >
-                <p className="text-sm font-semibold mb-3" style={{ color: "var(--foreground)" }}>
-                  Will there be a safety car deployment?
-                </p>
-                <div className="flex gap-3">
-                  {([true, false] as const).map((option) => {
-                    const isSelected = picks?.safetyCar === option;
-                    const isSaved = savedField === "safetyCar" && isSelected;
-                    const isYes = option === true;
-                    return (
-                      <button
-                        key={String(option)}
-                        onClick={() => pick("safetyCar", isSelected ? null : option)}
-                        disabled={isLocked}
-                        className="flex-1 rounded-xl py-3 text-sm font-bold transition-colors"
-                        style={{
-                          backgroundColor: isSelected
-                            ? isYes ? "rgba(34,197,94,0.15)" : "rgba(225,6,0,0.15)"
-                            : "var(--background)",
-                          border: isSelected
-                            ? `1px solid ${isYes ? "rgba(34,197,94,0.6)" : "var(--f1-red)"}`
-                            : "1px solid var(--border)",
-                          color: isSelected
-                            ? isYes ? "#22c55e" : "var(--f1-red)"
-                            : "var(--muted)",
-                          opacity: isLocked ? 0.5 : 1,
-                          cursor: isLocked ? "default" : "pointer",
-                        }}
-                      >
-                        {option ? "Yes" : "No"}
-                        {isSaved ? " ✓" : ""}
-                      </button>
-                    );
-                  })}
-                </div>
+              <p className="text-sm font-semibold mb-3" style={{ color: "var(--foreground)" }}>
+                Will there be a safety car deployment?
+              </p>
+              <div className="flex gap-3">
+                {([true, false] as const).map((option) => {
+                  const isSelected = picks?.safetyCar === option;
+                  const isSaved = savedField === "safetyCar" && isSelected;
+                  const isYes = option === true;
+                  return (
+                    <button
+                      key={String(option)}
+                      onClick={() => pick("safetyCar", isSelected ? null : option)}
+                      disabled={isLocked}
+                      className="flex-1 rounded-xl py-3 text-sm font-bold transition-colors"
+                      style={{
+                        backgroundColor: isSelected
+                          ? isYes ? "rgba(34,197,94,0.15)" : "rgba(225,6,0,0.15)"
+                          : "var(--background)",
+                        border: isSelected
+                          ? `1px solid ${isYes ? "rgba(34,197,94,0.6)" : "var(--f1-red)"}`
+                          : "1px solid var(--border)",
+                        color: isSelected
+                          ? isYes ? "#22c55e" : "var(--f1-red)"
+                          : "var(--muted)",
+                        opacity: isLocked ? 0.5 : 1,
+                        cursor: isLocked ? "default" : "pointer",
+                      }}
+                    >
+                      {option ? "Yes" : "No"}
+                      {isSaved ? " ✓" : ""}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

@@ -28,7 +28,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick }
   }
 
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)", borderLeft: hasPick && teamColor ? `3px solid ${teamColor}` : "1px solid var(--border)", backgroundColor: "var(--surface)" }}>
       {/* Header */}
       <button
         onClick={() => !disabled && setOpen((o) => !o)}
