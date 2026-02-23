@@ -98,7 +98,7 @@ export default function HomePage() {
             style={{
               top: `${line.top}%`,
               width: `${line.width}%`,
-              height: "2px",
+              height: "1.5px",
               background: `linear-gradient(to right, transparent, rgba(${hexToRgb(teamAccent)},0.75), transparent)`,
               opacity: line.opacity,
               animation: `speed-rush ${line.dur}s linear ${line.delay}s infinite`,
