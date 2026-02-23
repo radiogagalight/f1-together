@@ -136,7 +136,7 @@ export default function HomePage() {
       >
         {/* ── Track image with overlaid buttons ── */}
         <div className="flex items-center justify-center md:flex-1">
-          <div className="relative w-full" style={{ maxWidth: "840px" }}>
+          <div className="relative w-full" style={{ maxWidth: "714px" }}>
             <Image
               src="/images/lv-circuit.webp"
               alt="Las Vegas Grand Prix track layout"
@@ -157,31 +157,31 @@ export default function HomePage() {
                   <button
                     onClick={() => navigate(turn.href)}
                     className="flex flex-col items-center"
-                    style={{ gap: "8px" }}
+                    style={{ gap: "7px" }}
                     aria-label={turn.label}
                   >
-                    <div style={{ position: "relative", width: "108px", height: "108px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ position: "relative", width: "92px", height: "92px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <div style={{ position: "absolute", inset: 0, borderRadius: "50%", backgroundColor: `rgba(${hexToRgb(teamAccent)},0.15)` }} />
-                      <div style={{ position: "absolute", inset: "10px", borderRadius: "50%", border: `1.5px solid rgba(${hexToRgb(teamAccent)},0.40)` }} />
-                      <div style={{ position: "relative", width: "76px", height: "76px", borderRadius: "50%", backgroundColor: teamAccent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", boxShadow: `0 0 28px rgba(${hexToRgb(teamAccent)},0.65)` }}>
+                      <div style={{ position: "absolute", inset: "9px", borderRadius: "50%", border: `1.5px solid rgba(${hexToRgb(teamAccent)},0.40)` }} />
+                      <div style={{ position: "relative", width: "65px", height: "65px", borderRadius: "50%", backgroundColor: teamAccent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "31px", boxShadow: `0 0 24px rgba(${hexToRgb(teamAccent)},0.65)` }}>
                         {turn.icon}
                       </div>
                     </div>
-                    <span style={{ fontSize: "22px", fontWeight: 700, color: "white", textShadow: "0 1px 4px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "19px", fontWeight: 700, color: "white", textShadow: "0 1px 4px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
                       {turn.label}
                     </span>
                     {turn.sublabel && (
-                      <span style={{ fontSize: "18px", color: "rgba(255,255,255,0.55)", textShadow: "0 1px 4px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "15px", color: "rgba(255,255,255,0.55)", textShadow: "0 1px 4px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
                         {turn.sublabel}
                       </span>
                     )}
                   </button>
                 ) : (
-                  <div className="flex flex-col items-center" style={{ gap: "8px" }}>
-                    <div style={{ width: "76px", height: "76px", borderRadius: "50%", backgroundColor: "#252525", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px" }}>
+                  <div className="flex flex-col items-center" style={{ gap: "7px" }}>
+                    <div style={{ width: "65px", height: "65px", borderRadius: "50%", backgroundColor: "#252525", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "27px" }}>
                       {turn.icon}
                     </div>
-                    <span style={{ fontSize: "18px", color: "#4a4a4a", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "15px", color: "#4a4a4a", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
                       {turn.label}
                     </span>
                   </div>
