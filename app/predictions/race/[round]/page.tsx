@@ -46,9 +46,6 @@ function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label:
         <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
           {label}
         </span>
-        <span className="ml-auto text-xs font-semibold" style={{ color: "var(--f1-red)" }}>
-          Until {target}
-        </span>
       </div>
 
       <div className="px-4 py-4">
@@ -79,7 +76,9 @@ function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label:
                 </span>
               </div>
             ))}
-          </div>
+          <p className="text-center text-xs font-semibold mt-3" style={{ color: "var(--f1-red)" }}>
+            Until {target}
+          </p>
         )}
       </div>
     </div>
