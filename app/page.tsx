@@ -138,33 +138,9 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
           Hi, {displayName ?? "driver"}
         </h1>
-        {currentTeamName && currentTeamColor ? (
-          <div className="flex items-center gap-2 mt-1">
-            <span className="inline-block h-0.5 w-4 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
-            <p style={{ color: "var(--muted)", fontWeight: 300, fontSize: "19px", lineHeight: 1.3 }}>
-              {"Let's go "}
-              <span
-                style={{
-                  color: currentTeamColor,
-                  fontWeight: 700,
-                  opacity:   teamPhase === "visible" ? 1 : 0,
-                  transform: teamPhase === "visible"  ? "translateX(0px)"
-                           : teamPhase === "exiting"  ? "translateX(10px)"
-                           : "translateX(-10px)",
-                  transition: teamPhase === "entering"
-                    ? "none"
-                    : "opacity 0.6s ease, transform 0.6s ease",
-                }}
-              >
-                {currentTeamName}
-              </span>
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
-            Tap a turn to navigate
-          </p>
-        )}
+        <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
+          Tap a turn to navigate
+        </p>
       </header>
 
       {/* ── Main content: track + schedule ── */}
@@ -230,8 +206,35 @@ export default function HomePage() {
         </div>
 
         {/* ── Race Schedule Panel ── */}
+        <div className="md:w-72 lg:w-80 flex flex-col gap-2">
+
+        {/* Let's go greeting */}
+        {currentTeamName && currentTeamColor && (
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-0.5 w-4 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
+            <p style={{ color: "var(--muted)", fontWeight: 300, fontSize: "19px", lineHeight: 1.3 }}>
+              {"Let's go "}
+              <span
+                style={{
+                  color: currentTeamColor,
+                  fontWeight: 700,
+                  opacity:   teamPhase === "visible" ? 1 : 0,
+                  transform: teamPhase === "visible"  ? "translateX(0px)"
+                           : teamPhase === "exiting"  ? "translateX(10px)"
+                           : "translateX(-10px)",
+                  transition: teamPhase === "entering"
+                    ? "none"
+                    : "opacity 0.6s ease, transform 0.6s ease",
+                }}
+              >
+                {currentTeamName}
+              </span>
+            </p>
+          </div>
+        )}
+
         <div
-          className="md:w-72 lg:w-80 flex flex-col rounded-xl overflow-hidden"
+          className="flex-1 flex flex-col rounded-xl overflow-hidden"
           style={{
             border: "1px solid rgba(255,255,255,0.08)",
             backgroundColor: "rgba(255,255,255,0.05)",
@@ -362,6 +365,7 @@ export default function HomePage() {
               Next →
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>
