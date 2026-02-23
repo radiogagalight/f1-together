@@ -403,12 +403,12 @@ export default function RaceDetailPage({
                       disabled={isLocked}
                       className="flex-1 rounded-xl py-3 text-sm font-bold transition-colors"
                       style={{
-                        backgroundColor: isSelected
+                        background: isSelected
                           ? isYes ? "rgba(34,197,94,0.15)" : "rgba(225,6,0,0.15)"
-                          : "var(--background)",
+                          : "linear-gradient(135deg, rgba(225,6,0,0.07) 0%, rgba(8,8,16,0.7) 100%)",
                         border: isSelected
                           ? `1px solid ${isYes ? "rgba(34,197,94,0.6)" : "var(--f1-red)"}`
-                          : "1px solid var(--border)",
+                          : "1px solid rgba(225,6,0,0.18)",
                         color: isSelected
                           ? isYes ? "#22c55e" : "var(--f1-red)"
                           : "var(--muted)",
