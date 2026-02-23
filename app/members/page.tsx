@@ -297,6 +297,14 @@ function PicksGrid({
 
 // ─── Comment Thread ───────────────────────────────────────────────────────────
 
+const EMOJIS = [
+  "😂", "🔥", "👏", "💪", "😮", "😍",
+  "🎉", "👍", "👎", "😢", "😤", "🤩",
+  "🏆", "💯", "🏎️", "🏁", "🚀", "⚡",
+  "🌧️", "🤞", "😬", "🥇", "⭐", "💥",
+  "😅", "🤔", "😎", "👀", "🙏", "🤯",
+];
+
 function CommentThread({
   round,
   profileMap,
@@ -310,6 +318,7 @@ function CommentThread({
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showEmojis, setShowEmojis] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -389,39 +398,73 @@ function CommentThread({
       )}
 
       {currentUser ? (
-        <div className="flex gap-2 mt-3">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                submit();
-              }
-            }}
-            placeholder="Write a comment…"
-            maxLength={500}
-            className="flex-1 px-3 py-2.5 text-sm rounded-lg"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.06)",
-              color: "var(--foreground)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              outline: "none",
-            }}
-          />
-          <button
-            onClick={submit}
-            disabled={!text.trim() || submitting}
-            className="px-4 py-2 text-sm font-semibold rounded-lg shrink-0"
-            style={{
-              backgroundColor:
-                text.trim() && !submitting ? "var(--team-accent)" : "rgba(255,255,255,0.06)",
-              color: text.trim() && !submitting ? "#fff" : "var(--muted)",
-              transition: "background-color 0.2s",
-            }}
-          >
-            Post
-          </button>
+        <div className="mt-3">
+          {showEmojis && (
+            <div
+              className="flex flex-wrap gap-0.5 p-2 rounded-xl mb-2"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              {EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => setText((t) => t + emoji)}
+                  className="p-1.5 rounded-lg text-lg leading-none hover:bg-white/10 active:bg-white/10 transition-colors"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+              placeholder="Write a comment…"
+              maxLength={500}
+              className="flex-1 px-3 py-2.5 text-sm rounded-lg"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.06)",
+                color: "var(--foreground)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                outline: "none",
+              }}
+            />
+            <button
+              onClick={() => setShowEmojis((s) => !s)}
+              className="px-3 py-2 text-xl rounded-lg shrink-0 transition-colors"
+              style={{
+                backgroundColor: showEmojis
+                  ? "rgba(255,255,255,0.12)"
+                  : "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                lineHeight: 1,
+              }}
+            >
+              🙂
+            </button>
+            <button
+              onClick={submit}
+              disabled={!text.trim() || submitting}
+              className="px-4 py-2 text-sm font-semibold rounded-lg shrink-0"
+              style={{
+                backgroundColor:
+                  text.trim() && !submitting ? "var(--team-accent)" : "rgba(255,255,255,0.06)",
+                color: text.trim() && !submitting ? "#fff" : "var(--muted)",
+                transition: "background-color 0.2s",
+              }}
+            >
+              Post
+            </button>
+          </div>
         </div>
       ) : (
         <p className="text-sm text-center py-2" style={{ color: "var(--muted)" }}>
