@@ -43,6 +43,7 @@ type ActivityItem = {
   userId: string;
   label: string;
   updatedAt: string;
+  onTap?: () => void;
 };
 
 type MentionNotification = {
@@ -192,7 +193,7 @@ function FeedTab({
 
   useEffect(() => {
     async function load() {
-      const [{ data: racePicks }, { data: seasonPicks }] = await Promise.all([
+      const [{ data: racePicks }, { data: seasonPicks }, { data: raceComments }] = await Promise.all([
         supabase
           .from("race_picks")
           .select("user_id,round,updated_at")
@@ -203,6 +204,11 @@ function FeedTab({
           .select("user_id,updated_at")
           .order("updated_at", { ascending: false })
           .limit(10),
+        supabase
+          .from("race_comments")
+          .select("user_id,round,created_at")
+          .order("created_at", { ascending: false })
+          .limit(15),
       ]);
 
       const feed: ActivityItem[] = [];
@@ -219,6 +225,15 @@ function FeedTab({
           userId: row.user_id,
           label: "updated their season predictions",
           updatedAt: row.updated_at,
+        });
+      }
+      for (const row of raceComments ?? []) {
+        const race = RACES.find((r) => r.r === row.round);
+        feed.push({
+          userId: row.user_id,
+          label: `posted a comment about the ${race?.name ?? `Round ${row.round}`}`,
+          updatedAt: row.created_at,
+          onTap: () => onViewRace(row.round),
         });
       }
       feed.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -321,17 +336,10 @@ function FeedTab({
         items.map((item, i) => {
           const profile = profileMap.get(item.userId);
           const accent = profileAccent(profile);
-          return (
-            <div
-              key={i}
-              className="flex items-start gap-3 p-3 rounded-xl"
-              style={{
-                backgroundColor: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
+          const inner = (
+            <>
               <Avatar profile={profile} />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm leading-snug" style={{ color: "var(--foreground)" }}>
                   <span className="font-semibold" style={{ color: accent }}>
                     {profile?.display_name ?? "Someone"}
@@ -340,8 +348,27 @@ function FeedTab({
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
                   {timeAgo(item.updatedAt)}
+                  {item.onTap && <span style={{ color: "var(--team-accent)" }}> · View →</span>}
                 </p>
               </div>
+            </>
+          );
+          const sharedStyle = {
+            backgroundColor: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          };
+          return item.onTap ? (
+            <button
+              key={i}
+              onClick={item.onTap}
+              className="flex items-start gap-3 p-3 rounded-xl w-full text-left active:bg-white/5 transition-colors"
+              style={sharedStyle}
+            >
+              {inner}
+            </button>
+          ) : (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={sharedStyle}>
+              {inner}
             </div>
           );
         })
