@@ -54,32 +54,34 @@ function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label:
             Race weekend is underway! 🏁
           </p>
         ) : (
-          <div className="grid grid-cols-4 gap-2 text-center">
-            {[
-              { value: days,    unit: "DAYS" },
-              { value: hours,   unit: "HRS"  },
-              { value: minutes, unit: "MINS" },
-              { value: seconds, unit: "SECS" },
-            ].map(({ value, unit }) => (
-              <div key={unit} className="flex flex-col items-center">
-                <span
-                  className="font-black tabular-nums leading-none"
-                  style={{ fontSize: "clamp(28px, 7vw, 42px)", color: "var(--foreground)" }}
-                >
-                  {unit === "DAYS" ? value : pad(value)}
-                </span>
-                <span
-                  className="text-[10px] font-bold uppercase tracking-widest mt-1"
-                  style={{ color: "var(--f1-red)" }}
-                >
-                  {unit}
-                </span>
-                  </div>
-            ))}
-          </div>
-          <p className="text-center text-xs font-semibold mt-3" style={{ color: "var(--f1-red)" }}>
-            Until {target}
-          </p>
+          <>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              {[
+                { value: days,    unit: "DAYS" },
+                { value: hours,   unit: "HRS"  },
+                { value: minutes, unit: "MINS" },
+                { value: seconds, unit: "SECS" },
+              ].map(({ value, unit }) => (
+                <div key={unit} className="flex flex-col items-center">
+                  <span
+                    className="font-black tabular-nums leading-none"
+                    style={{ fontSize: "clamp(28px, 7vw, 42px)", color: "var(--foreground)" }}
+                  >
+                    {unit === "DAYS" ? value : pad(value)}
+                  </span>
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-widest mt-1"
+                    style={{ color: "var(--f1-red)" }}
+                  >
+                    {unit}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-xs font-semibold mt-3" style={{ color: "var(--f1-red)" }}>
+              Until {target}
+            </p>
+          </>
         )}
       </div>
     </div>

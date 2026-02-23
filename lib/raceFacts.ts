@@ -36,7 +36,11 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       },
       {
         label: "Race distance",
-        value: "58 laps of the 5.278 km circuit — approximately 307 km total",
+        value: "58 laps × 5.278 km = 306.124 km total",
+      },
+      {
+        label: "Average speed",
+        value: "Qualifying average exceeds 250 km/h — one of the faster street circuits on the calendar",
       },
       {
         label: "Did you know?",
