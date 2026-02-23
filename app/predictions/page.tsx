@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import { RACES, formatDate } from "@/lib/data";
+import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
 import { loadRacePickStatuses } from "@/lib/raceStorage";
 
 export default function AllPredictionsPage() {
-  const { user } = useAuth();
+  const { user, timezoneOffset } = useAuth();
   const [pickedRounds, setPickedRounds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
@@ -64,13 +64,14 @@ export default function AllPredictionsPage() {
               <span className="font-mono text-xs shrink-0" style={{ color: "var(--muted)", minWidth: "26px" }}>
                 R{String(race.r).padStart(2, "0")}
               </span>
-              <span className="text-xl leading-none shrink-0">{race.flag}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`https://flagcdn.com/w40/${flagToCC(race.flag)}.png`} width={24} height={18} alt="" className="shrink-0 rounded-sm" style={{ objectFit: "cover" }} />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold truncate" style={{ color: "var(--foreground)" }}>
                   {race.name.replace(" Grand Prix", " GP")}
                 </div>
                 <div className="text-xs" style={{ color: "var(--muted)" }}>
-                  {formatDate(race.date)}
+                  {formatRaceDate(race, timezoneOffset)}
                   {race.sprint && (
                     <span
                       className="ml-2 text-[9px] px-1 py-px rounded font-bold uppercase tracking-wider"

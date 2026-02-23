@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { RACES, formatDate } from "@/lib/data";
+import { useAuth } from "@/components/AuthProvider";
+import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
 
 export default function RacePredictionsPage() {
+  const { timezoneOffset } = useAuth();
   const now = Date.now();
   const nextIdx = Math.max(0, RACES.findIndex((r) => new Date(r.date + "T14:00:00Z").getTime() > now));
 
@@ -37,13 +39,14 @@ export default function RacePredictionsPage() {
               <span className="font-mono text-xs shrink-0" style={{ color: "var(--muted)", minWidth: "26px" }}>
                 R{String(race.r).padStart(2, "0")}
               </span>
-              <span className="text-xl leading-none shrink-0">{race.flag}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`https://flagcdn.com/w40/${flagToCC(race.flag)}.png`} width={24} height={18} alt="" className="shrink-0 rounded-sm" style={{ objectFit: "cover" }} />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold truncate" style={{ color: "var(--foreground)" }}>
                   {race.name.replace(" Grand Prix", " GP")}
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-xs" style={{ color: "var(--muted)" }}>{formatDate(race.date)}</span>
+                  <span className="text-xs" style={{ color: "var(--muted)" }}>{formatRaceDate(race, timezoneOffset)}</span>
                   {isNext && (
                     <span
                       className="text-[9px] px-1 py-px rounded font-bold uppercase tracking-wider"
