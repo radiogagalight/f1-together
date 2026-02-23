@@ -73,15 +73,19 @@ export default function HomePage() {
   // ── Rotating favourite team greeting ──
   const activeTeams = favTeams.filter((t): t is string => t !== null);
   const [teamIdx, setTeamIdx] = useState(0);
-  const [teamVisible, setTeamVisible] = useState(true);
+  const [teamPhase, setTeamPhase] = useState<"visible" | "exiting" | "entering">("visible");
 
   useEffect(() => {
     if (activeTeams.length <= 1) return;
     const id = setInterval(() => {
-      setTeamVisible(false);
+      // 1. Fade out to the right
+      setTeamPhase("exiting");
       setTimeout(() => {
+        // 2. Swap name + instantly reposition to the left (no transition)
         setTeamIdx((i) => (i + 1) % activeTeams.length);
-        setTeamVisible(true);
+        setTeamPhase("entering");
+        // 3. One frame later: slide in from the left
+        setTimeout(() => setTeamPhase("visible"), 50);
       }, 600);
     }, 4000);
     return () => clearInterval(id);
@@ -155,9 +159,13 @@ export default function HomePage() {
                 style={{
                   color: currentTeamColor,
                   fontWeight: 700,
-                  opacity: teamVisible ? 1 : 0,
-                  transform: teamVisible ? "translateY(0px)" : "translateY(6px)",
-                  transition: "opacity 0.6s ease, transform 0.6s ease",
+                  opacity:   teamPhase === "visible" ? 1 : 0,
+                  transform: teamPhase === "visible"  ? "translateX(0px)"
+                           : teamPhase === "exiting"  ? "translateX(10px)"
+                           : "translateX(-10px)",
+                  transition: teamPhase === "entering"
+                    ? "none"
+                    : "opacity 0.6s ease, transform 0.6s ease",
                 }}
               >
                 {currentTeamName}
