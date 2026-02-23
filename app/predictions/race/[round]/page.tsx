@@ -15,12 +15,16 @@ function FactCard({ facts }: { facts: RaceFact[] }) {
   return (
     <div
       className="rounded-xl overflow-hidden mb-6"
-      style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}
+      style={{
+        border: "1px solid rgba(225,6,0,0.35)",
+        background: "linear-gradient(135deg, rgba(225,6,0,0.13) 0%, rgba(30,6,6,0.7) 100%)",
+        boxShadow: "0 0 24px rgba(225,6,0,0.12)",
+      }}
     >
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: open ? "1px solid var(--border)" : "none" }}
+        style={{ borderBottom: open ? "1px solid rgba(225,6,0,0.2)" : "none" }}
       >
         <div className="flex items-center gap-2">
           <span
@@ -29,12 +33,12 @@ function FactCard({ facts }: { facts: RaceFact[] }) {
           />
           <span
             className="text-xs font-bold uppercase tracking-widest"
-            style={{ color: "var(--muted)" }}
+            style={{ color: "rgba(255,255,255,0.7)" }}
           >
             Track Facts
           </span>
         </div>
-        <span style={{ color: "var(--muted)", fontSize: "11px" }}>
+        <span style={{ color: "rgba(225,6,0,0.8)", fontSize: "11px", fontWeight: 700 }}>
           {open ? "▲ Hide" : "▼ Show"}
         </span>
       </button>
@@ -45,7 +49,7 @@ function FactCard({ facts }: { facts: RaceFact[] }) {
             <div
               key={fact.label}
               className="px-4 py-3"
-              style={{ borderTop: i > 0 ? "1px solid var(--border)" : "none" }}
+              style={{ borderTop: i > 0 ? "1px solid rgba(225,6,0,0.15)" : "none" }}
             >
               <div
                 className="text-[10px] font-bold uppercase tracking-wider mb-0.5"
