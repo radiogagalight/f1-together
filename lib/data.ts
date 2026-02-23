@@ -21,6 +21,8 @@ export const DRIVERS: Driver[] = [
   { id: "isack-hadjar", name: "Isack Hadjar", team: "Racing Bulls" },
   { id: "oliver-bearman", name: "Oliver Bearman", team: "Haas" },
   { id: "esteban-ocon", name: "Esteban Ocon", team: "Haas" },
+  { id: "valtteri-bottas", name: "Valtteri Bottas", team: "Cadillac" },
+  { id: "sergio-perez", name: "Sergio Pérez", team: "Cadillac" },
 ];
 
 export const CONSTRUCTORS: Constructor[] = [
@@ -34,6 +36,7 @@ export const CONSTRUCTORS: Constructor[] = [
   { id: "sauber", name: "Sauber" },
   { id: "racing-bulls", name: "Racing Bulls" },
   { id: "haas", name: "Haas" },
+  { id: "cadillac", name: "Cadillac" },
 ];
 
 export interface Race {
