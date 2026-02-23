@@ -27,8 +27,18 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick }
     setOpen(false);
   }
 
+  const carbonBg = "repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px)";
+
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(225,6,0,0.18)", borderLeft: hasPick && teamColor ? `3px solid ${teamColor}` : "1px solid rgba(225,6,0,0.18)", background: "linear-gradient(135deg, rgba(225,6,0,0.07) 0%, rgba(8,8,16,0.7) 100%)" }}>
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{
+        backgroundColor: "rgb(12, 8, 10)",
+        backgroundImage: carbonBg,
+        border: "1px solid rgba(225,6,0,0.2)",
+        borderLeft: hasPick && teamColor ? `3px solid ${teamColor}` : "2px solid rgba(225,6,0,0.45)",
+      }}
+    >
       {/* Header */}
       <button
         onClick={() => !disabled && setOpen((o) => !o)}
@@ -70,7 +80,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick }
 
       {/* Driver list */}
       {open && !disabled && (
-        <div className="border-t" style={{ borderColor: "var(--border)", maxHeight: "260px", overflowY: "auto" }}>
+        <div className="border-t" style={{ borderColor: "rgba(225,6,0,0.2)", maxHeight: "260px", overflowY: "auto" }}>
           <ul>
             {DRIVERS.map((d) => {
               const isSelected = value === d.id;
