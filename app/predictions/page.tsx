@@ -9,14 +9,14 @@ import { loadRacePickStatuses } from "@/lib/raceStorage";
 
 export default function AllPredictionsPage() {
   const { user, timezoneOffset } = useAuth();
-  const [pickedRounds, setPickedRounds] = useState<Set<number>>(new Set());
+  const [pickCounts, setPickCounts] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
     loadRacePickStatuses(user.id, supabase).then((statuses) => {
-      setPickedRounds(statuses);
+      setPickCounts(statuses);
       setLoading(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -28,24 +28,23 @@ export default function AllPredictionsPage() {
         All Predictions
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
-        {loading ? "Loading…" : `${pickedRounds.size} of 24 races picked`}
+        {loading ? "Loading…" : `${[...pickCounts.values()].filter(c => c === 8).length} of 24 races complete`}
       </p>
 
       <div className="flex flex-col rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
         {RACES.map((race, i) => {
           const isPast = new Date(race.date + "T14:00:00Z").getTime() < Date.now();
-          const hasPick = pickedRounds.has(race.r);
+          const count = pickCounts.get(race.r) ?? 0;
           const isLast = i === RACES.length - 1;
+          const isComplete = count === 8;
 
-          let badgeText = "No pick";
+          let badgeText = `${count}/8`;
           let badgeBg = "rgba(255,255,255,0.04)";
           let badgeColor = "var(--muted)";
           let badgeBorder = "var(--border)";
 
-          if (isPast && !hasPick) {
-            badgeText = "Locked";
-          } else if (hasPick) {
-            badgeText = "Picked ✓";
+          if (isComplete) {
+            badgeText = "8/8 ✓";
             badgeBg = "rgba(34,197,94,0.1)";
             badgeColor = "#22c55e";
             badgeBorder = "rgba(34,197,94,0.3)";
@@ -58,7 +57,7 @@ export default function AllPredictionsPage() {
               className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-hover"
               style={{
                 borderBottom: isLast ? "none" : "1px solid var(--border)",
-                opacity: isPast && !hasPick ? 0.5 : 1,
+                opacity: isPast && count === 0 ? 0.5 : 1,
               }}
             >
               <span className="font-mono text-xs shrink-0" style={{ color: "var(--muted)", minWidth: "26px" }}>

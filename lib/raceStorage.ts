@@ -65,14 +65,24 @@ export async function saveRacePick(
   );
 }
 
+/** Returns a map of round → number of filled picks (0–8) for all races the user has a row for. */
 export async function loadRacePickStatuses(
   userId: string,
   supabase: SupabaseClient
-): Promise<Set<number>> {
+): Promise<Map<number, number>> {
   const { data } = await supabase
     .from("race_picks")
-    .select("round")
+    .select("round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,fastest_lap,safety_car")
     .eq("user_id", userId);
 
-  return new Set((data ?? []).map((row: { round: number }) => row.round));
+  const map = new Map<number, number>();
+  for (const row of data ?? []) {
+    const count = [
+      row.qual_pole, row.qual_p2, row.qual_p3,
+      row.race_winner, row.race_p2, row.race_p3,
+      row.fastest_lap, row.safety_car,
+    ].filter((v) => v !== null && v !== undefined).length;
+    map.set(row.round, count);
+  }
+  return map;
 }
