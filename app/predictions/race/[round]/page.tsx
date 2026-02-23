@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
 import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
@@ -9,6 +9,79 @@ import type { RaceFact } from "@/lib/raceFacts";
 import { useRacePick } from "@/hooks/useRacePick";
 import DriverSelect from "@/components/DriverSelect";
 import type { RacePick } from "@/lib/types";
+
+function CountdownCard({ targetUtc, label }: { targetUtc: string; label: string }) {
+  const [timeLeft, setTimeLeft] = useState(() =>
+    Math.max(0, new Date(targetUtc).getTime() - Date.now())
+  );
+
+  useEffect(() => {
+    const id = setInterval(
+      () => setTimeLeft(Math.max(0, new Date(targetUtc).getTime() - Date.now())),
+      1000
+    );
+    return () => clearInterval(id);
+  }, [targetUtc]);
+
+  const expired = timeLeft === 0;
+  const days    = Math.floor(timeLeft / 86_400_000);
+  const hours   = Math.floor((timeLeft % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((timeLeft % 3_600_000) / 60_000);
+  const seconds = Math.floor((timeLeft % 60_000) / 1_000);
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden mb-6"
+      style={{
+        border: "1px solid rgba(225,6,0,0.35)",
+        background: "linear-gradient(135deg, rgba(225,6,0,0.10) 0%, rgba(30,6,6,0.7) 100%)",
+        boxShadow: "0 0 24px rgba(225,6,0,0.10)",
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(225,6,0,0.2)" }}>
+        <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
+        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
+          {label}
+        </span>
+      </div>
+
+      <div className="px-4 py-4">
+        {expired ? (
+          <p className="text-center font-bold text-lg" style={{ color: "var(--f1-red)" }}>
+            Race weekend is underway! 🏁
+          </p>
+        ) : (
+          <div className="grid grid-cols-4 gap-2 text-center">
+            {[
+              { value: days,    unit: "DAYS" },
+              { value: hours,   unit: "HRS"  },
+              { value: minutes, unit: "MINS" },
+              { value: seconds, unit: "SECS" },
+            ].map(({ value, unit }) => (
+              <div key={unit} className="flex flex-col items-center">
+                <span
+                  className="font-black tabular-nums leading-none"
+                  style={{ fontSize: "clamp(28px, 7vw, 42px)", color: "var(--foreground)" }}
+                >
+                  {unit === "DAYS" ? value : pad(value)}
+                </span>
+                <span
+                  className="text-[10px] font-bold uppercase tracking-widest mt-1"
+                  style={{ color: "var(--f1-red)" }}
+                >
+                  {unit}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function FactCard({ facts }: { facts: RaceFact[] }) {
   const [open, setOpen] = useState(false);
@@ -199,6 +272,14 @@ export default function RaceDetailPage({
 
       {/* ── Content ── */}
       <div className="px-4">
+
+        {/* Race weekend countdown */}
+        {race.weekendStartUtc && (
+          <CountdownCard
+            targetUtc={race.weekendStartUtc}
+            label="Race Weekend Countdown"
+          />
+        )}
 
         {/* Track fact card */}
         {raceData?.facts && <FactCard facts={raceData.facts} />}

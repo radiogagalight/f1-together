@@ -47,13 +47,15 @@ export interface Race {
   date: string;
   /** Approximate UTC race start time. Used for timezone-aware date display. */
   startUtc: string;
+  /** UTC start of FP1 — enables the race weekend countdown card when present. */
+  weekendStartUtc?: string;
   sprint: boolean;
 }
 
 // startUtc: approximate UTC race start time (based on historical patterns per circuit).
 // Used only for timezone-aware date display — the date field remains the circuit-local date.
 export const RACES: Race[] = [
-  { r:  1, name: "Australian Grand Prix",          circuit: "Albert Park Circuit",             flag: "🇦🇺", date: "2026-03-08", startUtc: "2026-03-08T04:00:00Z", sprint: false },
+  { r:  1, name: "Australian Grand Prix",          circuit: "Albert Park Circuit",             flag: "🇦🇺", date: "2026-03-08", startUtc: "2026-03-08T04:00:00Z", weekendStartUtc: "2026-03-06T01:30:00Z", sprint: false },
   { r:  2, name: "Chinese Grand Prix",              circuit: "Shanghai International Circuit",  flag: "🇨🇳", date: "2026-03-15", startUtc: "2026-03-15T07:00:00Z", sprint: true  },
   { r:  3, name: "Japanese Grand Prix",             circuit: "Suzuka Circuit",                  flag: "🇯🇵", date: "2026-03-29", startUtc: "2026-03-29T05:00:00Z", sprint: false },
   { r:  4, name: "Bahrain Grand Prix",              circuit: "Bahrain International Circuit",   flag: "🇧🇭", date: "2026-04-12", startUtc: "2026-04-12T15:00:00Z", sprint: false },
