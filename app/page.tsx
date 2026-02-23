@@ -135,18 +135,6 @@ export default function HomePage() {
 
       {/* ── Header ── */}
       <header className="relative z-10 w-full px-6 pt-8 pb-4" style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className="inline-block h-0.5 w-6 rounded-full"
-            style={{ backgroundColor: "var(--f1-red)" }}
-          />
-          <span
-            className="text-xs font-bold uppercase tracking-widest"
-            style={{ color: "var(--muted)" }}
-          >
-            2026 Season
-          </span>
-        </div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
           Hi, {displayName ?? "driver"}
         </h1>
