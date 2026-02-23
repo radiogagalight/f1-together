@@ -1,16 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { clearPicks } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 
+const UTC_OFFSETS = [
+  { value: -12, label: "UTC−12" },
+  { value: -11, label: "UTC−11" },
+  { value: -10, label: "UTC−10  (Hawaii)" },
+  { value: -9,  label: "UTC−9   (Alaska)" },
+  { value: -8,  label: "UTC−8   (Pacific US/Canada)" },
+  { value: -7,  label: "UTC−7   (Mountain US/Canada)" },
+  { value: -6,  label: "UTC−6   (Central US/Canada)" },
+  { value: -5,  label: "UTC−5   (Eastern US/Canada)" },
+  { value: -4,  label: "UTC−4   (Atlantic / EDT)" },
+  { value: -3,  label: "UTC−3   (Brazil, Argentina)" },
+  { value: -2,  label: "UTC−2" },
+  { value: -1,  label: "UTC−1" },
+  { value:  0,  label: "UTC+0   (London, Dublin)" },
+  { value:  1,  label: "UTC+1   (Paris, Amsterdam)" },
+  { value:  2,  label: "UTC+2   (Helsinki, Cairo)" },
+  { value:  3,  label: "UTC+3   (Moscow, Riyadh)" },
+  { value:  4,  label: "UTC+4   (Dubai, Baku)" },
+  { value:  5,  label: "UTC+5   (Karachi)" },
+  { value:  6,  label: "UTC+6   (Dhaka)" },
+  { value:  7,  label: "UTC+7   (Bangkok, Jakarta)" },
+  { value:  8,  label: "UTC+8   (Singapore, Shanghai)" },
+  { value:  9,  label: "UTC+9   (Tokyo, Seoul)" },
+  { value: 10,  label: "UTC+10  (Sydney — AEST)" },
+  { value: 11,  label: "UTC+11  (Melbourne — AEDT)" },
+  { value: 12,  label: "UTC+12  (Auckland)" },
+  { value: 13,  label: "UTC+13" },
+  { value: 14,  label: "UTC+14" },
+];
+
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, timezoneOffset, refreshFavorites } = useAuth();
   const [confirming, setConfirming] = useState(false);
+  const [tzOffset, setTzOffset] = useState(timezoneOffset);
+  const [tzSaved, setTzSaved] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  // Sync local state when context loads (after DB fetch)
+  useEffect(() => { setTzOffset(timezoneOffset); }, [timezoneOffset]);
+
+  async function handleTzChange(value: number) {
+    setTzOffset(value);
+    setTzSaved(false);
+    if (!user) return;
+    await supabase.from("profiles").upsert({ id: user.id, timezone_offset: value });
+    await refreshFavorites();
+    setTzSaved(true);
+    setTimeout(() => setTzSaved(false), 2000);
+  }
+
+  function autoDetect() {
+    const detected = -Math.round(new Date().getTimezoneOffset() / 60);
+    handleTzChange(detected);
+  }
 
   async function handleConfirmDelete() {
     if (!user) return;
@@ -63,6 +113,59 @@ export default function SettingsPage() {
             }}
           >
             Log out
+          </button>
+        </div>
+      </section>
+
+      {/* Display */}
+      <section className="mb-6">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+          Display
+        </h2>
+        <div
+          className="rounded-xl border p-4"
+          style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                Race date timezone
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                Adjusts race dates to your local time
+              </p>
+            </div>
+            {tzSaved && (
+              <span className="text-xs text-green-500 font-medium">Saved ✓</span>
+            )}
+          </div>
+
+          <select
+            value={tzOffset}
+            onChange={(e) => handleTzChange(Number(e.target.value))}
+            className="w-full rounded-lg border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--f1-red)] mb-3"
+            style={{
+              borderColor: "var(--border)",
+              backgroundColor: "var(--background)",
+              color: "var(--foreground)",
+            }}
+          >
+            {UTC_OFFSETS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+
+          <button
+            onClick={autoDetect}
+            className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold border transition-colors active:opacity-80"
+            style={{
+              minHeight: "44px",
+              borderColor: "var(--border)",
+              color: "var(--muted)",
+              backgroundColor: "transparent",
+            }}
+          >
+            Auto-detect from browser
           </button>
         </div>
       </section>

@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import { RACES, formatDate, flagToCC } from "@/lib/data";
+import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
 import { hexToRgb } from "@/lib/teamColors";
 
 const PAGE_SIZE = 8;
@@ -63,7 +63,7 @@ const TURNS: TurnItem[] = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, teamAccent } = useAuth();
+  const { user, teamAccent, timezoneOffset } = useAuth();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -292,7 +292,7 @@ export default function HomePage() {
                     className="font-mono text-xs shrink-0"
                     style={{ color: "var(--muted)" }}
                   >
-                    {formatDate(race.date)}
+                    {formatRaceDate(race, timezoneOffset)}
                   </span>
                 </Link>
               );

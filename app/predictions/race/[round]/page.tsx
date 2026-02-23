@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
-import { RACES, formatDate, flagToCC } from "@/lib/data";
+import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
 import type { RaceFact } from "@/lib/raceFacts";
 import { useRacePick } from "@/hooks/useRacePick";
@@ -77,7 +77,7 @@ export default function RaceDetailPage({
   const { round: roundStr } = use(params);
   const round = parseInt(roundStr);
   const race = RACES.find((r) => r.r === round);
-  const { user } = useAuth();
+  const { user, timezoneOffset } = useAuth();
   const { picks, setPick, savedField, loading } = useRacePick(user?.id, round);
 
   if (!race) {
@@ -122,7 +122,7 @@ export default function RaceDetailPage({
           <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-                Round {race.r} · {formatDate(race.date)}
+                Round {race.r} · {formatRaceDate(race, timezoneOffset)}
               </span>
               {race.sprint && (
                 <span
@@ -162,7 +162,7 @@ export default function RaceDetailPage({
         <div className="px-4 pt-6 mb-6">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-mono text-xs" style={{ color: "var(--muted)" }}>
-              Round {race.r} · {formatDate(race.date)}
+              Round {race.r} · {formatRaceDate(race, timezoneOffset)}
             </span>
             {race.sprint && (
               <span
