@@ -15,7 +15,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick }
   const [open, setOpen] = useState(false);
 
   const driver = value ? DRIVERS.find((d) => d.id === value) : null;
-  const displayName = driver ? driver.name : "Not picked";
+  const displayName = driver ? driver.name : "Make your prediction";
   const hasPick = value !== null;
 
   function handlePick(id: string) {
