@@ -3,14 +3,27 @@ export interface RaceFact {
   value: string;
 }
 
+export interface RaceSession {
+  name: string;
+  utc: string; // ISO UTC datetime string
+}
+
 export interface RacePageData {
   heroImage?: string;
   facts: RaceFact[];
+  sessions?: RaceSession[];
 }
 
 export const RACE_FACTS: Record<number, RacePageData> = {
   1: {
     heroImage: "/images/au-flag.webp",
+    sessions: [
+      { name: "Practice 1",  utc: "2026-03-06T01:30:00Z" },
+      { name: "Practice 2",  utc: "2026-03-06T05:00:00Z" },
+      { name: "Practice 3",  utc: "2026-03-07T01:30:00Z" },
+      { name: "Qualifying",  utc: "2026-03-07T05:00:00Z" },
+      { name: "Race",        utc: "2026-03-08T04:00:00Z" },
+    ],
     facts: [
       {
         label: "First F1 race",

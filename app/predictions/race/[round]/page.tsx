@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
 import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
-import type { RaceFact } from "@/lib/raceFacts";
+import type { RaceFact, RaceSession } from "@/lib/raceFacts";
 import { useRacePick } from "@/hooks/useRacePick";
 import DriverSelect from "@/components/DriverSelect";
 import type { RacePick } from "@/lib/types";
@@ -83,6 +83,71 @@ function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label:
             </p>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+function SessionCard({ sessions, timezoneOffset }: { sessions: RaceSession[]; timezoneOffset: number }) {
+  const now = Date.now();
+  const nextIdx = sessions.findIndex((s) => new Date(s.utc).getTime() > now);
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden mb-6"
+      style={{
+        border: "1px solid rgba(34,197,94,0.3)",
+        background: "linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(6,16,8,0.7) 100%)",
+        boxShadow: "0 0 24px rgba(34,197,94,0.08)",
+      }}
+    >
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(34,197,94,0.15)" }}>
+        <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "rgba(34,197,94,0.8)" }} />
+        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
+          Weekend Schedule
+        </span>
+      </div>
+
+      <div>
+        {sessions.map((session, i) => {
+          const local = new Date(new Date(session.utc).getTime() + timezoneOffset * 3_600_000);
+          const isPast = new Date(session.utc).getTime() < now;
+          const isNext = i === nextIdx;
+          const day  = local.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+          const date = local.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+          const time = local.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" });
+
+          return (
+            <div
+              key={session.name}
+              className="flex items-center gap-3 px-4 py-3"
+              style={{
+                borderTop: i > 0 ? "1px solid rgba(34,197,94,0.1)" : "none",
+                opacity: isPast ? 0.38 : 1,
+              }}
+            >
+              <div
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{
+                  backgroundColor: isNext ? "#22c55e" : isPast ? "rgba(255,255,255,0.2)" : "rgba(34,197,94,0.4)",
+                  boxShadow: isNext ? "0 0 8px rgba(34,197,94,0.9)" : "none",
+                }}
+              />
+              <span
+                className="text-sm font-semibold flex-1"
+                style={{ color: isNext ? "#22c55e" : isPast ? "var(--muted)" : "var(--foreground)" }}
+              >
+                {session.name}
+              </span>
+              <span
+                className="text-xs font-mono shrink-0"
+                style={{ color: isNext ? "#22c55e" : "var(--muted)" }}
+              >
+                {day} · {date} · {time}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -286,6 +351,9 @@ export default function RaceDetailPage({
             target="Practice 1"
           />
         )}
+
+        {/* Weekend schedule card */}
+        {raceData?.sessions && <SessionCard sessions={raceData.sessions} timezoneOffset={timezoneOffset} />}
 
         {/* Track fact card */}
         {raceData?.facts && <FactCard facts={raceData.facts} />}
