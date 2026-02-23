@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
 const NAV_ITEMS = [
   { href: "/",            label: "Home",        icon: "🏠" },
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { unreadCount } = useAuth();
 
   if (pathname.startsWith("/auth")) return null;
 
@@ -36,7 +38,14 @@ export default function BottomNav() {
               minHeight: "44px",
             }}
           >
-            <span className="text-xl leading-none">{item.icon}</span>
+            <span className="relative text-xl leading-none">
+              {item.icon}
+              {item.href === "/members" && unreadCount > 0 && (
+                <span style={{ position: "absolute", top: "-4px", right: "-8px", minWidth: "16px", height: "16px", borderRadius: "8px", backgroundColor: "#e10600", color: "#fff", fontSize: "10px", fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </span>
             <span>{item.label}</span>
           </Link>
         );

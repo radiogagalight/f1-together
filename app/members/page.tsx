@@ -45,6 +45,13 @@ type ActivityItem = {
   updatedAt: string;
 };
 
+type MentionNotification = {
+  id: string;
+  from_user_id: string;
+  round: number;
+  created_at: string;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function driverName(id: string | null): string {
@@ -80,18 +87,69 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
+/** First word of a display name — used as the @mention handle. */
+function firstWord(displayName: string | null): string {
+  return (displayName ?? "").split(" ")[0];
+}
+
+/** Parse @handles in comment text and return matching user IDs (excluding sender). */
+function parseMentionIds(
+  content: string,
+  profileMap: Map<string, Profile>,
+  senderId: string
+): string[] {
+  const matches = content.match(/@(\w+)/g);
+  if (!matches) return [];
+  const ids: string[] = [];
+  for (const match of matches) {
+    const handle = match.slice(1).toLowerCase();
+    for (const [id, profile] of profileMap) {
+      if (id === senderId) continue;
+      if (firstWord(profile.display_name).toLowerCase() === handle) {
+        ids.push(id);
+        break;
+      }
+    }
+  }
+  return [...new Set(ids)];
+}
+
+/** Render comment text with @handles highlighted in the mentioned user's team colour. */
+function renderText(content: string, profileMap: Map<string, Profile>): React.ReactNode {
+  const parts = content.split(/(@\w+)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("@")) {
+      const handle = part.slice(1).toLowerCase();
+      let accent: string | null = null;
+      for (const [, profile] of profileMap) {
+        if (firstWord(profile.display_name).toLowerCase() === handle) {
+          accent = profileAccent(profile);
+          break;
+        }
+      }
+      if (accent) {
+        return (
+          <span key={i} className="font-semibold" style={{ color: accent }}>
+            {part}
+          </span>
+        );
+      }
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 // ─── Shared components ────────────────────────────────────────────────────────
 
 function Avatar({ profile, size = 8 }: { profile: Profile | undefined; size?: number }) {
   const accent = profileAccent(profile);
   const rgb = hexToRgb(accent);
-  const letter = (profile?.display_name?.trim() || "?")[0].toUpperCase();
   return (
     <div
       className={`w-${size} h-${size} rounded-full shrink-0 flex items-center justify-center text-xs font-bold`}
       style={{ backgroundColor: `rgba(${rgb},0.2)`, color: accent }}
     >
-      {letter}
+      {(profile?.display_name?.trim() || "?")[0].toUpperCase()}
     </div>
   );
 }
@@ -116,8 +174,19 @@ function SectionHeader({ label }: { label: string }) {
 
 // ─── Feed Tab ─────────────────────────────────────────────────────────────────
 
-function FeedTab({ profileMap }: { profileMap: Map<string, Profile> }) {
+function FeedTab({
+  profileMap,
+  currentUser,
+  refreshNotifications,
+  onViewRace,
+}: {
+  profileMap: Map<string, Profile>;
+  currentUser: User | null;
+  refreshNotifications: () => Promise<void>;
+  onViewRace: (round: number) => void;
+}) {
   const [items, setItems] = useState<ActivityItem[]>([]);
+  const [mentions, setMentions] = useState<MentionNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -160,46 +229,123 @@ function FeedTab({ profileMap }: { profileMap: Map<string, Profile> }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Load and mark-as-read any unread notifications for the current user
+  useEffect(() => {
+    if (!currentUser) return;
+    supabase
+      .from("notifications")
+      .select("id,from_user_id,round,created_at")
+      .eq("user_id", currentUser.id)
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        const rows = data ?? [];
+        setMentions(rows);
+        if (rows.length > 0) {
+          supabase
+            .from("notifications")
+            .update({ read_at: new Date().toISOString() })
+            .eq("user_id", currentUser.id)
+            .is("read_at", null)
+            .then(() => refreshNotifications());
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
   if (loading) {
     return <p className="text-sm py-4" style={{ color: "var(--muted)" }}>Loading feed…</p>;
-  }
-  if (items.length === 0) {
-    return (
-      <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>
-        No activity yet. Make some picks to see them here!
-      </p>
-    );
   }
 
   return (
     <div className="flex flex-col gap-2">
-      {items.map((item, i) => {
-        const profile = profileMap.get(item.userId);
-        const accent = profileAccent(profile);
-        return (
-          <div
-            key={i}
-            className="flex items-start gap-3 p-3 rounded-xl"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            <Avatar profile={profile} />
-            <div className="min-w-0">
-              <p className="text-sm leading-snug" style={{ color: "var(--foreground)" }}>
-                <span className="font-semibold" style={{ color: accent }}>
-                  {profile?.display_name ?? "Someone"}
-                </span>{" "}
-                {item.label}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                {timeAgo(item.updatedAt)}
-              </p>
-            </div>
+      {/* Mentions section */}
+      {mentions.length > 0 && (
+        <div className="mb-2">
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className="inline-block h-1 w-4 rounded-full shrink-0"
+              style={{ backgroundColor: "var(--f1-red)" }}
+            />
+            <span
+              className="text-xs font-bold uppercase tracking-widest"
+              style={{ color: "var(--f1-red)" }}
+            >
+              Mentions
+            </span>
           </div>
-        );
-      })}
+          <div className="flex flex-col gap-2 mb-4">
+            {mentions.map((m) => {
+              const fromProfile = profileMap.get(m.from_user_id);
+              const accent = profileAccent(fromProfile);
+              const race = RACES.find((r) => r.r === m.round);
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onViewRace(m.round)}
+                  className="flex items-start gap-3 p-3 rounded-xl w-full text-left"
+                  style={{
+                    backgroundColor: "rgba(225,6,0,0.06)",
+                    border: "1px solid rgba(225,6,0,0.2)",
+                  }}
+                >
+                  <Avatar profile={fromProfile} />
+                  <div className="min-w-0">
+                    <p className="text-sm leading-snug" style={{ color: "var(--foreground)" }}>
+                      <span className="font-semibold" style={{ color: accent }}>
+                        {fromProfile?.display_name ?? "Someone"}
+                      </span>{" "}
+                      mentioned you in the{" "}
+                      <span className="font-semibold" style={{ color: "var(--foreground)" }}>
+                        {race?.name ?? `Round ${m.round}`}
+                      </span>{" "}
+                      discussion
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                      {timeAgo(m.created_at)} · Tap to view
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Activity feed */}
+      {items.length === 0 ? (
+        <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>
+          No activity yet. Make some picks to see them here!
+        </p>
+      ) : (
+        items.map((item, i) => {
+          const profile = profileMap.get(item.userId);
+          const accent = profileAccent(profile);
+          return (
+            <div
+              key={i}
+              className="flex items-start gap-3 p-3 rounded-xl"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <Avatar profile={profile} />
+              <div className="min-w-0">
+                <p className="text-sm leading-snug" style={{ color: "var(--foreground)" }}>
+                  <span className="font-semibold" style={{ color: accent }}>
+                    {profile?.display_name ?? "Someone"}
+                  </span>{" "}
+                  {item.label}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                  {timeAgo(item.updatedAt)}
+                </p>
+              </div>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
@@ -295,7 +441,7 @@ function PicksGrid({
   );
 }
 
-// ─── Comment Thread ───────────────────────────────────────────────────────────
+// ─── Emoji list ───────────────────────────────────────────────────────────────
 
 const EMOJIS = [
   "😂", "🔥", "👏", "💪", "😮", "😍",
@@ -304,6 +450,8 @@ const EMOJIS = [
   "🌧️", "🤞", "😬", "🥇", "⭐", "💥",
   "😅", "🤔", "😎", "👀", "🙏", "🤯",
 ];
+
+// ─── Comment Thread ───────────────────────────────────────────────────────────
 
 function CommentThread({
   round,
@@ -339,14 +487,45 @@ function CommentThread({
   async function submit() {
     if (!currentUser || !text.trim() || submitting) return;
     setSubmitting(true);
+    const content = text.trim();
     const { data } = await supabase
       .from("race_comments")
-      .insert({ user_id: currentUser.id, round, content: text.trim() })
+      .insert({ user_id: currentUser.id, round, content })
       .select("id,user_id,content,created_at")
       .single();
-    if (data) setComments((prev) => [...prev, data]);
+    if (data) {
+      setComments((prev) => [...prev, data]);
+      // Write a notification for each @mentioned user
+      const mentionedIds = parseMentionIds(content, profileMap, currentUser.id);
+      for (const userId of mentionedIds) {
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          from_user_id: currentUser.id,
+          comment_id: data.id,
+          round,
+        });
+      }
+    }
     setText("");
     setSubmitting(false);
+    setShowEmojis(false);
+  }
+
+  // Compute @mention autocomplete suggestions from the current text
+  const mentionMatch = text.match(/(^|\s)@(\w*)$/);
+  const mentionQuery = mentionMatch ? mentionMatch[2].toLowerCase() : null;
+  const mentionSuggestions =
+    mentionQuery !== null
+      ? Array.from(profileMap.values()).filter((p) => {
+          if (p.id === currentUser?.id) return false;
+          return firstWord(p.display_name).toLowerCase().startsWith(mentionQuery);
+        })
+      : [];
+
+  function insertMention(profile: Profile) {
+    const handle = firstWord(profile.display_name);
+    setText((t) => t.replace(/(^|\s)@\w*$/, (m) => m.replace(/@\w*$/, `@${handle} `)));
+    setShowEmojis(false);
   }
 
   return (
@@ -388,7 +567,7 @@ function CommentThread({
                     </span>
                   </div>
                   <p className="text-sm leading-snug" style={{ color: "var(--foreground)" }}>
-                    {c.content}
+                    {renderText(c.content, profileMap)}
                   </p>
                 </div>
               </div>
@@ -399,6 +578,41 @@ function CommentThread({
 
       {currentUser ? (
         <div className="mt-3">
+          {/* @mention suggestions */}
+          {mentionSuggestions.length > 0 && (
+            <div
+              className="rounded-xl mb-2 overflow-hidden"
+              style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+            >
+              {mentionSuggestions.map((profile) => {
+                const accent = profileAccent(profile);
+                const rgb = hexToRgb(accent);
+                return (
+                  <button
+                    key={profile.id}
+                    onClick={() => insertMention(profile)}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 hover:bg-white/5 active:bg-white/5 transition-colors"
+                    style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
+                  >
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                      style={{ backgroundColor: `rgba(${rgb},0.2)`, color: accent }}
+                    >
+                      {(profile.display_name?.trim() || "?")[0].toUpperCase()}
+                    </div>
+                    <span className="text-sm font-semibold" style={{ color: accent }}>
+                      @{firstWord(profile.display_name)}
+                    </span>
+                    <span className="text-xs" style={{ color: "var(--muted)" }}>
+                      {profile.display_name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Emoji panel */}
           {showEmojis && (
             <div
               className="flex flex-wrap gap-0.5 p-2 rounded-xl mb-2"
@@ -418,6 +632,8 @@ function CommentThread({
               ))}
             </div>
           )}
+
+          {/* Input row */}
           <div className="flex gap-2">
             <input
               value={text}
@@ -428,7 +644,7 @@ function CommentThread({
                   submit();
                 }
               }}
-              placeholder="Write a comment…"
+              placeholder="Write a comment… (@ to mention)"
               maxLength={500}
               className="flex-1 px-3 py-2.5 text-sm rounded-lg"
               style={{
@@ -480,15 +696,15 @@ function CommentThread({
 function RacesTab({
   profileMap,
   currentUser,
+  selectedRound,
+  setSelectedRound,
 }: {
   profileMap: Map<string, Profile>;
   currentUser: User | null;
+  selectedRound: number;
+  setSelectedRound: (r: number) => void;
 }) {
   const now = new Date();
-  const [selectedRound, setSelectedRound] = useState<number>(() => {
-    const past = RACES.filter((r) => new Date(r.startUtc) < now);
-    return past.length > 0 ? past[past.length - 1].r : RACES[0].r;
-  });
   const [picks, setPicks] = useState<PicksRow[]>([]);
   const [loadingPicks, setLoadingPicks] = useState(false);
   const supabase = createClient();
@@ -544,10 +760,7 @@ function RacesTab({
         {isRevealed ? (
           <PicksGrid picks={picks} profileMap={profileMap} loading={loadingPicks} />
         ) : (
-          <p
-            className="text-sm text-center py-4"
-            style={{ color: "var(--muted)" }}
-          >
+          <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
             Predictions are revealed once the race weekend begins.
           </p>
         )}
@@ -647,11 +860,18 @@ function MembersTab({ profiles, loading }: { profiles: Profile[]; loading: boole
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function GroupPage() {
-  const { user } = useAuth();
+  const { user, refreshNotifications } = useAuth();
   const [tab, setTab] = useState<"feed" | "races" | "members">("feed");
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const supabase = createClient();
+
+  // selectedRound lives here so FeedTab can deep-link into a race
+  const now = new Date();
+  const [selectedRound, setSelectedRound] = useState<number>(() => {
+    const past = RACES.filter((r) => new Date(r.startUtc) < now);
+    return past.length > 0 ? past[past.length - 1].r : RACES[0].r;
+  });
 
   useEffect(() => {
     supabase
@@ -667,6 +887,11 @@ export default function GroupPage() {
   }, []);
 
   const profileMap = new Map(profiles.map((p) => [p.id, p]));
+
+  function goToRace(round: number) {
+    setSelectedRound(round);
+    setTab("races");
+  }
 
   const tabs = [
     { id: "feed" as const,    label: "Feed"    },
@@ -713,8 +938,22 @@ export default function GroupPage() {
       </div>
 
       {/* Tab content */}
-      {tab === "feed"    && <FeedTab profileMap={profileMap} />}
-      {tab === "races"   && <RacesTab profileMap={profileMap} currentUser={user} />}
+      {tab === "feed" && (
+        <FeedTab
+          profileMap={profileMap}
+          currentUser={user}
+          refreshNotifications={refreshNotifications}
+          onViewRace={goToRace}
+        />
+      )}
+      {tab === "races" && (
+        <RacesTab
+          profileMap={profileMap}
+          currentUser={user}
+          selectedRound={selectedRound}
+          setSelectedRound={setSelectedRound}
+        />
+      )}
       {tab === "members" && <MembersTab profiles={profiles} loading={loadingProfiles} />}
     </div>
   );

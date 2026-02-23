@@ -14,6 +14,8 @@ interface AuthContextValue {
   teamAccent: string;
   timezoneOffset: number;
   refreshFavorites: () => Promise<void>;
+  unreadCount: number;
+  refreshNotifications: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -24,6 +26,8 @@ const AuthContext = createContext<AuthContextValue>({
   teamAccent: "#e10600",
   timezoneOffset: 0,
   refreshFavorites: async () => {},
+  unreadCount: 0,
+  refreshNotifications: async () => {},
 });
 
 export function useAuth() {
@@ -36,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [favDrivers, setFavDrivers] = useState<[string | null, string | null, string | null]>([null, null, null]);
   const [teamAccent, setTeamAccent] = useState("#e10600");
   const [timezoneOffset, setTimezoneOffset] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
   const supabase = createClient();
 
@@ -63,6 +68,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loadFavorites(user.id);
   }
 
+  async function fetchUnreadCount(userId: string) {
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("read_at", null);
+    setUnreadCount(count ?? 0);
+  }
+
+  async function refreshNotifications() {
+    if (!user?.id) return;
+    await fetchUnreadCount(user.id);
+  }
+
   useEffect(() => {
     document.documentElement.style.setProperty("--team-accent", teamAccent);
   }, [teamAccent]);
@@ -71,7 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
-      if (user?.id) loadFavorites(user.id);
+      if (user?.id) {
+        loadFavorites(user.id);
+        fetchUnreadCount(user.id);
+      }
     });
 
     // Keep in sync with auth state changes (handles OAuth redirects)
@@ -82,11 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(newUser);
       if (newUser?.id) {
         loadFavorites(newUser.id);
+        fetchUnreadCount(newUser.id);
       } else {
         setFavTeams([null, null, null]);
         setFavDrivers([null, null, null]);
         setTeamAccent("#e10600");
         setTimezoneOffset(0);
+        setUnreadCount(0);
       }
     });
 
@@ -100,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, signOut, favTeams, favDrivers, teamAccent, timezoneOffset, refreshFavorites }}>
+    <AuthContext.Provider value={{ user, signOut, favTeams, favDrivers, teamAccent, timezoneOffset, refreshFavorites, unreadCount, refreshNotifications }}>
       {children}
     </AuthContext.Provider>
   );

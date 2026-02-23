@@ -63,7 +63,7 @@ const TURNS: TurnItem[] = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, teamAccent, timezoneOffset, favTeams } = useAuth();
+  const { user, teamAccent, timezoneOffset, favTeams, unreadCount } = useAuth();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -179,6 +179,11 @@ export default function HomePage() {
                       <div style={{ position: "absolute", inset: "9px", borderRadius: "50%", border: `1.5px solid rgba(${hexToRgb(teamAccent)},0.40)` }} />
                       <div style={{ position: "relative", width: "65px", height: "65px", borderRadius: "50%", backgroundColor: teamAccent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "31px", boxShadow: `0 0 24px rgba(${hexToRgb(teamAccent)},0.65)` }}>
                         {turn.icon}
+                        {turn.href === "/members" && unreadCount > 0 && (
+                          <div style={{ position: "absolute", top: "-4px", right: "-4px", minWidth: "20px", height: "20px", borderRadius: "10px", backgroundColor: "#e10600", color: "#fff", fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px", border: "2px solid #080810" }}>
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <span style={{ fontSize: "19px", fontWeight: 700, color: "white", textShadow: "0 0 8px rgba(0,0,0,1), 0 2px 12px rgba(0,0,0,1), 0 0 24px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
