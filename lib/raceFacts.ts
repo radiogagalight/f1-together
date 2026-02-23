@@ -16,6 +16,44 @@ export interface RacePageData {
 }
 
 export const RACE_FACTS: Record<number, RacePageData> = {
+  2: {
+    heroImage: "/images/china-flag.png",
+    trackImage: "/images/china-gp-track.webp",
+    facts: [
+      {
+        label: "First F1 race",
+        value: "2004 — Rubens Barrichello won the inaugural Chinese Grand Prix at Shanghai International Circuit.",
+      },
+      {
+        label: "Most wins",
+        value: "Lewis Hamilton — 6 victories (2008, 2011, 2014, 2015, 2017, 2019)",
+      },
+      {
+        label: "Best known for",
+        value: "The long, sweeping Turn 6-7 complex and the hairpin at Turn 14 — one of the best overtaking spots on the calendar.",
+      },
+      {
+        label: "Qualifying record",
+        value: "Max Verstappen — 1:12.930 (2024)",
+      },
+      {
+        label: "Race lap record",
+        value: "Michael Schumacher — 1:32.238 (2004)",
+      },
+      {
+        label: "Race distance",
+        value: "56 laps × 5.451 km = 305.066 km total",
+      },
+      {
+        label: "Sprint weekend",
+        value: "China hosts a Sprint race in 2026 — the only format where Saturday features a Sprint Shootout and Sprint race instead of regular qualifying.",
+      },
+      {
+        label: "Did you know?",
+        value: "Shanghai International Circuit was purpose-built for Formula 1 and opened in 2004. Its layout was inspired by the Chinese character 上 (shàng), meaning 'above' or 'upper'.",
+      },
+    ],
+  },
   1: {
     heroImage: "/images/aus-gp-track.avif",
     trackImage: "/images/aus-gp-track-2.jpg",
