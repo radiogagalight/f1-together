@@ -6,8 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
-import { hexToRgb } from "@/lib/teamColors";
+import { RACES, CONSTRUCTORS, formatRaceDate, flagToCC } from "@/lib/data";
+import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 
 const PAGE_SIZE = 8;
 const TOTAL_PAGES = Math.ceil(RACES.length / PAGE_SIZE);
@@ -63,12 +63,34 @@ const TURNS: TurnItem[] = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, teamAccent, timezoneOffset } = useAuth();
+  const { user, teamAccent, timezoneOffset, favTeams } = useAuth();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const supabase = createClient();
 
   const nextRaceIdx = getNextRaceIndex();
   const [page, setPage] = useState(Math.floor(nextRaceIdx / PAGE_SIZE));
+
+  // ── Rotating favourite team greeting ──
+  const activeTeams = favTeams.filter((t): t is string => t !== null);
+  const [teamIdx, setTeamIdx] = useState(0);
+  const [teamVisible, setTeamVisible] = useState(true);
+
+  useEffect(() => {
+    if (activeTeams.length <= 1) return;
+    const id = setInterval(() => {
+      setTeamVisible(false);
+      setTimeout(() => {
+        setTeamIdx((i) => (i + 1) % activeTeams.length);
+        setTeamVisible(true);
+      }, 300);
+    }, 2500);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTeams.length]);
+
+  const currentTeamId   = activeTeams[teamIdx % Math.max(1, activeTeams.length)] ?? null;
+  const currentTeamName = currentTeamId ? (CONSTRUCTORS.find((c) => c.id === currentTeamId)?.name ?? null) : null;
+  const currentTeamColor = currentTeamId ? (TEAM_COLORS[currentTeamId] ?? null) : null;
 
   useEffect(() => {
     if (!user) return;
@@ -122,11 +144,31 @@ export default function HomePage() {
           </span>
         </div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
-          Hi, {displayName ?? "driver"}!
+          Hi, {displayName ?? "driver"}
         </h1>
-        <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
-          Tap a turn to navigate
-        </p>
+        {currentTeamName && currentTeamColor ? (
+          <div className="flex items-center gap-2 mt-1">
+            <span className="inline-block h-0.5 w-4 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
+            <p style={{ color: "var(--muted)", fontWeight: 300, fontSize: "15px", lineHeight: 1.3 }}>
+              {"Let's go "}
+              <span
+                style={{
+                  color: currentTeamColor,
+                  fontWeight: 700,
+                  opacity: teamVisible ? 1 : 0,
+                  transition: "opacity 0.3s ease",
+                }}
+              >
+                {currentTeamName}
+              </span>
+              <span style={{ fontWeight: 300 }}>!</span>
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
+            Tap a turn to navigate
+          </p>
+        )}
       </header>
 
       {/* ── Main content: track + schedule ── */}
