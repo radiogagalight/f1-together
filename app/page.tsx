@@ -156,7 +156,8 @@ export default function HomePage() {
                   color: currentTeamColor,
                   fontWeight: 700,
                   opacity: teamVisible ? 1 : 0,
-                  transition: "opacity 0.6s ease",
+                  transform: teamVisible ? "translateY(0px)" : "translateY(6px)",
+                  transition: "opacity 0.6s ease, transform 0.6s ease",
                 }}
               >
                 {currentTeamName}
