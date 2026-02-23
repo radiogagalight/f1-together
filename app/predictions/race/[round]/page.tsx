@@ -74,8 +74,9 @@ function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label:
                 >
                   {unit}
                 </span>
-              </div>
+                  </div>
             ))}
+          </div>
           <p className="text-center text-xs font-semibold mt-3" style={{ color: "var(--f1-red)" }}>
             Until {target}
           </p>
