@@ -75,6 +75,14 @@ export const RACES: Race[] = [
   { r: 24, name: "Abu Dhabi Grand Prix",            circuit: "Yas Marina Circuit",              flag: "🇦🇪", date: "2026-12-06", sprint: false },
 ];
 
+/** Converts a flag emoji (e.g. 🇦🇺) to a lowercase ISO country code (e.g. "au") */
+export function flagToCC(flag: string): string {
+  return [...flag]
+    .map((c) => String.fromCharCode((c.codePointAt(0) ?? 0) - 0x1f1e6 + 65))
+    .join("")
+    .toLowerCase();
+}
+
 export function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00Z");
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });

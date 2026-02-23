@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
-import { RACES, formatDate } from "@/lib/data";
+import { RACES, formatDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
 import type { RaceFact } from "@/lib/raceFacts";
 import { useRacePick } from "@/hooks/useRacePick";
@@ -182,7 +182,15 @@ export default function RaceDetailPage({
             )}
           </div>
           <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: "var(--foreground)" }}>
-            <span>{race.flag}</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://flagcdn.com/w40/${flagToCC(race.flag)}.png`}
+              width={28}
+              height={21}
+              alt=""
+              className="rounded-sm shrink-0"
+              style={{ objectFit: "cover" }}
+            />
             <span>{race.name}</span>
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>{race.circuit}</p>

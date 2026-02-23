@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import { RACES, formatDate } from "@/lib/data";
+import { RACES, formatDate, flagToCC } from "@/lib/data";
 import { hexToRgb } from "@/lib/teamColors";
 
 const PAGE_SIZE = 8;
@@ -249,7 +249,15 @@ export default function HomePage() {
                   </span>
 
                   {/* Flag */}
-                  <span className="text-xl leading-none shrink-0">{race.flag}</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://flagcdn.com/w40/${flagToCC(race.flag)}.png`}
+                    width={24}
+                    height={18}
+                    alt=""
+                    className="shrink-0 rounded-sm"
+                    style={{ objectFit: "cover" }}
+                  />
 
                   {/* Name + tags */}
                   <div className="flex-1 min-w-0">
