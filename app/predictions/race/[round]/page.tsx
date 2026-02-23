@@ -306,13 +306,13 @@ export default function RaceDetailPage({
 
             {/* ── Qualifying ── */}
             <div>
-              <h2
-                className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
-                style={{ color: "var(--muted)" }}
-              >
-                <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
-                Qualifying
-              </h2>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
+                <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
+                  Qualifying
+                </h2>
+                <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+              </div>
               <div className="flex flex-col gap-2">
                 <DriverSelect
                   label="Pole Position"
@@ -340,13 +340,13 @@ export default function RaceDetailPage({
 
             {/* ── Race ── */}
             <div>
-              <h2
-                className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
-                style={{ color: "var(--muted)" }}
-              >
-                <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
-                Race
-              </h2>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
+                <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
+                  Race
+                </h2>
+                <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+              </div>
               <div className="flex flex-col gap-2">
                 <DriverSelect
                   label="Race Winner"
@@ -381,13 +381,13 @@ export default function RaceDetailPage({
 
             {/* ── Safety Car ── */}
             <div>
-              <h2
-                className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
-                style={{ color: "var(--muted)" }}
-              >
-                <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
-                Safety Car
-              </h2>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--f1-red)" }} />
+                <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
+                  Safety Car
+                </h2>
+                <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+              </div>
               <div
                 className="rounded-xl px-4 py-4"
                 style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}

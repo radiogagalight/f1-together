@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DRIVERS } from "@/lib/data";
+import { TEAM_COLORS } from "@/lib/teamColors";
 
 interface Props {
   label: string;
@@ -17,6 +18,9 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick }
   const driver = value ? DRIVERS.find((d) => d.id === value) : null;
   const displayName = driver ? driver.name : "Make your prediction";
   const hasPick = value !== null;
+  const teamColor = driver
+    ? (TEAM_COLORS[driver.team.toLowerCase().replace(/\s+/g, "-")] ?? null)
+    : null;
 
   function handlePick(id: string) {
     onPick(id);
@@ -44,8 +48,8 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick }
             style={{
               color: isSaved
                 ? "var(--f1-red)"
-                : hasPick
-                ? "var(--foreground)"
+                : hasPick && teamColor
+                ? teamColor
                 : "var(--muted)",
             }}
           >
