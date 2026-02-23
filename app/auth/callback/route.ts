@@ -21,7 +21,15 @@ export async function GET(request: Request) {
         .from("profiles")
         .upsert({ id: data.user.id, display_name: displayName });
 
-      return NextResponse.redirect(`${origin}${next}`);
+      // On Vercel, origin from request.url may be an internal URL.
+      // x-forwarded-host contains the actual public hostname.
+      const forwardedHost = request.headers.get("x-forwarded-host");
+      const redirectBase =
+        process.env.NODE_ENV === "development" || !forwardedHost
+          ? origin
+          : `https://${forwardedHost}`;
+
+      return NextResponse.redirect(`${redirectBase}${next}`);
     }
   }
 
