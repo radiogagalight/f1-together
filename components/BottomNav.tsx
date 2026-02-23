@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: "/",            label: "Home",        icon: "🏠" },
   { href: "/predictions", label: "Predictions", icon: "🏁" },
   { href: "/members",     label: "Group",       icon: "👥" },
+  { href: "/profile",     label: "Profile",     icon: "👤" },
   { href: "/settings",    label: "Settings",    icon: "⚙️" },
 ];
 
