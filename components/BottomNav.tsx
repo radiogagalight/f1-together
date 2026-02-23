@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/",            label: "Home",        icon: "🏠" },
   { href: "/predictions", label: "Predictions", icon: "🏁" },
+  { href: "/members",     label: "Group",       icon: "👥" },
   { href: "/settings",    label: "Settings",    icon: "⚙️" },
 ];
 
@@ -30,7 +31,7 @@ export default function BottomNav() {
             href={item.href}
             className="flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors"
             style={{
-              color: isActive ? "var(--f1-red)" : "var(--muted)",
+              color: isActive ? "var(--team-accent)" : "var(--muted)",
               minHeight: "44px",
             }}
           >

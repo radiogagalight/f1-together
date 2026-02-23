@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import { RACES, formatDate } from "@/lib/data";
+import { hexToRgb } from "@/lib/teamColors";
 
 const PAGE_SIZE = 8;
 const TOTAL_PAGES = Math.ceil(RACES.length / PAGE_SIZE);
@@ -57,12 +58,12 @@ const TURNS: TurnItem[] = [
   { label: "Predictions", sublabel: "2026 season", href: "/predictions", left: "72%", top: "24%", active: true,  icon: "🏁" },
   { label: "Profile",     sublabel: "Your details", href: "/profile",     left: "22%", top: "24%", active: true,  icon: "👤" },
   { label: "Coming soon", sublabel: "",             href: "#",            left: "11%", top: "55%", active: false, icon: "🔒" },
-  { label: "Coming soon", sublabel: "",             href: "#",            left: "73%", top: "80%", active: false, icon: "🔒" },
+  { label: "Group",       sublabel: "Fan cards",     href: "/members",     left: "73%", top: "80%", active: true,  icon: "👥" },
 ];
 
 export default function HomePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, teamAccent } = useAuth();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -98,7 +99,7 @@ export default function HomePage() {
               top: `${line.top}%`,
               width: `${line.width}%`,
               height: "1px",
-              background: "linear-gradient(to right, transparent, rgba(225,6,0,0.4), transparent)",
+              background: `linear-gradient(to right, transparent, rgba(${hexToRgb(teamAccent)},0.4), transparent)`,
               opacity: line.opacity,
               animation: `speed-rush ${line.dur}s linear ${line.delay}s infinite`,
             }}
@@ -160,9 +161,9 @@ export default function HomePage() {
                     aria-label={turn.label}
                   >
                     <div style={{ position: "relative", width: "54px", height: "54px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ position: "absolute", inset: 0, borderRadius: "50%", backgroundColor: "rgba(225,6,0,0.15)" }} />
-                      <div style={{ position: "absolute", inset: "5px", borderRadius: "50%", border: "1.5px solid rgba(225,6,0,0.40)" }} />
-                      <div style={{ position: "relative", width: "38px", height: "38px", borderRadius: "50%", backgroundColor: "#e10600", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", boxShadow: "0 0 14px rgba(225,6,0,0.65)" }}>
+                      <div style={{ position: "absolute", inset: 0, borderRadius: "50%", backgroundColor: `rgba(${hexToRgb(teamAccent)},0.15)` }} />
+                      <div style={{ position: "absolute", inset: "5px", borderRadius: "50%", border: `1.5px solid rgba(${hexToRgb(teamAccent)},0.40)` }} />
+                      <div style={{ position: "relative", width: "38px", height: "38px", borderRadius: "50%", backgroundColor: teamAccent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", boxShadow: `0 0 14px rgba(${hexToRgb(teamAccent)},0.65)` }}>
                         {turn.icon}
                       </div>
                     </div>
