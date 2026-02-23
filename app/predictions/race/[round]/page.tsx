@@ -170,7 +170,7 @@ export default function RaceDetailPage({
   const raceData = RACE_FACTS[round];
   const heroImage = raceData?.heroImage;
 
-  function pick(field: keyof RacePick, value: string | boolean) {
+  function pick(field: keyof RacePick, value: string | boolean | null) {
     if (!isLocked) setPick(field, value);
   }
 
@@ -399,21 +399,22 @@ export default function RaceDetailPage({
                   {([true, false] as const).map((option) => {
                     const isSelected = picks?.safetyCar === option;
                     const isSaved = savedField === "safetyCar" && isSelected;
+                    const isYes = option === true;
                     return (
                       <button
                         key={String(option)}
-                        onClick={() => pick("safetyCar", option)}
+                        onClick={() => pick("safetyCar", isSelected ? null : option)}
                         disabled={isLocked}
                         className="flex-1 rounded-xl py-3 text-sm font-bold transition-colors"
                         style={{
                           backgroundColor: isSelected
-                            ? option ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)"
+                            ? isYes ? "rgba(34,197,94,0.15)" : "rgba(225,6,0,0.15)"
                             : "var(--background)",
                           border: isSelected
-                            ? `1px solid ${option ? "var(--f1-red)" : "var(--foreground)"}`
+                            ? `1px solid ${isYes ? "rgba(34,197,94,0.6)" : "var(--f1-red)"}`
                             : "1px solid var(--border)",
                           color: isSelected
-                            ? option ? "var(--f1-red)" : "var(--foreground)"
+                            ? isYes ? "#22c55e" : "var(--f1-red)"
                             : "var(--muted)",
                           opacity: isLocked ? 0.5 : 1,
                           cursor: isLocked ? "default" : "pointer",

@@ -25,7 +25,7 @@ export function useRacePick(userId: string | undefined, round: number) {
   }, [userId, round]);
 
   const setPick = useCallback(
-    (field: keyof RacePick, value: string | boolean) => {
+    (field: keyof RacePick, value: string | boolean | null) => {
       if (!userId) return;
 
       // Optimistic update — save latest picks inside setState callback
