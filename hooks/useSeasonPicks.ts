@@ -26,7 +26,7 @@ export function useSeasonPicks(userId: string | undefined) {
   }, [userId]);
 
   const setPick = useCallback(
-    (key: keyof SeasonPicks, value: string) => {
+    (key: keyof SeasonPicks, value: string | null) => {
       if (!userId) return;
 
       // Optimistic update
@@ -35,9 +35,11 @@ export function useSeasonPicks(userId: string | undefined) {
         return { ...prev, [key]: value };
       });
 
-      // Flash "Saved ✓" immediately
-      setSavedKey(key);
-      setTimeout(() => setSavedKey(null), 1500);
+      // Flash "Saved ✓" immediately (only when picking, not deselecting)
+      if (value !== null) {
+        setSavedKey(key);
+        setTimeout(() => setSavedKey(null), 1500);
+      }
 
       // Background save to Supabase
       savePick(userId, key, value, supabase);

@@ -51,7 +51,7 @@ export async function loadPicks(
 export async function savePick(
   userId: string,
   key: keyof SeasonPicks,
-  value: string,
+  value: string | null,
   supabase: SupabaseClient
 ): Promise<void> {
   const column = KEY_MAP[key];
