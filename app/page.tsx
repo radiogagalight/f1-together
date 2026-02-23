@@ -247,18 +247,10 @@ export default function HomePage() {
             className="flex items-center justify-between px-4 py-3 shrink-0"
             style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
           >
-            <div className="flex items-center gap-2">
-              <span
-                className="inline-block h-0.5 w-4 rounded-full"
-                style={{ backgroundColor: "var(--f1-red)" }}
-              />
-              <span
-                className="text-xs font-bold uppercase tracking-widest"
-                style={{ color: "var(--muted)" }}
-              >
-                2026 Schedule
-              </span>
-            </div>
+            <h2 className="text-lg font-bold tracking-tight">
+              <span style={{ color: "var(--f1-red)" }}>F1</span>
+              <span style={{ color: "var(--foreground)" }}> 2026 Season</span>
+            </h2>
             <span className="text-xs font-mono" style={{ color: "var(--muted)" }}>
               24 Races
             </span>
