@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
 import { RACES, formatDate } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
@@ -88,187 +89,253 @@ export default function RaceDetailPage({
   }
 
   const isLocked = new Date(race.date + "T14:00:00Z").getTime() < Date.now();
-  const facts = RACE_FACTS[round];
+  const raceData = RACE_FACTS[round];
+  const heroImage = raceData?.heroImage;
 
   function pick(field: keyof RacePick, value: string | boolean) {
     if (!isLocked) setPick(field, value);
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6">
-      {/* Race header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-mono text-xs" style={{ color: "var(--muted)" }}>
-            Round {race.r} · {formatDate(race.date)}
-          </span>
-          {race.sprint && (
-            <span
-              className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
-              style={{ backgroundColor: "rgba(255,200,0,0.1)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.3)" }}
-            >
-              Sprint
-            </span>
-          )}
-          {isLocked && (
-            <span
-              className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
-              style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--muted)", border: "1px solid var(--border)" }}
-            >
-              🔒 Locked
-            </span>
-          )}
+    <div className="max-w-lg mx-auto pb-8">
+
+      {/* ── Hero banner (when flag image exists) ── */}
+      {heroImage ? (
+        <div className="relative overflow-hidden mb-6" style={{ height: "210px" }}>
+          <Image
+            src={heroImage}
+            alt={`${race.name} flag`}
+            fill
+            style={{ objectFit: "cover", objectPosition: "center", opacity: 0.55 }}
+            priority
+          />
+          {/* Gradient: subtle at top, fades fully to page bg at bottom */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(to bottom, rgba(8,8,16,0.25) 0%, rgba(8,8,16,0.0) 30%, rgba(8,8,16,0.75) 68%, rgba(8,8,16,1.0) 100%)",
+            }}
+          />
+          {/* Race info pinned to bottom-left */}
+          <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+                Round {race.r} · {formatDate(race.date)}
+              </span>
+              {race.sprint && (
+                <span
+                  className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: "rgba(255,200,0,0.15)",
+                    color: "#ffc800",
+                    border: "1px solid rgba(255,200,0,0.4)",
+                  }}
+                >
+                  Sprint
+                </span>
+              )}
+              {isLocked && (
+                <span
+                  className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.5)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                  }}
+                >
+                  🔒 Locked
+                </span>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold" style={{ color: "#ffffff", textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>
+              {race.name}
+            </h1>
+            <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.5)", textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}>
+              {race.circuit}
+            </p>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: "var(--foreground)" }}>
-          <span>{race.flag}</span>
-          <span>{race.name}</span>
-        </h1>
-        <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>{race.circuit}</p>
-      </div>
-
-      {/* Track fact card */}
-      {facts && <FactCard facts={facts} />}
-
-      {isLocked && (
-        <div
-          className="mb-6 rounded-xl px-4 py-3 text-sm"
-          style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--muted)" }}
-        >
-          Predictions for this race are locked — the race weekend has passed.
+      ) : (
+        /* ── Plain header fallback for races without a hero image ── */
+        <div className="px-4 pt-6 mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-mono text-xs" style={{ color: "var(--muted)" }}>
+              Round {race.r} · {formatDate(race.date)}
+            </span>
+            {race.sprint && (
+              <span
+                className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                style={{ backgroundColor: "rgba(255,200,0,0.1)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.3)" }}
+              >
+                Sprint
+              </span>
+            )}
+            {isLocked && (
+              <span
+                className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--muted)", border: "1px solid var(--border)" }}
+              >
+                🔒 Locked
+              </span>
+            )}
+          </div>
+          <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: "var(--foreground)" }}>
+            <span>{race.flag}</span>
+            <span>{race.name}</span>
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>{race.circuit}</p>
         </div>
       )}
 
-      {loading ? (
-        <p className="text-sm" style={{ color: "var(--muted)" }}>Loading…</p>
-      ) : (
-        <div className="flex flex-col gap-6">
+      {/* ── Content ── */}
+      <div className="px-4">
 
-          {/* ── Qualifying ── */}
-          <div>
-            <h2
-              className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
-              style={{ color: "var(--muted)" }}
-            >
-              <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
-              Qualifying
-            </h2>
-            <div className="flex flex-col gap-2">
-              <DriverSelect
-                label="Pole Position"
-                value={picks?.qualPole ?? null}
-                isSaved={savedField === "qualPole"}
-                disabled={isLocked}
-                onPick={(v) => pick("qualPole", v)}
-              />
-              <DriverSelect
-                label="P2"
-                value={picks?.qualP2 ?? null}
-                isSaved={savedField === "qualP2"}
-                disabled={isLocked}
-                onPick={(v) => pick("qualP2", v)}
-              />
-              <DriverSelect
-                label="P3"
-                value={picks?.qualP3 ?? null}
-                isSaved={savedField === "qualP3"}
-                disabled={isLocked}
-                onPick={(v) => pick("qualP3", v)}
-              />
-            </div>
+        {/* Track fact card */}
+        {raceData?.facts && <FactCard facts={raceData.facts} />}
+
+        {isLocked && (
+          <div
+            className="mb-6 rounded-xl px-4 py-3 text-sm"
+            style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--muted)" }}
+          >
+            Predictions for this race are locked — the race weekend has passed.
           </div>
+        )}
 
-          {/* ── Race ── */}
-          <div>
-            <h2
-              className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
-              style={{ color: "var(--muted)" }}
-            >
-              <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
-              Race
-            </h2>
-            <div className="flex flex-col gap-2">
-              <DriverSelect
-                label="Race Winner"
-                value={picks?.raceWinner ?? null}
-                isSaved={savedField === "raceWinner"}
-                disabled={isLocked}
-                onPick={(v) => pick("raceWinner", v)}
-              />
-              <DriverSelect
-                label="P2"
-                value={picks?.raceP2 ?? null}
-                isSaved={savedField === "raceP2"}
-                disabled={isLocked}
-                onPick={(v) => pick("raceP2", v)}
-              />
-              <DriverSelect
-                label="P3"
-                value={picks?.raceP3 ?? null}
-                isSaved={savedField === "raceP3"}
-                disabled={isLocked}
-                onPick={(v) => pick("raceP3", v)}
-              />
-              <DriverSelect
-                label="Fastest Lap"
-                value={picks?.fastestLap ?? null}
-                isSaved={savedField === "fastestLap"}
-                disabled={isLocked}
-                onPick={(v) => pick("fastestLap", v)}
-              />
-            </div>
-          </div>
+        {loading ? (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>Loading…</p>
+        ) : (
+          <div className="flex flex-col gap-6">
 
-          {/* ── Safety Car ── */}
-          <div>
-            <h2
-              className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
-              style={{ color: "var(--muted)" }}
-            >
-              <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
-              Safety Car
-            </h2>
-            <div
-              className="rounded-xl px-4 py-4"
-              style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}
-            >
-              <p className="text-sm font-semibold mb-3" style={{ color: "var(--foreground)" }}>
-                Will there be a safety car deployment?
-              </p>
-              <div className="flex gap-3">
-                {([true, false] as const).map((option) => {
-                  const isSelected = picks?.safetyCar === option;
-                  const isSaved = savedField === "safetyCar" && isSelected;
-                  return (
-                    <button
-                      key={String(option)}
-                      onClick={() => pick("safetyCar", option)}
-                      disabled={isLocked}
-                      className="flex-1 rounded-xl py-3 text-sm font-bold transition-colors"
-                      style={{
-                        backgroundColor: isSelected
-                          ? option ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)"
-                          : "var(--background)",
-                        border: isSelected
-                          ? `1px solid ${option ? "var(--f1-red)" : "var(--foreground)"}`
-                          : "1px solid var(--border)",
-                        color: isSelected
-                          ? option ? "var(--f1-red)" : "var(--foreground)"
-                          : "var(--muted)",
-                        opacity: isLocked ? 0.5 : 1,
-                        cursor: isLocked ? "default" : "pointer",
-                      }}
-                    >
-                      {option ? "Yes" : "No"}
-                      {isSaved ? " ✓" : ""}
-                    </button>
-                  );
-                })}
+            {/* ── Qualifying ── */}
+            <div>
+              <h2
+                className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
+                style={{ color: "var(--muted)" }}
+              >
+                <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
+                Qualifying
+              </h2>
+              <div className="flex flex-col gap-2">
+                <DriverSelect
+                  label="Pole Position"
+                  value={picks?.qualPole ?? null}
+                  isSaved={savedField === "qualPole"}
+                  disabled={isLocked}
+                  onPick={(v) => pick("qualPole", v)}
+                />
+                <DriverSelect
+                  label="P2"
+                  value={picks?.qualP2 ?? null}
+                  isSaved={savedField === "qualP2"}
+                  disabled={isLocked}
+                  onPick={(v) => pick("qualP2", v)}
+                />
+                <DriverSelect
+                  label="P3"
+                  value={picks?.qualP3 ?? null}
+                  isSaved={savedField === "qualP3"}
+                  disabled={isLocked}
+                  onPick={(v) => pick("qualP3", v)}
+                />
               </div>
             </div>
-          </div>
 
-        </div>
-      )}
+            {/* ── Race ── */}
+            <div>
+              <h2
+                className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
+                style={{ color: "var(--muted)" }}
+              >
+                <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
+                Race
+              </h2>
+              <div className="flex flex-col gap-2">
+                <DriverSelect
+                  label="Race Winner"
+                  value={picks?.raceWinner ?? null}
+                  isSaved={savedField === "raceWinner"}
+                  disabled={isLocked}
+                  onPick={(v) => pick("raceWinner", v)}
+                />
+                <DriverSelect
+                  label="P2"
+                  value={picks?.raceP2 ?? null}
+                  isSaved={savedField === "raceP2"}
+                  disabled={isLocked}
+                  onPick={(v) => pick("raceP2", v)}
+                />
+                <DriverSelect
+                  label="P3"
+                  value={picks?.raceP3 ?? null}
+                  isSaved={savedField === "raceP3"}
+                  disabled={isLocked}
+                  onPick={(v) => pick("raceP3", v)}
+                />
+                <DriverSelect
+                  label="Fastest Lap"
+                  value={picks?.fastestLap ?? null}
+                  isSaved={savedField === "fastestLap"}
+                  disabled={isLocked}
+                  onPick={(v) => pick("fastestLap", v)}
+                />
+              </div>
+            </div>
+
+            {/* ── Safety Car ── */}
+            <div>
+              <h2
+                className="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
+                style={{ color: "var(--muted)" }}
+              >
+                <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
+                Safety Car
+              </h2>
+              <div
+                className="rounded-xl px-4 py-4"
+                style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}
+              >
+                <p className="text-sm font-semibold mb-3" style={{ color: "var(--foreground)" }}>
+                  Will there be a safety car deployment?
+                </p>
+                <div className="flex gap-3">
+                  {([true, false] as const).map((option) => {
+                    const isSelected = picks?.safetyCar === option;
+                    const isSaved = savedField === "safetyCar" && isSelected;
+                    return (
+                      <button
+                        key={String(option)}
+                        onClick={() => pick("safetyCar", option)}
+                        disabled={isLocked}
+                        className="flex-1 rounded-xl py-3 text-sm font-bold transition-colors"
+                        style={{
+                          backgroundColor: isSelected
+                            ? option ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)"
+                            : "var(--background)",
+                          border: isSelected
+                            ? `1px solid ${option ? "var(--f1-red)" : "var(--foreground)"}`
+                            : "1px solid var(--border)",
+                          color: isSelected
+                            ? option ? "var(--f1-red)" : "var(--foreground)"
+                            : "var(--muted)",
+                          opacity: isLocked ? 0.5 : 1,
+                          cursor: isLocked ? "default" : "pointer",
+                        }}
+                      >
+                        {option ? "Yes" : "No"}
+                        {isSaved ? " ✓" : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+      </div>
     </div>
   );
 }
