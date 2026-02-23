@@ -170,7 +170,6 @@ export default function HomePage() {
               >
                 {currentTeamName}
               </span>
-              <span style={{ fontWeight: 300 }}>{"\u2009"}!</span>
             </p>
           </div>
         ) : (
