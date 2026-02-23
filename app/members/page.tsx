@@ -189,7 +189,17 @@ function FeedTab({
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [mentions, setMentions] = useState<MentionNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clearedBefore, setClearedBefore] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("f1_feed_cleared_before") : null
+  );
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const supabase = createClient();
+
+  function clearFeed() {
+    const now = new Date().toISOString();
+    setClearedBefore(now);
+    localStorage.setItem("f1_feed_cleared_before", now);
+  }
 
   useEffect(() => {
     async function load() {
@@ -328,12 +338,12 @@ function FeedTab({
       )}
 
       {/* Activity feed */}
-      {items.length === 0 ? (
-        <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>
-          No activity yet. Make some picks to see them here!
-        </p>
-      ) : (
-        items.map((item, i) => {
+      {(() => {
+        const cutoff = clearedBefore ? new Date(clearedBefore).getTime() : null;
+        const activeItems = cutoff ? items.filter((it) => new Date(it.updatedAt).getTime() > cutoff) : items;
+        const archivedItems = cutoff ? items.filter((it) => new Date(it.updatedAt).getTime() <= cutoff) : [];
+
+        function renderItem(item: ActivityItem, i: number, dimmed = false) {
           const profile = profileMap.get(item.userId);
           const accent = profileAccent(profile);
           const inner = (
@@ -353,9 +363,10 @@ function FeedTab({
               </div>
             </>
           );
-          const sharedStyle = {
+          const sharedStyle: React.CSSProperties = {
             backgroundColor: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.08)",
+            opacity: dimmed ? 0.55 : 1,
           };
           return item.onTap ? (
             <button
@@ -371,8 +382,72 @@ function FeedTab({
               {inner}
             </div>
           );
-        })
-      )}
+        }
+
+        return (
+          <>
+            {activeItems.length === 0 && archivedItems.length === 0 ? (
+              <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>
+                No activity yet. Make some picks to see them here!
+              </p>
+            ) : (
+              <>
+                {/* Clear button */}
+                {activeItems.length > 0 && (
+                  <div className="flex justify-end mb-1">
+                    <button
+                      onClick={clearFeed}
+                      className="text-xs font-semibold px-3 py-1 rounded-lg transition-colors"
+                      style={{
+                        color: "var(--muted)",
+                        backgroundColor: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      Clear feed
+                    </button>
+                  </div>
+                )}
+
+                {/* Active items */}
+                {activeItems.length === 0 ? (
+                  <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
+                    You&apos;re all caught up.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {activeItems.map((item, i) => renderItem(item, i))}
+                  </div>
+                )}
+
+                {/* Archive */}
+                {archivedItems.length > 0 && (
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setArchiveOpen((o) => !o)}
+                      className="flex items-center gap-2 w-full py-2"
+                    >
+                      <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+                      <span className="text-xs font-semibold uppercase tracking-widest shrink-0" style={{ color: "var(--muted)" }}>
+                        Archive ({archivedItems.length})
+                      </span>
+                      <span className="text-[10px]" style={{ color: "var(--muted)" }}>
+                        {archiveOpen ? "▲" : "▼"}
+                      </span>
+                      <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+                    </button>
+                    {archiveOpen && (
+                      <div className="flex flex-col gap-2 mt-2">
+                        {archivedItems.map((item, i) => renderItem(item, i, true))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }
