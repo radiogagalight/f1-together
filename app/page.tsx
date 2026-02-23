@@ -167,11 +167,11 @@ export default function HomePage() {
                         {turn.icon}
                       </div>
                     </div>
-                    <span style={{ fontSize: "19px", fontWeight: 700, color: "white", textShadow: "0 1px 4px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "19px", fontWeight: 700, color: "white", textShadow: "0 0 8px rgba(0,0,0,1), 0 2px 12px rgba(0,0,0,1), 0 0 24px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
                       {turn.label}
                     </span>
                     {turn.sublabel && (
-                      <span style={{ fontSize: "15px", color: "rgba(255,255,255,0.55)", textShadow: "0 1px 4px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "15px", color: "rgba(255,255,255,0.55)", textShadow: "0 0 8px rgba(0,0,0,1), 0 2px 12px rgba(0,0,0,1), 0 0 24px rgba(0,0,0,0.9)", lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap" }}>
                         {turn.sublabel}
                       </span>
                     )}
