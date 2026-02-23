@@ -95,29 +95,28 @@ function FactCard({ facts }: { facts: RaceFact[] }) {
     <div
       className="rounded-xl overflow-hidden mb-6"
       style={{
-        border: "1px solid rgba(225,6,0,0.35)",
-        background: "linear-gradient(135deg, rgba(225,6,0,0.13) 0%, rgba(30,6,6,0.7) 100%)",
-        boxShadow: "0 0 24px rgba(225,6,0,0.12)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        background: "rgba(255,255,255,0.04)",
       }}
     >
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: open ? "1px solid rgba(225,6,0,0.2)" : "none" }}
+        style={{ borderBottom: open ? "1px solid rgba(255,255,255,0.08)" : "none" }}
       >
         <div className="flex items-center gap-2">
           <span
             className="inline-block h-px w-4 rounded-full"
-            style={{ backgroundColor: "var(--f1-red)" }}
+            style={{ backgroundColor: "rgba(255,255,255,0.4)" }}
           />
           <span
             className="text-xs font-bold uppercase tracking-widest"
-            style={{ color: "rgba(255,255,255,0.7)" }}
+            style={{ color: "rgba(255,255,255,0.5)" }}
           >
             Track Facts
           </span>
         </div>
-        <span style={{ color: "rgba(225,6,0,0.8)", fontSize: "11px", fontWeight: 700 }}>
+        <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "11px", fontWeight: 700 }}>
           {open ? "▲ Hide" : "▼ Show"}
         </span>
       </button>
@@ -128,11 +127,11 @@ function FactCard({ facts }: { facts: RaceFact[] }) {
             <div
               key={fact.label}
               className="px-4 py-3"
-              style={{ borderTop: i > 0 ? "1px solid rgba(225,6,0,0.15)" : "none" }}
+              style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
             >
               <div
                 className="text-[10px] font-bold uppercase tracking-wider mb-0.5"
-                style={{ color: "var(--f1-red)" }}
+                style={{ color: "rgba(255,255,255,0.4)" }}
               >
                 {fact.label}
               </div>
