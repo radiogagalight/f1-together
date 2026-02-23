@@ -82,8 +82,8 @@ export default function HomePage() {
       setTimeout(() => {
         setTeamIdx((i) => (i + 1) % activeTeams.length);
         setTeamVisible(true);
-      }, 300);
-    }, 2500);
+      }, 600);
+    }, 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeams.length]);
@@ -156,7 +156,7 @@ export default function HomePage() {
                   color: currentTeamColor,
                   fontWeight: 700,
                   opacity: teamVisible ? 1 : 0,
-                  transition: "opacity 0.3s ease",
+                  transition: "opacity 0.6s ease",
                 }}
               >
                 {currentTeamName}
