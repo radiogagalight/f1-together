@@ -234,6 +234,7 @@ export default function RaceDetailPage({
   const isLocked = new Date(race.date + "T14:00:00Z").getTime() < Date.now();
   const raceData = RACE_FACTS[round];
   const heroImage = raceData?.heroImage;
+  const trackImage = raceData?.trackImage;
 
   function pick(field: keyof RacePick, value: string | boolean | null) {
     if (!isLocked) setPick(field, value);
@@ -354,6 +355,30 @@ export default function RaceDetailPage({
 
         {/* Weekend schedule card */}
         {raceData?.sessions && <SessionCard sessions={raceData.sessions} timezoneOffset={timezoneOffset} />}
+
+        {/* Circuit image */}
+        {trackImage && (
+          <div className="relative rounded-xl overflow-hidden mb-6" style={{ height: "180px" }}>
+            <Image
+              src={trackImage}
+              alt={`${race.name} circuit`}
+              fill
+              style={{ objectFit: "cover", objectPosition: "center" }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(to bottom, transparent 50%, rgba(8,8,16,0.85) 100%)",
+              }}
+            />
+            <div className="absolute bottom-0 left-0 px-4 pb-3">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
+                {race.circuit}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Track fact card */}
         {raceData?.facts && <FactCard facts={raceData.facts} />}

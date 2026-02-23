@@ -10,13 +10,15 @@ export interface RaceSession {
 
 export interface RacePageData {
   heroImage?: string;
+  trackImage?: string;
   facts: RaceFact[];
   sessions?: RaceSession[];
 }
 
 export const RACE_FACTS: Record<number, RacePageData> = {
   1: {
-    heroImage: "/images/au-flag.webp",
+    heroImage: "/images/aus-gp-track.avif",
+    trackImage: "/images/aus-gp-track-2.jpg",
     sessions: [
       { name: "Practice 1",  utc: "2026-03-06T01:30:00Z" },
       { name: "Practice 2",  utc: "2026-03-06T05:00:00Z" },
