@@ -231,13 +231,17 @@ export default function RaceDetailPage({
     );
   }
 
-  const isLocked = new Date(race.startUtc).getTime() < Date.now();
+  const isQualLocked = new Date(race.qualifyingUtc).getTime() < Date.now();
+  const isRaceLocked = new Date(race.startUtc).getTime() < Date.now();
   const raceData = RACE_FACTS[round];
   const heroImage = raceData?.heroImage;
   const trackImage = raceData?.trackImage;
 
+  const QUAL_FIELDS: (keyof RacePick)[] = ["qualPole", "qualP2", "qualP3"];
+
   function pick(field: keyof RacePick, value: string | boolean | null) {
-    if (!isLocked) setPick(field, value);
+    const locked = QUAL_FIELDS.includes(field) ? isQualLocked : isRaceLocked;
+    if (!locked) setPick(field, value);
   }
 
   return (
@@ -280,7 +284,7 @@ export default function RaceDetailPage({
                   Sprint
                 </span>
               )}
-              {isLocked && (
+              {isRaceLocked && (
                 <span
                   className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
                   style={{
@@ -290,6 +294,18 @@ export default function RaceDetailPage({
                   }}
                 >
                   🔒 Locked
+                </span>
+              )}
+              {isQualLocked && !isRaceLocked && (
+                <span
+                  className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.5)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                  }}
+                >
+                  🔒 Qual Locked
                 </span>
               )}
             </div>
@@ -316,12 +332,20 @@ export default function RaceDetailPage({
                 Sprint
               </span>
             )}
-            {isLocked && (
+            {isRaceLocked && (
               <span
                 className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
                 style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--muted)", border: "1px solid var(--border)" }}
               >
                 🔒 Locked
+              </span>
+            )}
+            {isQualLocked && !isRaceLocked && (
+              <span
+                className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--muted)", border: "1px solid var(--border)" }}
+              >
+                🔒 Qual Locked
               </span>
             )}
           </div>
@@ -383,12 +407,20 @@ export default function RaceDetailPage({
         {/* Track fact card */}
         {raceData?.facts && <FactCard facts={raceData.facts} />}
 
-        {isLocked && (
+        {isQualLocked && !isRaceLocked && (
           <div
             className="mb-6 rounded-xl px-4 py-3 text-sm"
             style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--muted)" }}
           >
-            Predictions for this race are locked — the race weekend has passed.
+            🔒 Qualifying predictions are locked. Race predictions lock at lights out.
+          </div>
+        )}
+        {isRaceLocked && (
+          <div
+            className="mb-6 rounded-xl px-4 py-3 text-sm"
+            style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--muted)" }}
+          >
+            🔒 All predictions for this race are locked.
           </div>
         )}
 
@@ -411,21 +443,21 @@ export default function RaceDetailPage({
                   label="Pole Position"
                   value={picks?.qualPole ?? null}
                   isSaved={savedField === "qualPole"}
-                  disabled={isLocked}
+                  disabled={isQualLocked}
                   onPick={(v) => pick("qualPole", v)}
                 />
                 <DriverSelect
                   label="P2"
                   value={picks?.qualP2 ?? null}
                   isSaved={savedField === "qualP2"}
-                  disabled={isLocked}
+                  disabled={isQualLocked}
                   onPick={(v) => pick("qualP2", v)}
                 />
                 <DriverSelect
                   label="P3"
                   value={picks?.qualP3 ?? null}
                   isSaved={savedField === "qualP3"}
-                  disabled={isLocked}
+                  disabled={isQualLocked}
                   onPick={(v) => pick("qualP3", v)}
                 />
               </div>
@@ -445,28 +477,28 @@ export default function RaceDetailPage({
                   label="Race Winner"
                   value={picks?.raceWinner ?? null}
                   isSaved={savedField === "raceWinner"}
-                  disabled={isLocked}
+                  disabled={isRaceLocked}
                   onPick={(v) => pick("raceWinner", v)}
                 />
                 <DriverSelect
                   label="P2"
                   value={picks?.raceP2 ?? null}
                   isSaved={savedField === "raceP2"}
-                  disabled={isLocked}
+                  disabled={isRaceLocked}
                   onPick={(v) => pick("raceP2", v)}
                 />
                 <DriverSelect
                   label="P3"
                   value={picks?.raceP3 ?? null}
                   isSaved={savedField === "raceP3"}
-                  disabled={isLocked}
+                  disabled={isRaceLocked}
                   onPick={(v) => pick("raceP3", v)}
                 />
                 <DriverSelect
                   label="Fastest Lap"
                   value={picks?.fastestLap ?? null}
                   isSaved={savedField === "fastestLap"}
-                  disabled={isLocked}
+                  disabled={isRaceLocked}
                   onPick={(v) => pick("fastestLap", v)}
                 />
               </div>
@@ -493,7 +525,7 @@ export default function RaceDetailPage({
                     <button
                       key={String(option)}
                       onClick={() => pick("safetyCar", isSelected ? null : option)}
-                      disabled={isLocked}
+                      disabled={isRaceLocked}
                       className="flex-1 rounded-xl py-3 text-sm font-bold transition-colors"
                       style={{
                         backgroundColor: isSelected
@@ -508,8 +540,8 @@ export default function RaceDetailPage({
                         color: isSelected
                           ? isYes ? "#22c55e" : "var(--f1-red)"
                           : "var(--muted)",
-                        opacity: isLocked ? 0.5 : 1,
-                        cursor: isLocked ? "default" : "pointer",
+                        opacity: isRaceLocked ? 0.5 : 1,
+                        cursor: isRaceLocked ? "default" : "pointer",
                       }}
                     >
                       {option ? "Yes" : "No"}
