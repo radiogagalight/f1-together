@@ -3,8 +3,10 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useSeasonPicks } from "@/hooks/useSeasonPicks";
 import CategoryCard from "./CategoryCard";
-import { CATEGORIES } from "@/lib/data";
+import { CATEGORIES, RACES } from "@/lib/data";
 import type { SeasonPicks } from "@/lib/types";
+
+const SEASON_LOCK_UTC = RACES[0].startUtc; // locks at Race 1 lights out
 
 const GROUPS: { label: string; keys: (keyof SeasonPicks)[] }[] = [
   { label: "Championship", keys: ["wdcWinner", "wccWinner"] },
@@ -15,6 +17,7 @@ const GROUPS: { label: string; keys: (keyof SeasonPicks)[] }[] = [
 export default function SeasonPredictions() {
   const { user } = useAuth();
   const { picks, setPick, savedKey, loading } = useSeasonPicks(user?.id);
+  const isLocked = new Date(SEASON_LOCK_UTC).getTime() < Date.now();
 
   const pickedCount = picks
     ? Object.values(picks).filter((v) => v !== null).length
@@ -44,6 +47,16 @@ export default function SeasonPredictions() {
               backgroundColor: "var(--team-accent)",
             }}
           />
+        </div>
+      )}
+
+      {/* Locked banner */}
+      {isLocked && (
+        <div
+          className="mb-6 rounded-xl px-4 py-3 text-sm"
+          style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--muted)" }}
+        >
+          🔒 Season predictions are locked — Race 1 has started.
         </div>
       )}
 
@@ -81,6 +94,7 @@ export default function SeasonPredictions() {
                       category={cat}
                       value={picks[cat.key]}
                       isSaved={savedKey === cat.key}
+                      disabled={isLocked}
                       onPick={setPick}
                     />
                   ))}

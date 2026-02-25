@@ -9,6 +9,7 @@ interface Props {
   category: Category;
   value: string | null;
   isSaved: boolean;
+  disabled?: boolean;
   onPick: (key: keyof SeasonPicks, value: string | null) => void;
 }
 
@@ -39,13 +40,14 @@ function getLabel(category: Category, value: string | null): string {
   return c ? c.name : value;
 }
 
-export default function CategoryCard({ category, value, isSaved, onPick }: Props) {
+export default function CategoryCard({ category, value, isSaved, disabled, onPick }: Props) {
   const [open, setOpen] = useState(false);
 
   const items: (Driver | Constructor)[] =
     category.type === "driver" ? DRIVERS : CONSTRUCTORS;
 
   function handlePick(id: string) {
+    if (disabled) return;
     onPick(category.key, value === id ? null : id);
     setOpen(false);
   }
@@ -68,9 +70,9 @@ export default function CategoryCard({ category, value, isSaved, onPick }: Props
     >
       {/* Header */}
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { if (!disabled) setOpen((o) => !o); }}
         className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-colors active:bg-surface-hover"
-        style={{ minHeight: "60px" }}
+        style={{ minHeight: "60px", opacity: disabled ? 0.6 : 1, cursor: disabled ? "default" : "pointer" }}
         aria-expanded={open}
       >
         <div className="flex flex-col gap-0.5 min-w-0">
