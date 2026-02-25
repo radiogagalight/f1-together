@@ -8,7 +8,9 @@ import { TEAM_COLORS } from "@/lib/teamColors";
 
 interface AuthContextValue {
   user: User | null;
+  authReady: boolean;
   signOut: () => Promise<void>;
+  displayName: string | null;
   favTeams: [string | null, string | null, string | null];
   favDrivers: [string | null, string | null, string | null];
   teamAccent: string;
@@ -20,7 +22,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
+  authReady: false,
   signOut: async () => {},
+  displayName: null,
   favTeams: [null, null, null],
   favDrivers: [null, null, null],
   teamAccent: "#e10600",
@@ -36,6 +40,8 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [favTeams, setFavTeams] = useState<[string | null, string | null, string | null]>([null, null, null]);
   const [favDrivers, setFavDrivers] = useState<[string | null, string | null, string | null]>([null, null, null]);
   const [teamAccent, setTeamAccent] = useState("#e10600");
@@ -47,12 +53,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function loadFavorites(userId: string) {
     const { data } = await supabase
       .from("profiles")
-      .select("fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3,timezone_offset")
+      .select("display_name,fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3,timezone_offset")
       .eq("id", userId)
       .maybeSingle();
     const t1 = data?.fav_team_1 ?? null;
     const t2 = data?.fav_team_2 ?? null;
     const t3 = data?.fav_team_3 ?? null;
+    setDisplayName(data?.display_name ?? null);
     setFavTeams([t1, t2, t3]);
     setFavDrivers([
       data?.fav_driver_1 ?? null,
@@ -87,13 +94,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [teamAccent]);
 
   useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  }, []);
+
+  useEffect(() => {
     // Get initial session
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
       if (user?.id) {
-        loadFavorites(user.id);
-        fetchUnreadCount(user.id);
+        await Promise.all([loadFavorites(user.id), fetchUnreadCount(user.id)]);
       }
+      setAuthReady(true);
     });
 
     // Keep in sync with auth state changes (handles OAuth redirects)
@@ -106,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loadFavorites(newUser.id);
         fetchUnreadCount(newUser.id);
       } else {
+        setDisplayName(null);
         setFavTeams([null, null, null]);
         setFavDrivers([null, null, null]);
         setTeamAccent("#e10600");
@@ -124,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, signOut, favTeams, favDrivers, teamAccent, timezoneOffset, refreshFavorites, unreadCount, refreshNotifications }}>
+    <AuthContext.Provider value={{ user, authReady, signOut, displayName, favTeams, favDrivers, teamAccent, timezoneOffset, refreshFavorites, unreadCount, refreshNotifications }}>
       {children}
     </AuthContext.Provider>
   );

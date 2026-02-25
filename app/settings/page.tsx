@@ -6,6 +6,16 @@ import { useAuth } from "@/components/AuthProvider";
 import { clearPicks } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 
+async function subscribeToPush(): Promise<PushSubscription | null> {
+  const reg = await navigator.serviceWorker.ready;
+  const existing = await reg.pushManager.getSubscription();
+  if (existing) return existing;
+  return reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  });
+}
+
 const UTC_OFFSETS = [
   { value: -12, label: "UTC−12" },
   { value: -11, label: "UTC−11" },
@@ -42,11 +52,66 @@ export default function SettingsPage() {
   const [tzOffset, setTzOffset] = useState(timezoneOffset);
   const [tzSaved, setTzSaved] = useState(false);
   const [tzError, setTzError] = useState<string | null>(null);
+  const [pushStatus, setPushStatus] = useState<"unsupported" | "denied" | "enabled" | "disabled">("disabled");
+  const [pushLoading, setPushLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   // Sync local state when context loads (after DB fetch)
   useEffect(() => { setTzOffset(timezoneOffset); }, [timezoneOffset]);
+
+  // Check current push permission / subscription status
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) {
+      setPushStatus('unsupported');
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      setPushStatus('denied');
+      return;
+    }
+    navigator.serviceWorker.ready.then((reg) =>
+      reg.pushManager.getSubscription().then((sub) => {
+        setPushStatus(sub ? 'enabled' : 'disabled');
+      })
+    );
+  }, []);
+
+  async function handleEnablePush() {
+    if (pushLoading) return;
+    setPushLoading(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setPushStatus(permission === 'denied' ? 'denied' : 'disabled');
+        return;
+      }
+      const sub = await subscribeToPush();
+      if (!sub) { setPushStatus('disabled'); return; }
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub.toJSON()),
+      });
+      setPushStatus('enabled');
+    } finally {
+      setPushLoading(false);
+    }
+  }
+
+  async function handleDisablePush() {
+    if (pushLoading) return;
+    setPushLoading(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) await sub.unsubscribe();
+      await fetch('/api/push/subscribe', { method: 'DELETE' });
+      setPushStatus('disabled');
+    } finally {
+      setPushLoading(false);
+    }
+  }
 
   async function handleTzChange(value: number) {
     setTzOffset(value);
@@ -176,6 +241,85 @@ export default function SettingsPage() {
           >
             Auto-detect from browser
           </button>
+        </div>
+      </section>
+
+      {/* Notifications */}
+      <section className="mb-6">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+          Notifications
+        </h2>
+        <div
+          className="rounded-xl border p-4"
+          style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                Push notifications
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                Get notified when someone @mentions you in a race discussion
+              </p>
+            </div>
+            <span
+              className="text-xs font-semibold ml-3 shrink-0"
+              style={{
+                color:
+                  pushStatus === 'enabled' ? '#22c55e' :
+                  pushStatus === 'denied' ? '#ef4444' :
+                  "var(--muted)",
+              }}
+            >
+              {pushStatus === 'enabled' ? 'Enabled' :
+               pushStatus === 'denied' ? 'Blocked' :
+               pushStatus === 'unsupported' ? 'Not supported' :
+               'Disabled'}
+            </span>
+          </div>
+
+          {pushStatus === 'unsupported' && (
+            <p className="text-xs" style={{ color: "var(--muted)" }}>
+              Push notifications are not supported in this browser.
+            </p>
+          )}
+
+          {pushStatus === 'denied' && (
+            <p className="text-xs" style={{ color: "var(--muted)" }}>
+              Notifications are blocked. Enable them in your browser settings to continue.
+            </p>
+          )}
+
+          {pushStatus === 'disabled' && (
+            <button
+              onClick={handleEnablePush}
+              disabled={pushLoading}
+              className="w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors active:opacity-80"
+              style={{
+                minHeight: "44px",
+                backgroundColor: pushLoading ? "rgba(255,255,255,0.06)" : "var(--f1-red)",
+                color: "#fff",
+              }}
+            >
+              {pushLoading ? "Enabling…" : "Enable push notifications"}
+            </button>
+          )}
+
+          {pushStatus === 'enabled' && (
+            <button
+              onClick={handleDisablePush}
+              disabled={pushLoading}
+              className="w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors active:opacity-80 border"
+              style={{
+                minHeight: "44px",
+                borderColor: "var(--border)",
+                color: "var(--muted)",
+                backgroundColor: "transparent",
+              }}
+            >
+              {pushLoading ? "Disabling…" : "Disable notifications"}
+            </button>
+          )}
         </div>
       </section>
 

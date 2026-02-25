@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { CONSTRUCTORS, DRIVERS, RACES } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
+import { sendPushToUser } from "@/lib/pushActions";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -606,6 +607,17 @@ function CommentThread({
           comment_id: data.id,
           round,
         });
+      }
+      // Send push notifications to mentioned users
+      const senderName = profileMap.get(currentUser.id)?.display_name ?? 'Someone';
+      const raceName = RACES.find((r) => r.r === round)?.name ?? `Round ${round}`;
+      for (const userId of mentionedIds) {
+        void sendPushToUser(
+          userId,
+          'F1 Together',
+          `${senderName} mentioned you in the ${raceName} discussion`,
+          '/members'
+        );
       }
     }
     setText("");

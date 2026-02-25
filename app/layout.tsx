@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "F1 Together",
   description: "Season predictions for your F1 group",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
