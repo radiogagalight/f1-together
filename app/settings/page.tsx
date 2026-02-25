@@ -54,6 +54,7 @@ export default function SettingsPage() {
   const [tzError, setTzError] = useState<string | null>(null);
   const [pushStatus, setPushStatus] = useState<"unsupported" | "denied" | "enabled" | "disabled">("disabled");
   const [pushLoading, setPushLoading] = useState(false);
+  const [pushError, setPushError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -80,6 +81,7 @@ export default function SettingsPage() {
   async function handleEnablePush() {
     if (pushLoading) return;
     setPushLoading(true);
+    setPushError(null);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
@@ -88,12 +90,17 @@ export default function SettingsPage() {
       }
       const sub = await subscribeToPush();
       if (!sub) { setPushStatus('disabled'); return; }
-      await fetch('/api/push/subscribe', {
+      const res = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sub.toJSON()),
       });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
       setPushStatus('enabled');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setPushError(msg);
+      console.error('Push subscribe failed:', err);
     } finally {
       setPushLoading(false);
     }
@@ -303,6 +310,12 @@ export default function SettingsPage() {
             >
               {pushLoading ? "Enabling…" : "Enable push notifications"}
             </button>
+          )}
+
+          {pushError && (
+            <p className="text-xs mt-2" style={{ color: "#ef4444" }}>
+              Failed: {pushError}
+            </p>
           )}
 
           {pushStatus === 'enabled' && (
