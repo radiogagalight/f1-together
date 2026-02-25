@@ -231,7 +231,7 @@ export default function RaceDetailPage({
     );
   }
 
-  const isLocked = new Date(race.date + "T14:00:00Z").getTime() < Date.now();
+  const isLocked = new Date(race.startUtc).getTime() < Date.now();
   const raceData = RACE_FACTS[round];
   const heroImage = raceData?.heroImage;
   const trackImage = raceData?.trackImage;
