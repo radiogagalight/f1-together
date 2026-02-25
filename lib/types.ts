@@ -26,6 +26,11 @@ export interface SeasonPicks {
   firstDnfConstructor: string | null;
 }
 
+export interface MidseasonPicks {
+  wdcWinner: string | null;
+  wccWinner: string | null;
+}
+
 export interface RacePick {
   qualPole: string | null;
   qualP2: string | null;

@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useSeasonPicks } from "@/hooks/useSeasonPicks";
 import CategoryCard from "./CategoryCard";
+import MidseasonPredictions from "./MidseasonPredictions";
 import { CATEGORIES, RACES } from "@/lib/data";
 import type { SeasonPicks } from "@/lib/types";
 
@@ -104,6 +105,11 @@ export default function SeasonPredictions() {
           })}
         </div>
       )}
+
+      {/* Mid-season window */}
+      <div className="mt-8">
+        <MidseasonPredictions />
+      </div>
     </div>
   );
 }
