@@ -6,6 +6,13 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { TEAM_COLORS } from "@/lib/teamColors";
 
+export interface CompanionProfile {
+  companion_name_pref?: string | null;
+  companion_dismissed?: boolean;
+  companion_intro_done?: boolean;
+  companion_first_dismiss_seen?: boolean;
+}
+
 interface AuthContextValue {
   user: User | null;
   authReady: boolean;
@@ -18,6 +25,11 @@ interface AuthContextValue {
   refreshFavorites: () => Promise<void>;
   unreadCount: number;
   refreshNotifications: () => Promise<void>;
+  companionNamePref: string | null;
+  companionDismissed: boolean;
+  companionIntroDone: boolean;
+  companionFirstDismissSeen: boolean;
+  updateCompanion: (patch: CompanionProfile) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -32,6 +44,11 @@ const AuthContext = createContext<AuthContextValue>({
   refreshFavorites: async () => {},
   unreadCount: 0,
   refreshNotifications: async () => {},
+  companionNamePref: null,
+  companionDismissed: false,
+  companionIntroDone: false,
+  companionFirstDismissSeen: false,
+  updateCompanion: async () => {},
 });
 
 export function useAuth() {
@@ -47,13 +64,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [teamAccent, setTeamAccent] = useState("#e10600");
   const [timezoneOffset, setTimezoneOffset] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [companionNamePref, setCompanionNamePref] = useState<string | null>(null);
+  const [companionDismissed, setCompanionDismissed] = useState(false);
+  const [companionIntroDone, setCompanionIntroDone] = useState(false);
+  const [companionFirstDismissSeen, setCompanionFirstDismissSeen] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   async function loadFavorites(userId: string) {
     const { data } = await supabase
       .from("profiles")
-      .select("display_name,fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3,timezone_offset")
+      .select(
+        "display_name,fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3,timezone_offset,companion_name_pref,companion_dismissed,companion_intro_done,companion_first_dismiss_seen"
+      )
       .eq("id", userId)
       .maybeSingle();
     const t1 = data?.fav_team_1 ?? null;
@@ -68,6 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ]);
     setTeamAccent(TEAM_COLORS[t1 ?? ""] ?? "#e10600");
     setTimezoneOffset(data?.timezone_offset ?? 0);
+    setCompanionNamePref(data?.companion_name_pref ?? null);
+    setCompanionDismissed(data?.companion_dismissed ?? false);
+    setCompanionIntroDone(data?.companion_intro_done ?? false);
+    setCompanionFirstDismissSeen(data?.companion_first_dismiss_seen ?? false);
   }
 
   async function refreshFavorites() {
@@ -87,6 +114,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function refreshNotifications() {
     if (!user?.id) return;
     await fetchUnreadCount(user.id);
+  }
+
+  async function updateCompanion(patch: CompanionProfile) {
+    if (!user?.id) return;
+    // Optimistic local update
+    if ("companion_name_pref" in patch) setCompanionNamePref(patch.companion_name_pref ?? null);
+    if ("companion_dismissed" in patch) setCompanionDismissed(patch.companion_dismissed ?? false);
+    if ("companion_intro_done" in patch) setCompanionIntroDone(patch.companion_intro_done ?? false);
+    if ("companion_first_dismiss_seen" in patch) setCompanionFirstDismissSeen(patch.companion_first_dismiss_seen ?? false);
+    await supabase.from("profiles").upsert({ id: user.id, ...patch });
   }
 
   useEffect(() => {
@@ -125,6 +162,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTeamAccent("#e10600");
         setTimezoneOffset(0);
         setUnreadCount(0);
+        setCompanionNamePref(null);
+        setCompanionDismissed(false);
+        setCompanionIntroDone(false);
+        setCompanionFirstDismissSeen(false);
       }
     });
 
@@ -138,7 +179,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, authReady, signOut, displayName, favTeams, favDrivers, teamAccent, timezoneOffset, refreshFavorites, unreadCount, refreshNotifications }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        authReady,
+        signOut,
+        displayName,
+        favTeams,
+        favDrivers,
+        teamAccent,
+        timezoneOffset,
+        refreshFavorites,
+        unreadCount,
+        refreshNotifications,
+        companionNamePref,
+        companionDismissed,
+        companionIntroDone,
+        companionFirstDismissSeen,
+        updateCompanion,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

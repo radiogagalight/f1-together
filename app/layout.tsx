@@ -4,6 +4,8 @@ import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ProfileGate } from "@/components/ProfileGate";
+import { CompanionProvider } from "@/components/CompanionProvider";
+import Companion from "@/components/Companion";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,10 +34,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <AuthProvider>
-          <ProfileGate>
-            <main>{children}</main>
-            <BottomNav />
-          </ProfileGate>
+          <CompanionProvider>
+            <ProfileGate>
+              <main>{children}</main>
+              <BottomNav />
+            </ProfileGate>
+            <Companion />
+          </CompanionProvider>
         </AuthProvider>
       </body>
     </html>
