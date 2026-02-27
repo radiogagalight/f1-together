@@ -86,10 +86,10 @@ export default function Companion() {
               borderRadius: "16px 16px 4px 16px",
               animation: "companion-bubble-in 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards",
             }}
-            className="bg-surface border border-border text-foreground px-3 py-2 shadow-lg"
+            className="bg-surface border border-border text-foreground px-3 py-3 shadow-lg"
           >
             {phase === "intro-step-1" ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <p>{message}</p>
                 <input
                   type="text"
@@ -99,23 +99,23 @@ export default function Companion() {
                   placeholder="Your name…"
                   maxLength={30}
                   autoFocus
-                  className="rounded px-2 py-1 text-sm bg-background border border-border text-foreground outline-none focus:border-[var(--team-accent)]"
+                  className="rounded px-2 py-2 text-sm bg-background border border-border text-foreground outline-none focus:border-[var(--team-accent)]"
                 />
                 <button
                   onClick={confirmIntroName}
-                  className="rounded px-3 py-1 text-sm font-semibold text-white"
-                  style={{ background: "var(--team-accent)" }}
+                  className="rounded px-3 py-2 text-sm font-semibold text-white"
+                  style={{ background: "var(--team-accent)", minHeight: "40px" }}
                 >
                   That&apos;s me! ✅
                 </button>
               </div>
             ) : phase === "intro-step-2" ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <p>{message}</p>
                 <button
                   onClick={confirmIntroStep2}
-                  className="rounded px-3 py-1 text-sm font-semibold text-white"
-                  style={{ background: "var(--team-accent)" }}
+                  className="rounded px-3 py-2 text-sm font-semibold text-white"
+                  style={{ background: "var(--team-accent)", minHeight: "40px" }}
                 >
                   Let&apos;s go! 🏁
                 </button>
