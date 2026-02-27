@@ -94,6 +94,9 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
 
   const bubbleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pageMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether we've done the initial phase setup for the current user.
+  // Prevents re-running the init logic on every pathname change.
+  const initializedForUser = useRef<string | null>(null);
 
   // Show a message with auto-dismiss
   const showMessage = useCallback((msg: string, durationMs = 8000) => {
@@ -111,16 +114,24 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ── Initialization ────────────────────────────────────────────────────────
+  // Runs whenever auth state or pathname changes. Uses a ref to ensure the
+  // phase setup only happens once per user session (subsequent pathname changes
+  // are handled by the effects below). pathname is in deps so the effect
+  // retries if auth resolved while still on an /auth/ page.
   useEffect(() => {
     if (!authReady) return;
     if (!user) {
       setPhase("hidden");
+      initializedForUser.current = null;
       return;
     }
-    if (pathname.startsWith("/auth/")) {
-      setPhase("hidden");
-      return;
-    }
+
+    // Wait until the user is on a real page before initialising
+    if (pathname?.startsWith("/auth/")) return;
+
+    // Already set up for this user — let other effects handle phase changes
+    if (initializedForUser.current === user.id) return;
+    initializedForUser.current = user.id;
 
     if (!companionIntroDone) {
       setPhase("intro-step-1");
@@ -140,10 +151,7 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
     }
 
     setPhase("active");
-  // We intentionally only re-run when auth state resolves — not on every
-  // pathname change (the pathname effect below handles that).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authReady, user, companionIntroDone, companionDismissed]);
+  }, [authReady, user, pathname, companionIntroDone, companionDismissed, showMessage]);
 
   // ── Page-change messages (active only) ───────────────────────────────────
   useEffect(() => {
