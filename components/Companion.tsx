@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCompanion } from "@/components/CompanionProvider";
+import CompanionCar, { type CarPose } from "@/components/CompanionCar";
 
 export default function Companion() {
   const {
@@ -35,7 +36,17 @@ export default function Companion() {
   if (phase === "hidden") return null;
   if (phase === "dismissed" && !isDismissing) return null;
 
-  // Car animation style
+  // Pick the right sprite pose for the current phase
+  let pose: CarPose = "side-right";
+  if (phase === "intro-step-1" || phase === "intro-step-2") {
+    pose = "quarter-front";
+  } else if (phase === "waiting-home") {
+    pose = "front";
+  } else if (isDismissing) {
+    pose = "side-left";
+  }
+
+  // Car animation
   let carAnimation = "none";
   if (isDismissing) {
     carAnimation = "companion-dismiss 0.8s forwards";
@@ -144,11 +155,11 @@ export default function Companion() {
           >
             {(
               [
-                { action: "help", label: "Help 💡", desc: "What can I do here?" },
-                { action: "joke", label: "Tell me a joke 😄", desc: "F1-flavoured comedy" },
-                { action: "hype", label: "Hype me up 🔥", desc: "Motivation boost" },
-                { action: "scoring", label: "How does scoring work? 🏆", desc: "Points breakdown" },
-                { action: "dismiss", label: "See ya later 👋", desc: "Dismiss companion" },
+                { action: "help",    label: "Help 💡" },
+                { action: "joke",    label: "Tell me a joke 😄" },
+                { action: "hype",    label: "Hype me up 🔥" },
+                { action: "scoring", label: "How does scoring work? 🏆" },
+                { action: "dismiss", label: "See ya later 👋" },
               ] as const
             ).map(({ action, label }) => (
               <button
@@ -168,19 +179,14 @@ export default function Companion() {
           </div>
         )}
 
-        {/* Car emoji button */}
+        {/* Car image button */}
         <button
           onClick={handleCarClick}
           aria-label={
-            phase === "waiting-home"
-              ? "Wake up companion"
-              : phase === "active"
-              ? "Open companion menu"
-              : undefined
+            phase === "waiting-home" ? "Wake up companion" :
+            phase === "active" ? "Open companion menu" : undefined
           }
           style={{
-            fontSize: "32px",
-            lineHeight: 1,
             background: "none",
             border: "none",
             cursor: phase === "active" || phase === "waiting-home" ? "pointer" : "default",
@@ -190,7 +196,7 @@ export default function Companion() {
             userSelect: "none",
           }}
         >
-          🏎️
+          <CompanionCar pose={pose} />
         </button>
       </div>
     </>
