@@ -80,6 +80,7 @@ export default function Companion() {
               position: "absolute",
               bottom: "calc(100% + 8px)",
               right: 0,
+              width: (phase === "intro-step-1" || phase === "intro-step-2") ? "240px" : undefined,
               maxWidth: "240px",
               fontSize: "13px",
               wordBreak: "break-word",
