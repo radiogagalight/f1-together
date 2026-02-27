@@ -12,8 +12,8 @@ export type CarPose =
   | "top-down"        // row 3 col 2 — bird's eye
   | "single";         // standalone f1-companion.png (full image)
 
-const W = 96; // display width per cell
-const H = 32; // display height per cell
+const W = 192; // display width per cell
+const H = 64;  // display height per cell
 
 // background-position for each sprite cell
 const SPRITE_POS: Record<Exclude<CarPose, "single">, string> = {
