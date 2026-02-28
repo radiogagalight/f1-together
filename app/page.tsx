@@ -202,7 +202,7 @@ export default function HomePage() {
         style={{ maxWidth: "1100px" }}
       >
         {/* ── Track image with overlaid buttons ── */}
-        <div className="flex items-center justify-center md:flex-1" style={{ marginTop: "-48px", marginLeft: "-88px" }}>
+        <div className="flex items-center justify-center md:flex-1 md:-ml-[88px]" style={{ marginTop: "-48px" }}>
           <div className="relative w-full" style={{ maxWidth: "714px" }}>
             <Image
               src="/images/lv-circuit.webp"
