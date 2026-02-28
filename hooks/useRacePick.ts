@@ -37,6 +37,8 @@ export function useRacePick(userId: string | undefined, round: number) {
               qualPole: null, qualP2: null, qualP3: null,
               raceWinner: null, raceP2: null, raceP3: null,
               fastestLap: null, safetyCar: null,
+              sprintQualPole: null, sprintQualP2: null, sprintQualP3: null,
+              sprintWinner: null, sprintP2: null, sprintP3: null,
               [field]: value,
             };
         saveRacePick(userId, round, updated, supabase);

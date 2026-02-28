@@ -10,18 +10,30 @@ const DEFAULT_RACE_PICK: RacePick = {
   raceP3: null,
   fastestLap: null,
   safetyCar: null,
+  sprintQualPole: null,
+  sprintQualP2: null,
+  sprintQualP3: null,
+  sprintWinner: null,
+  sprintP2: null,
+  sprintP3: null,
 };
 
 function dbRowToRacePick(row: Record<string, unknown>): RacePick {
   return {
-    qualPole:   (row.qual_pole    as string | null) ?? null,
-    qualP2:     (row.qual_p2      as string | null) ?? null,
-    qualP3:     (row.qual_p3      as string | null) ?? null,
-    raceWinner: (row.race_winner  as string | null) ?? null,
-    raceP2:     (row.race_p2      as string | null) ?? null,
-    raceP3:     (row.race_p3      as string | null) ?? null,
-    fastestLap: (row.fastest_lap  as string | null) ?? null,
-    safetyCar:  (row.safety_car   as boolean | null) ?? null,
+    qualPole:     (row.qual_pole     as string | null) ?? null,
+    qualP2:       (row.qual_p2       as string | null) ?? null,
+    qualP3:       (row.qual_p3       as string | null) ?? null,
+    raceWinner:   (row.race_winner   as string | null) ?? null,
+    raceP2:       (row.race_p2       as string | null) ?? null,
+    raceP3:       (row.race_p3       as string | null) ?? null,
+    fastestLap:   (row.fastest_lap   as string | null) ?? null,
+    safetyCar:    (row.safety_car    as boolean | null) ?? null,
+    sprintQualPole: (row.sprint_qual_pole as string | null) ?? null,
+    sprintQualP2:   (row.sprint_qual_p2   as string | null) ?? null,
+    sprintQualP3:   (row.sprint_qual_p3   as string | null) ?? null,
+    sprintWinner:   (row.sprint_winner    as string | null) ?? null,
+    sprintP2:       (row.sprint_p2        as string | null) ?? null,
+    sprintP3:       (row.sprint_p3        as string | null) ?? null,
   };
 }
 
@@ -49,17 +61,23 @@ export async function saveRacePick(
 ): Promise<void> {
   await supabase.from("race_picks").upsert(
     {
-      user_id:     userId,
+      user_id:      userId,
       round,
-      qual_pole:   picks.qualPole,
-      qual_p2:     picks.qualP2,
-      qual_p3:     picks.qualP3,
-      race_winner: picks.raceWinner,
-      race_p2:     picks.raceP2,
-      race_p3:     picks.raceP3,
-      fastest_lap: picks.fastestLap,
-      safety_car:  picks.safetyCar,
-      updated_at:  new Date().toISOString(),
+      qual_pole:    picks.qualPole,
+      qual_p2:      picks.qualP2,
+      qual_p3:      picks.qualP3,
+      race_winner:  picks.raceWinner,
+      race_p2:      picks.raceP2,
+      race_p3:      picks.raceP3,
+      fastest_lap:  picks.fastestLap,
+      safety_car:   picks.safetyCar,
+      sprint_qual_pole: picks.sprintQualPole,
+      sprint_qual_p2:   picks.sprintQualP2,
+      sprint_qual_p3:   picks.sprintQualP3,
+      sprint_winner:    picks.sprintWinner,
+      sprint_p2:        picks.sprintP2,
+      sprint_p3:        picks.sprintP3,
+      updated_at:   new Date().toISOString(),
     },
     { onConflict: "user_id,round" }
   );
@@ -72,7 +90,7 @@ export async function loadRacePickStatuses(
 ): Promise<Map<number, number>> {
   const { data } = await supabase
     .from("race_picks")
-    .select("round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,fastest_lap,safety_car")
+    .select("round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,fastest_lap,safety_car,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3")
     .eq("user_id", userId);
 
   const map = new Map<number, number>();
@@ -81,6 +99,8 @@ export async function loadRacePickStatuses(
       row.qual_pole, row.qual_p2, row.qual_p3,
       row.race_winner, row.race_p2, row.race_p3,
       row.fastest_lap, row.safety_car,
+      row.sprint_qual_pole, row.sprint_qual_p2, row.sprint_qual_p3,
+      row.sprint_winner, row.sprint_p2, row.sprint_p3,
     ].filter((v) => v !== null && v !== undefined).length;
     map.set(row.round, count);
   }

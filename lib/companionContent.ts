@@ -37,13 +37,13 @@ export const PAGE_MESSAGES: Record<string, string[]> = {
 
 // One contextual help string per page
 export const PAGE_HELP: Record<string, string> = {
-  "/": "From here you can navigate to Predictions, Members, Profile, and Settings via the bottom bar.",
-  "/predictions": "Pick your podium for each race. Tap a race to open it and lock in your prediction before it starts.",
-  "/predictions/race/[round]": "Choose P1, P2, and P3. You can change your picks until the race begins.",
-  "/members": "See everyone in your group and their favourite teams and drivers.",
-  "/profile": "Set your display name, favourite teams, and favourite drivers here.",
-  "/settings": "Manage your account, notifications, and display preferences.",
-  "/notifications": "All your @mention alerts live here. Tap one to jump to the comment.",
+  "/": "Welcome to the pit wall! 🏎️ Tap the track buttons to navigate the app, and use the race schedule to jump straight to any race prediction. The race highlighted in red is up next — don't miss it!",
+  "/predictions": "This is your season predictions hub! 🏁 Set your overall season picks at the top, then tap any race to lock in your podium prediction. Picks close the moment the lights go out — get in early!",
+  "/predictions/race/[round]": "Pick who you think will finish P1, P2, and P3. You can update your picks right up until the race starts — after that, they're locked in for good. Exact position = 3 pts, podium placement = 1 pt. Choose wisely! 🎯",
+  "/members": "Your league's fan cards are all here! 👥 See everyone's favourite teams and drivers, and leave comments on their cards. Use @name in a comment to send someone a direct notification — great for a bit of trash talk. 😄",
+  "/profile": "This is your driver profile! Set your display name, then rank your favourite teams and drivers. Your top team pick sets the colour theme across the whole app — so choose your true colours! 🎨",
+  "/settings": "Here you can update your display name, toggle push notifications for @mentions, and manage your account. Turn on notifications so you never miss when someone calls you out on the Members page! 🔔",
+  "/notifications": "These are your @mention alerts — when someone tags you in a comment on the Members page, it lands here. Tap any notification to jump straight to the conversation. 💬",
 };
 
 // F1-themed jokes
@@ -89,6 +89,61 @@ export const RANDOM_MESSAGES: string[] = [
   "The steering wheel alone costs around £50,000. Don't drop it! 💸",
   "F1 drivers can lose up to 3 kg in sweat during a single race. Respect. 💦",
   "Have you checked the latest race predictions from your group? Might be time to scout the competition! 👀",
+];
+
+// 2026 season facts — regulations, drivers, tracks
+export const SEASON_FACTS: string[] = [
+  // Regulations
+  "2026 brings the biggest technical overhaul in a decade — cars are smaller, lighter, and produce around 30% less downforce. Expect closer racing! 🏎️",
+  "The MGU-H is gone in 2026! The complex heat recovery system is scrapped in favour of a much more powerful MGU-K. Simpler, louder, faster. 🔊",
+  "F1 is half-electric in 2026 — power units produce roughly a 50/50 split between combustion and electric power. The sport has never been this electrified! ⚡",
+  "Active aero is back! For the first time since the early 2010s, drivers can manually adjust their bodywork — low drag on straights, high downforce in corners. 🪽",
+  "2026 cars are designed to follow each other more closely, with cleaner aerodynamic wakes. The goal? More overtakes, less 'dirty air' frustration. 🌬️",
+  // New manufacturers
+  "Audi officially enters F1 in 2026 — the first German manufacturer since BMW departed in 2009. They've taken over the Sauber entry to do it. 🇩🇪",
+  "Ford is back in Formula 1 as a power unit partner with Red Bull and RB — their first serious F1 involvement in over 20 years. The Blue Oval returns! 🇺🇸",
+  "Honda is partnering with Aston Martin in 2026 for a full works relationship — their biggest F1 commitment since leaving McLaren after the 2021 season. 🍀",
+  "General Motors enters F1 in 2026 through the Andretti team — the first American constructor on the grid in decades. Stars and stripes on the starting grid! 🇺🇸",
+  // Rookie drivers
+  "Arvid Lindblad is one of the most hyped rookies in years — the British-Swedish prodigy dominated junior categories and is considered by many scouts as a generational talent. Watch this space. 🌟",
+  "Oliver Bearman became one of the youngest ever points scorers when he stepped in for Ferrari at just 18 in 2024. Now he's a full-time F1 driver — and he's only just getting started. 💪",
+  "Kimi Antonelli stepped into Lewis Hamilton's seat at Mercedes — one of the most high-pressure rookie debuts in F1 history. No pressure, kid! 😅",
+  "Isack Hadjar is another rookie to watch — the French-Algerian driver starred in Formula 2 and joins a team with serious ambitions for 2026. 🇫🇷",
+  // Tracks
+  "The Las Vegas Strip Circuit is one of the fastest on the 2026 calendar — cars hit over 210 mph on the main straight past the hotels and casinos. Only in Vegas! 🎰",
+  "The Miami International Autodrome is built around Hard Rock Stadium — home of the Miami Dolphins NFL team. F1 quite literally surrounds an American football stadium. 🏈",
+  "The São Paulo GP at Interlagos has been on the F1 calendar since 1973 — one of the most beloved circuits in the world, famous for dramatic weather and even more dramatic racing. ⛈️",
+  "The Circuit de Monaco hasn't changed significantly since 1929. F1 cars in 2026 are the most advanced machines ever built — racing on a layout older than most grandparents. 🏰",
+  "The Jeddah Corniche Circuit is the second longest lap on the calendar and one of the fastest street circuits ever built. Average speeds above 155 mph — on a street circuit! 🇸🇦",
+  "Spa-Francorchamps has one of the most iconic corners in motorsport — Eau Rouge/Raidillon. Drivers take it nearly flat out in modern F1 cars. Absolutely wild. 🌧️",
+  "The Circuit Gilles Villeneuve in Montreal is built on an artificial island in the St. Lawrence River. The hairpin at the end of the pit straight is nicknamed the 'Wall of Champions' — it's claimed some very famous victims. 🍁",
+  "Suzuka is one of the most technically demanding circuits on the calendar — and it's owned by Honda. The figure-of-eight layout with its sweeping S-curves is considered a true driver's circuit. 🇯🇵",
+  "Monza is known as the 'Temple of Speed' — the oldest circuit still in active use, and consistently the fastest race on the calendar. Average race speeds above 160 mph. 🏛️",
+  "The Hungaroring is nicknamed the 'Monaco of Hungary' — a tight, twisty circuit with almost no overtaking spots. Strategy and qualifying position are everything there. 🇭🇺",
+  "Zandvoort was absent from the F1 calendar for 35 years before returning in 2021. The Dutch crowd for Max Verstappen is unlike anything else in F1 — the place turns completely orange. 🧡",
+  "The Baku City Circuit has the longest straight in Formula 1 — over 2 km along the Azerbaijani coastline. Top speeds there regularly exceed 220 mph. 🇦🇿",
+  "Singapore's Marina Bay Circuit is one of the few true night races in F1. Over 1,500 lights illuminate the track — the race runs under what feels like permanent floodlight. 🌃",
+  "The Mexican GP at Autodromo Hermanos Rodriguez sits at 2,285 metres above sea level — the altitude affects engine performance and tyre behaviour in ways teams have to carefully manage. 🇲🇽",
+  "Silverstone hosted the very first Formula 1 World Championship race in 1950. It's the birthplace of the modern F1 era — and still one of the best circuits on the calendar. 🇬🇧",
+  // More drivers
+  "Lewis Hamilton moved to Ferrari for 2025 — one of the most seismic driver moves in the sport's history. The 7-time champion swapped the team he dominated with for F1's most iconic brand. 🔴",
+  "Fernando Alonso made his F1 debut in 2001. He's still racing in 2026 — that's a career spanning a quarter of a century. Absolute iron man. 🇪🇸",
+  "Max Verstappen set the record for most wins in a single season — 19 victories in 2023. A record that may stand for a very long time. 👑",
+  "Lando Norris scored his first F1 race win at Miami in 2024, ending years of near-misses. McLaren's resurgence and Lando's evolution into a title contender was one of the stories of the era. 🍋",
+  "Oscar Piastri went from Formula 2 champion to F1 race winner within two seasons. The quiet Australian is widely regarded as one of the most complete young drivers in the paddock. 🦘",
+  "Arvid Lindblad is considered by many scouts and team principals to have the kind of raw pace that comes along once in a generation. Some comparisons to a young Max Verstappen have already been made — no pressure! ⭐",
+  // More regulation/technical
+  "2026 cars target a weight of around 768 kg — significantly lighter than recent generations. Less mass means more agile cars and harder braking zones. 🪶",
+  "The 2026 power unit regulations were specifically designed to attract new manufacturers — and it worked. Audi, Ford, Honda, and GM all committed. That hasn't happened in F1 for decades. 🏭",
+  "F1 switched to 100% sustainable fuels in 2026 — every drop of fuel burned at a Grand Prix this season is carbon-neutral. The sport is serious about its environmental goals. 🌱",
+  "The 2026 cars use a 'manual override' system for the active aerodynamics — drivers press a button to switch between high-downforce and low-drag modes. It's a new tactical layer for overtaking. 🕹️",
+  "With the 2026 regulation reset, every team starts from a cleaner slate than usual. New regs have historically reshuffled the order dramatically — expect the unexpected this season! 🎲",
+  // Team facts
+  "McLaren won the Constructors' Championship in 2024 — their first since 1998. A 26-year wait finally ended. The Woking team's rebuild is one of F1's great comeback stories. 🧡",
+  "Ferrari's last Constructors' Championship was in 2008. The Scuderia have the most wins and championships in F1 history — but the wait for another title has been long and painful. 🐴",
+  "Williams holds the record for most Constructors' Championships by a private (non-manufacturer) team — seven titles, all between 1980 and 1997. A legendary era. 💙",
+  "Red Bull Racing only entered F1 in 2005 — and have already won six Constructors' Championships. One of the fastest rises in the sport's history. 🐂",
+  "The Haas F1 team is the only American constructor currently on the grid — founded in 2016 and based in Kannapolis, North Carolina. Gene Haas brought F1 back to the USA. 🇺🇸",
 ];
 
 // One-time strings

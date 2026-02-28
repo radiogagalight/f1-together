@@ -223,6 +223,12 @@ export default function RaceDetailPage({
   const { user, timezoneOffset } = useAuth();
   const { picks, setPick, savedField, loading } = useRacePick(user?.id, round);
 
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 5_000);
+    return () => clearInterval(id);
+  }, []);
+
   if (!race) {
     return (
       <div className="max-w-lg mx-auto px-4 pt-6">
@@ -231,16 +237,27 @@ export default function RaceDetailPage({
     );
   }
 
-  const isQualLocked = new Date(race.qualifyingUtc).getTime() < Date.now();
-  const isRaceLocked = new Date(race.startUtc).getTime() < Date.now();
+  const isQualLocked    = new Date(race.qualifyingUtc).getTime() < now;
+  const isRaceLocked    = new Date(race.startUtc).getTime() < now;
+  const isSprintQualLocked = race.sprintQualifyingUtc
+    ? new Date(race.sprintQualifyingUtc).getTime() < now
+    : false;
+  const isSprintLocked = race.sprintStartUtc
+    ? new Date(race.sprintStartUtc).getTime() < now
+    : false;
   const raceData = RACE_FACTS[round];
   const heroImage = raceData?.heroImage;
   const trackImage = raceData?.trackImage;
 
-  const QUAL_FIELDS: (keyof RacePick)[] = ["qualPole", "qualP2", "qualP3"];
+  const QUAL_FIELDS:         (keyof RacePick)[] = ["qualPole", "qualP2", "qualP3"];
+  const SPRINT_QUAL_FIELDS:  (keyof RacePick)[] = ["sprintQualPole", "sprintQualP2", "sprintQualP3"];
+  const SPRINT_FIELDS:       (keyof RacePick)[] = ["sprintWinner", "sprintP2", "sprintP3"];
 
   function pick(field: keyof RacePick, value: string | boolean | null) {
-    const locked = QUAL_FIELDS.includes(field) ? isQualLocked : isRaceLocked;
+    const locked = QUAL_FIELDS.includes(field)        ? isQualLocked
+                 : SPRINT_QUAL_FIELDS.includes(field)  ? isSprintQualLocked
+                 : SPRINT_FIELDS.includes(field)        ? isSprintLocked
+                 : isRaceLocked;
     if (!locked) setPick(field, value);
   }
 
@@ -407,6 +424,22 @@ export default function RaceDetailPage({
         {/* Track fact card */}
         {raceData?.facts && <FactCard facts={raceData.facts} />}
 
+        {race.sprint && isSprintQualLocked && !isSprintLocked && (
+          <div
+            className="mb-6 rounded-xl px-4 py-3 text-sm"
+            style={{ backgroundColor: "rgba(255,200,0,0.04)", border: "1px solid rgba(255,200,0,0.25)", color: "var(--muted)" }}
+          >
+            🔒 Sprint Qualifying predictions are locked. Sprint Race predictions lock at the sprint lights out.
+          </div>
+        )}
+        {race.sprint && isSprintLocked && !isQualLocked && (
+          <div
+            className="mb-6 rounded-xl px-4 py-3 text-sm"
+            style={{ backgroundColor: "rgba(255,200,0,0.04)", border: "1px solid rgba(255,200,0,0.25)", color: "var(--muted)" }}
+          >
+            🔒 Sprint predictions are locked. Qualifying and race predictions are still open.
+          </div>
+        )}
         {isQualLocked && !isRaceLocked && (
           <div
             className="mb-6 rounded-xl px-4 py-3 text-sm"
@@ -428,6 +461,126 @@ export default function RaceDetailPage({
           <p className="text-sm" style={{ color: "var(--muted)" }}>Loading…</p>
         ) : (
           <div className="flex flex-col gap-6">
+
+            {/* ── Sprint Qualifying (sprint weekends only) ── */}
+            {race.sprint && (
+              <div
+                className="rounded-xl p-4"
+                style={{
+                  border: "1px solid rgba(255,200,0,0.25)",
+                  backgroundColor: "rgba(255,200,0,0.04)",
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <span
+                    className="inline-block w-1 h-5 rounded-full shrink-0"
+                    style={{ backgroundColor: "#ffc800" }}
+                  />
+                  <h2
+                    className="text-sm font-bold uppercase tracking-widest shrink-0"
+                    style={{ color: "var(--foreground)" }}
+                  >
+                    Sprint Qualifying
+                  </h2>
+                  <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,200,0,0.2)" }} />
+                  {isSprintQualLocked && (
+                    <span
+                      className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                      style={{
+                        backgroundColor: "rgba(255,200,0,0.08)",
+                        color: "#ffc800",
+                        border: "1px solid rgba(255,200,0,0.3)",
+                      }}
+                    >
+                      🔒 Locked
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <DriverSelect
+                    label="Pole Position"
+                    value={picks?.sprintQualPole ?? null}
+                    isSaved={savedField === "sprintQualPole"}
+                    disabled={isSprintQualLocked}
+                    onPick={(v) => pick("sprintQualPole", v)}
+                  />
+                  <DriverSelect
+                    label="P2"
+                    value={picks?.sprintQualP2 ?? null}
+                    isSaved={savedField === "sprintQualP2"}
+                    disabled={isSprintQualLocked}
+                    onPick={(v) => pick("sprintQualP2", v)}
+                  />
+                  <DriverSelect
+                    label="P3"
+                    value={picks?.sprintQualP3 ?? null}
+                    isSaved={savedField === "sprintQualP3"}
+                    disabled={isSprintQualLocked}
+                    onPick={(v) => pick("sprintQualP3", v)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── Sprint Race (sprint weekends only) ── */}
+            {race.sprint && (
+              <div
+                className="rounded-xl p-4"
+                style={{
+                  border: "1px solid rgba(255,200,0,0.25)",
+                  backgroundColor: "rgba(255,200,0,0.04)",
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <span
+                    className="inline-block w-1 h-5 rounded-full shrink-0"
+                    style={{ backgroundColor: "#ffc800" }}
+                  />
+                  <h2
+                    className="text-sm font-bold uppercase tracking-widest shrink-0"
+                    style={{ color: "var(--foreground)" }}
+                  >
+                    Sprint Race
+                  </h2>
+                  <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,200,0,0.2)" }} />
+                  {isSprintLocked && (
+                    <span
+                      className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                      style={{
+                        backgroundColor: "rgba(255,200,0,0.08)",
+                        color: "#ffc800",
+                        border: "1px solid rgba(255,200,0,0.3)",
+                      }}
+                    >
+                      🔒 Locked
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <DriverSelect
+                    label="Sprint Winner"
+                    value={picks?.sprintWinner ?? null}
+                    isSaved={savedField === "sprintWinner"}
+                    disabled={isSprintLocked}
+                    onPick={(v) => pick("sprintWinner", v)}
+                  />
+                  <DriverSelect
+                    label="P2"
+                    value={picks?.sprintP2 ?? null}
+                    isSaved={savedField === "sprintP2"}
+                    disabled={isSprintLocked}
+                    onPick={(v) => pick("sprintP2", v)}
+                  />
+                  <DriverSelect
+                    label="P3"
+                    value={picks?.sprintP3 ?? null}
+                    isSaved={savedField === "sprintP3"}
+                    disabled={isSprintLocked}
+                    onPick={(v) => pick("sprintP3", v)}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* ── Qualifying ── */}
             <div className="rounded-xl p-4" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>

@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { Flag, User, Trophy, Users, SlidersHorizontal } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/",            label: "Home",        icon: "🏠" },
-  { href: "/profile",     label: "Profile",     icon: "👤" },
-  { href: "/predictions", label: "Predictions", icon: "🏁" },
-  { href: "/members",     label: "Group",       icon: "👥" },
-  { href: "/settings",    label: "Settings",    icon: "⚙️" },
+  { href: "/",            label: "Home",        Icon: Flag },
+  { href: "/profile",     label: "Profile",     Icon: User },
+  { href: "/predictions", label: "Predictions", Icon: Trophy },
+  { href: "/members",     label: "Community",   Icon: Users },
+  { href: "/settings",    label: "Settings",    Icon: SlidersHorizontal },
 ];
 
 export default function BottomNav() {
@@ -38,10 +39,41 @@ export default function BottomNav() {
               minHeight: "44px",
             }}
           >
-            <span className="relative text-xl leading-none">
-              {item.icon}
+            {/* Pill highlight + icon */}
+            <span
+              className="relative flex items-center justify-center transition-all duration-200"
+              style={{
+                width: "48px",
+                height: "28px",
+                borderRadius: "14px",
+                backgroundColor: isActive
+                  ? "color-mix(in srgb, var(--team-accent) 15%, transparent)"
+                  : "transparent",
+              }}
+            >
+              <item.Icon
+                size={18}
+                strokeWidth={isActive ? 2.5 : 1.75}
+              />
               {item.href === "/members" && unreadCount > 0 && (
-                <span style={{ position: "absolute", top: "-4px", right: "-8px", minWidth: "16px", height: "16px", borderRadius: "8px", backgroundColor: "#e10600", color: "#fff", fontSize: "10px", fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "-4px",
+                    right: "-4px",
+                    minWidth: "16px",
+                    height: "16px",
+                    borderRadius: "8px",
+                    backgroundColor: "#e10600",
+                    color: "#fff",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 3px",
+                  }}
+                >
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}

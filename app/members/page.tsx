@@ -1030,7 +1030,7 @@ export default function GroupPage() {
           </span>
         </div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
-          Group
+          Community
         </h1>
       </div>
 

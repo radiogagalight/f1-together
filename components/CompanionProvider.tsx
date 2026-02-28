@@ -15,8 +15,8 @@ import {
   PAGE_HELP,
   JOKES,
   HYPE_MESSAGES,
-  IDLE_MESSAGES,
   RANDOM_MESSAGES,
+  SEASON_FACTS,
   INTRO_STEP_1,
   INTRO_STEP_2,
   FIRST_DISMISS_MESSAGE,
@@ -45,7 +45,7 @@ interface CompanionContextValue {
   confirmIntroStep2: () => void;
   openMenu: () => void;
   closeMenu: () => void;
-  handleMenuAction: (action: "help" | "joke" | "hype" | "scoring" | "dismiss") => void;
+  handleMenuAction: (action: "help" | "joke" | "hype" | "scoring" | "fact" | "dismiss") => void;
   dismiss: () => void;
   wakeUp: () => void;
 }
@@ -90,7 +90,6 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
   const [showBubble, setShowBubble] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [introNameInput, setIntroNameInput] = useState("");
-  const [lastInteraction, setLastInteraction] = useState(Date.now());
 
   const bubbleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pageMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -109,9 +108,7 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Bump last interaction timestamp
-  const bumpInteraction = useCallback(() => {
-    setLastInteraction(Date.now());
-  }, []);
+  const bumpInteraction = useCallback(() => {}, []);
 
   // ── Initialization ────────────────────────────────────────────────────────
   // Runs whenever auth state or pathname changes. Uses a ref to ensure the
@@ -185,27 +182,20 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, phase]);
 
-  // ── Idle + random timers ─────────────────────────────────────────────────
+  // ── Random timer ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== "active") return;
-
-    const idleInterval = setInterval(() => {
-      if (Date.now() - lastInteraction > 120_000) {
-        showMessage(pickRandom(IDLE_MESSAGES), 10000);
-      }
-    }, 10_000);
 
     const randomInterval = setInterval(() => {
       if (!showMenu) {
         showMessage(pickRandom(RANDOM_MESSAGES), 8000);
       }
-    }, 60_000);
+    }, 180_000);
 
     return () => {
-      clearInterval(idleInterval);
       clearInterval(randomInterval);
     };
-  }, [phase, lastInteraction, showMenu, showMessage]);
+  }, [phase, showMenu, showMessage]);
 
   // ── CustomEvent listener ─────────────────────────────────────────────────
   useEffect(() => {
@@ -247,7 +237,7 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleMenuAction = useCallback(
-    (action: "help" | "joke" | "hype" | "scoring" | "dismiss") => {
+    (action: "help" | "joke" | "hype" | "scoring" | "fact" | "dismiss") => {
       setShowMenu(false);
       bumpInteraction();
 
@@ -264,6 +254,8 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
           favDriver: favDrivers[0],
         });
         showMessage(msg, 10000);
+      } else if (action === "fact") {
+        showMessage(pickRandom(SEASON_FACTS), 12000);
       } else if (action === "scoring") {
         showMessage(
           "Scoring: 3 pts for exact position, 1 pt for podium placement, 0 pts otherwise. Most points at season end wins! 🏆",

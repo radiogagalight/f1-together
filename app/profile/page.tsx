@@ -17,33 +17,23 @@ const DRIVERS_BY_TEAM = CONSTRUCTORS.map((c) => ({
 }));
 
 export default function ProfilePage() {
-  const { user, refreshFavorites } = useAuth();
-  const [displayName, setDisplayName] = useState("");
+  const { user, authReady, refreshFavorites, displayName: ctxDisplayName, favTeams: ctxFavTeams, favDrivers: ctxFavDrivers } = useAuth();
+  const [displayName, setDisplayName] = useState(ctxDisplayName ?? "");
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [nameSaved, setNameSaved] = useState(false);
 
-  const [teams, setTeams] = useState<[string | null, string | null, string | null]>([null, null, null]);
-  const [drivers, setDrivers] = useState<[string | null, string | null, string | null]>([null, null, null]);
+  const [teams, setTeams] = useState<[string | null, string | null, string | null]>(ctxFavTeams);
+  const [drivers, setDrivers] = useState<[string | null, string | null, string | null]>(ctxFavDrivers);
   const [openTeamSlot, setOpenTeamSlot] = useState<number | null>(null);
   const [openDriverSlot, setOpenDriverSlot] = useState<number | null>(null);
 
   const supabase = createClient();
 
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("profiles")
-      .select("display_name,fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.display_name) setDisplayName(data.display_name);
-        setTeams([data?.fav_team_1 ?? null, data?.fav_team_2 ?? null, data?.fav_team_3 ?? null]);
-        setDrivers([data?.fav_driver_1 ?? null, data?.fav_driver_2 ?? null, data?.fav_driver_3 ?? null]);
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  // Sync from context — handles hard-refresh where context loads after component mount
+  useEffect(() => { setDisplayName(ctxDisplayName ?? ""); }, [ctxDisplayName]);
+  useEffect(() => { setTeams(ctxFavTeams); }, [ctxFavTeams]);
+  useEffect(() => { setDrivers(ctxFavDrivers); }, [ctxFavDrivers]);
 
   const initials = displayName
     ? displayName.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join("")
@@ -56,6 +46,7 @@ export default function ProfilePage() {
     setEditingName(false);
     setNameSaved(true);
     setTimeout(() => setNameSaved(false), 2000);
+    refreshFavorites();
   }
 
   function startEditing() {
@@ -158,7 +149,7 @@ export default function ProfilePage() {
       {/* Profile card */}
       <div
         className="rounded-2xl border p-6 mb-4 flex flex-col items-center text-center"
-        style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}
+        style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)", opacity: authReady ? 1 : 0, transition: "opacity 0.15s ease" }}
       >
         <div
           className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black text-white mb-5 shadow-lg"
@@ -232,7 +223,7 @@ export default function ProfilePage() {
       {/* ── My Teams ── */}
       <div
         className="rounded-2xl border p-4 mb-4"
-        style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}
+        style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)", opacity: authReady ? 1 : 0, transition: "opacity 0.15s ease" }}
       >
         <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
           My Teams
@@ -322,7 +313,7 @@ export default function ProfilePage() {
       {/* ── My Drivers ── */}
       <div
         className="rounded-2xl border p-4 mb-4"
-        style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}
+        style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)", opacity: authReady ? 1 : 0, transition: "opacity 0.15s ease" }}
       >
         <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
           My Drivers

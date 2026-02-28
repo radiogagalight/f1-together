@@ -95,10 +95,10 @@ export default function Companion() {
               position: "absolute",
               bottom: "calc(100% + 8px)",
               right: 0,
-              width: (phase === "intro-step-1" || phase === "intro-step-2") ? "240px" : undefined,
-              minWidth: "180px",
-              maxWidth: "240px",
-              fontSize: "13px",
+              width: (phase === "intro-step-1" || phase === "intro-step-2") ? "300px" : undefined,
+              minWidth: "220px",
+              maxWidth: "300px",
+              fontSize: "15px",
               wordBreak: "break-word",
               borderRadius: "16px 16px 4px 16px",
               animation: "companion-bubble-in 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards",
@@ -160,6 +160,7 @@ export default function Companion() {
             {(
               [
                 { action: "help",    label: "Help 💡" },
+                { action: "fact",    label: "2026 season fact 📖" },
                 { action: "joke",    label: "Tell me a joke 😄" },
                 { action: "hype",    label: "Hype me up 🔥" },
                 { action: "scoring", label: "How does scoring work? 🏆" },

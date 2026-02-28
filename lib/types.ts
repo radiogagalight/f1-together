@@ -40,4 +40,10 @@ export interface RacePick {
   raceP3: string | null;
   fastestLap: string | null;
   safetyCar: boolean | null;
+  sprintQualPole: string | null;
+  sprintQualP2: string | null;
+  sprintQualP3: string | null;
+  sprintWinner: string | null;
+  sprintP2: string | null;
+  sprintP3: string | null;
 }
