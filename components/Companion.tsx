@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useCompanion } from "@/components/CompanionProvider";
 import CompanionCar, { type CarPose } from "@/components/CompanionCar";
 
@@ -19,6 +20,9 @@ export default function Companion() {
     handleMenuAction,
     wakeUp,
   } = useCompanion();
+
+  const pathname = usePathname();
+  const isHome = pathname === "/";
 
   // Keep the component alive during dismiss animation
   const [isDismissing, setIsDismissing] = useState(false);
@@ -161,7 +165,7 @@ export default function Companion() {
                 { action: "scoring", label: "How does scoring work? 🏆" },
                 { action: "dismiss", label: "See ya later 👋" },
               ] as const
-            ).map(({ action, label }) => (
+            ).filter(({ action }) => !(action === "dismiss" && isHome)).map(({ action, label }) => (
               <button
                 key={action}
                 onClick={() => handleMenuAction(action)}
