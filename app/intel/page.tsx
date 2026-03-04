@@ -156,7 +156,7 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
 
 // ─── Result card (2024 / 2025) ────────────────────────────────────────────────
 
-function ResultCard({ result, raceName }: { result: HistoricalResult | null; raceName: string }) {
+function ResultCard({ result, raceName, newCircuit = false }: { result: HistoricalResult | null; raceName: string; newCircuit?: boolean }) {
   if (!result) {
     return (
       <Card>
@@ -179,7 +179,7 @@ function ResultCard({ result, raceName }: { result: HistoricalResult | null; rac
           </span>
         </div>
         <p style={{ color: "var(--muted)", fontSize: "13px", fontStyle: "italic" }}>
-          No data for {result.year} — new circuit
+          {newCircuit ? `No data for ${result.year} — new circuit` : `No data found for ${result.year}.`}
         </p>
       </Card>
     );
@@ -605,8 +605,8 @@ export default function IntelPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ResultCard result={result2024} raceName="2024" />
-                <ResultCard result={result2025} raceName="2025" />
+                <ResultCard result={result2024} raceName="2024" newCircuit={circuitChar?.hasHistory === false} />
+                <ResultCard result={result2025} raceName="2025" newCircuit={circuitChar?.hasHistory === false} />
               </div>
             )}
           </div>
