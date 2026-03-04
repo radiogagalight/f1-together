@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchHistoricalCircuitResult } from "@/lib/openf1Intel";
 
+export const maxDuration = 60; // Vercel Hobby allows up to 60s
+
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const round = parseInt(searchParams.get("round") ?? "");

@@ -351,6 +351,7 @@ export default function IntelPage() {
   const [result2024, setResult2024] = useState<HistoricalResult | null>(null);
   const [result2025, setResult2025] = useState<HistoricalResult | null>(null);
   const [loadingCircuit, setLoadingCircuit] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const race = RACES.find((r) => r.r === selectedRound) ?? RACES[0];
   const circuitChar = CIRCUIT_INTEL.find((c) => c.round === selectedRound);
@@ -359,13 +360,25 @@ export default function IntelPage() {
     setLoadingCircuit(true);
     setResult2024(null);
     setResult2025(null);
-    const [r24, r25] = await Promise.all([
-      fetch(`/api/intel?round=${round}&year=2024`).then((r) => r.json() as Promise<HistoricalResult>),
-      fetch(`/api/intel?round=${round}&year=2025`).then((r) => r.json() as Promise<HistoricalResult>),
-    ]);
-    setResult2024(r24);
-    setResult2025(r25);
-    setLoadingCircuit(false);
+    setLoadError(false);
+    try {
+      const [r24, r25] = await Promise.all([
+        fetch(`/api/intel?round=${round}&year=2024`).then((r) => {
+          if (!r.ok) throw new Error(`${r.status}`);
+          return r.json() as Promise<HistoricalResult>;
+        }),
+        fetch(`/api/intel?round=${round}&year=2025`).then((r) => {
+          if (!r.ok) throw new Error(`${r.status}`);
+          return r.json() as Promise<HistoricalResult>;
+        }),
+      ]);
+      setResult2024(r24);
+      setResult2025(r25);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoadingCircuit(false);
+    }
   }, []);
 
   // Load circuit data on mount + when round changes
@@ -510,6 +523,10 @@ export default function IntelPage() {
             {loadingCircuit ? (
               <div style={{ color: "var(--muted)", textAlign: "center", padding: "32px", fontSize: "13px" }}>
                 Loading historical results…
+              </div>
+            ) : loadError ? (
+              <div style={{ color: "#ef4444", textAlign: "center", padding: "32px", fontSize: "13px" }}>
+                Could not load historical results. Check your connection and try again.
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

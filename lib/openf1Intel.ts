@@ -194,7 +194,6 @@ export async function fetchHistoricalCircuitResult(
       qualKey   ? fetchSessionTop3(qualKey).catch(() => null)   : Promise.resolve(null),
       raceKey   ? Promise.all([
                     fetchSessionTop3(raceKey),
-                    apiFetch<{ driver_number: number; lap_duration: number | null }>(`/laps?session_key=${raceKey}`),
                     apiFetch<{ category: string; message: string }>(`/race_control?session_key=${raceKey}`),
                   ]).catch(() => null)                           : Promise.resolve(null),
       sqKey     ? fetchSessionTop3(sqKey).catch(() => null)     : Promise.resolve(null),
@@ -211,17 +210,32 @@ export async function fetchHistoricalCircuitResult(
 
     // ── Race ────────────────────────────────────────────────────────────────
     if (raceData) {
-      const [{ driverMap, posMap }, laps, scEvents] = raceData;
+      const [{ driverMap, posMap }, scEvents] = raceData;
       base.raceWinner = positionDriverRef(1, posMap, driverMap);
       base.raceP2     = positionDriverRef(2, posMap, driverMap);
       base.raceP3     = positionDriverRef(3, posMap, driverMap);
 
-      const validLaps = laps.filter(
-        (l) => l.lap_duration !== null && l.lap_duration > 60
-      ) as Array<{ driver_number: number; lap_duration: number }>;
-      if (validLaps.length > 0) {
-        const fl = validLaps.reduce((b, l) => l.lap_duration < b.lap_duration ? l : b);
-        base.fastestLap = driverMap.get(fl.driver_number) ?? null;
+      // Fetch laps only for the top 3 finishers — much smaller than full stream
+      const top3nums = [1, 2, 3].map((p) => {
+        for (const [num, pos] of posMap.entries()) if (pos === p) return num;
+        return null;
+      }).filter((n): n is number => n !== null);
+
+      if (top3nums.length > 0) {
+        const lapArrays = await Promise.all(
+          top3nums.map((n) =>
+            apiFetch<{ driver_number: number; lap_duration: number | null }>(
+              `/laps?session_key=${raceKey!}&driver_number=${n}`
+            )
+          )
+        );
+        const allLaps = lapArrays.flat().filter(
+          (l) => l.lap_duration !== null && l.lap_duration > 60
+        ) as Array<{ driver_number: number; lap_duration: number }>;
+        if (allLaps.length > 0) {
+          const fl = allLaps.reduce((b, l) => l.lap_duration < b.lap_duration ? l : b);
+          base.fastestLap = driverMap.get(fl.driver_number) ?? null;
+        }
       }
 
       base.safetyCar = scEvents.length > 0
