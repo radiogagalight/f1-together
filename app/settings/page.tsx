@@ -148,7 +148,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-24">
+    <div className="max-w-lg md:max-w-2xl mx-auto px-4 pt-6 pb-28 md:pb-6">
       {/* Page header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-1">

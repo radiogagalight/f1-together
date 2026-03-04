@@ -37,9 +37,16 @@ export async function sendPushToUser(
       JSON.stringify({ title, body, url })
     );
   } catch (err: unknown) {
-    if (typeof err === 'object' && err !== null && 'statusCode' in err && (err as { statusCode: number }).statusCode === 410) {
-      // Subscription expired — clean it up
-      await supabase.from('push_subscriptions').delete().eq('user_id', userId);
+    if (typeof err === 'object' && err !== null && 'statusCode' in err) {
+      const statusCode = (err as { statusCode: number }).statusCode;
+      if (statusCode === 410 || statusCode === 404) {
+        // Subscription expired or invalid — clean it up
+        await supabase.from('push_subscriptions').delete().eq('user_id', userId);
+      } else {
+        console.error(`[push] Failed to send notification to ${userId}:`, err);
+      }
+    } else {
+      console.error(`[push] Failed to send notification to ${userId}:`, err);
     }
   }
 }

@@ -190,6 +190,7 @@ function FeedTab({
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [mentions, setMentions] = useState<MentionNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [clearedBefore, setClearedBefore] = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem("f1_feed_cleared_before") : null
   );
@@ -204,7 +205,8 @@ function FeedTab({
 
   useEffect(() => {
     async function load() {
-      const [{ data: racePicks }, { data: seasonPicks }, { data: raceComments }] = await Promise.all([
+      setError(false);
+      const [{ data: racePicks, error: e1 }, { data: seasonPicks, error: e2 }, { data: raceComments, error: e3 }] = await Promise.all([
         supabase
           .from("race_picks")
           .select("user_id,round,updated_at")
@@ -222,6 +224,7 @@ function FeedTab({
           .limit(15),
       ]);
 
+      if (e1 || e2 || e3) { setError(true); setLoading(false); return; }
       const feed: ActivityItem[] = [];
       for (const row of racePicks ?? []) {
         const race = RACES.find((r) => r.r === row.round);
@@ -252,6 +255,18 @@ function FeedTab({
       setLoading(false);
     }
     load();
+
+    // Real-time: reload feed when anyone posts a new comment
+    const channel = supabase
+      .channel("feed-comments")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "race_comments" },
+        () => { load(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -281,6 +296,9 @@ function FeedTab({
 
   if (loading) {
     return <p className="text-sm py-4" style={{ color: "var(--muted)" }}>Loading feed…</p>;
+  }
+  if (error) {
+    return <p className="text-sm py-4 text-center" style={{ color: "var(--muted)" }}>Couldn&apos;t load the feed. Check your connection and try again.</p>;
   }
 
   return (
@@ -567,6 +585,8 @@ function CommentThread({
 }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
@@ -575,28 +595,50 @@ function CommentThread({
   useEffect(() => {
     setLoading(true);
     setComments([]);
+    setLoadError(false);
     supabase
       .from("race_comments")
       .select("id,user_id,content,created_at")
       .eq("round", round)
       .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        setComments(data ?? []);
+      .then(({ data, error }) => {
+        if (error) { setLoadError(true); } else { setComments(data ?? []); }
         setLoading(false);
       });
+
+    // Real-time: append new comments as they arrive
+    const channel = supabase
+      .channel(`race-comments-${round}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "race_comments", filter: `round=eq.${round}` },
+        (payload) => {
+          setComments((prev) => {
+            // Avoid duplicates (our own submit already appends optimistically)
+            if (prev.some((c) => c.id === payload.new.id)) return prev;
+            return [...prev, payload.new as Comment];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round]);
 
   async function submit() {
     if (!currentUser || !text.trim() || submitting) return;
     setSubmitting(true);
+    setSubmitError(false);
     const content = text.trim();
     const { data } = await supabase
       .from("race_comments")
       .insert({ user_id: currentUser.id, round, content })
       .select("id,user_id,content,created_at")
       .single();
-    if (data) {
+    if (!data) {
+      setSubmitError(true);
+    } else {
       setComments((prev) => [...prev, data]);
       // Write a notification for each @mentioned user
       const mentionedIds = parseMentionIds(content, profileMap, currentUser.id);
@@ -619,10 +661,11 @@ function CommentThread({
           '/members'
         );
       }
+    } else {
+      setText("");
+      setShowEmojis(false);
     }
-    setText("");
     setSubmitting(false);
-    setShowEmojis(false);
   }
 
   // Compute @mention autocomplete suggestions from the current text
@@ -646,6 +689,8 @@ function CommentThread({
     <div>
       {loading ? (
         <p className="text-sm py-4" style={{ color: "var(--muted)" }}>Loading discussion…</p>
+      ) : loadError ? (
+        <p className="text-sm py-4 text-center" style={{ color: "var(--muted)" }}>Couldn&apos;t load comments. Check your connection.</p>
       ) : comments.length === 0 ? (
         <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
           No comments yet. Start the discussion!
@@ -795,6 +840,11 @@ function CommentThread({
               Post
             </button>
           </div>
+          {submitError && (
+            <p className="text-xs mt-2 text-center" style={{ color: "#ef4444" }}>
+              Failed to post. Please try again.
+            </p>
+          )}
         </div>
       ) : (
         <p className="text-sm text-center py-2" style={{ color: "var(--muted)" }}>
@@ -895,9 +945,12 @@ function RacesTab({
 
 // ─── Members Tab ──────────────────────────────────────────────────────────────
 
-function MembersTab({ profiles, loading }: { profiles: Profile[]; loading: boolean }) {
+function MembersTab({ profiles, loading, error }: { profiles: Profile[]; loading: boolean; error: boolean }) {
   if (loading) {
     return <p className="text-sm py-4" style={{ color: "var(--muted)" }}>Loading…</p>;
+  }
+  if (error) {
+    return <p className="text-sm py-4 text-center" style={{ color: "var(--muted)" }}>Couldn&apos;t load members. Check your connection.</p>;
   }
 
   return (
@@ -978,6 +1031,7 @@ export default function GroupPage() {
   const [tab, setTab] = useState<"feed" | "races" | "members">("feed");
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [profilesError, setProfilesError] = useState(false);
   const supabase = createClient();
 
   // selectedRound lives here so FeedTab can deep-link into a race
@@ -993,8 +1047,8 @@ export default function GroupPage() {
       .select(
         "id,display_name,fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3"
       )
-      .then(({ data }) => {
-        setProfiles(data ?? []);
+      .then(({ data, error }) => {
+        if (error) { setProfilesError(true); } else { setProfiles(data ?? []); }
         setLoadingProfiles(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1014,7 +1068,7 @@ export default function GroupPage() {
   ];
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-5 pb-24">
+    <div className="max-w-lg md:max-w-2xl mx-auto px-4 pt-5 pb-28 md:pb-6">
       {/* Header */}
       <div className="mb-5">
         <div className="flex items-center gap-2 mb-1">
@@ -1068,7 +1122,7 @@ export default function GroupPage() {
           setSelectedRound={setSelectedRound}
         />
       )}
-      {tab === "members" && <MembersTab profiles={profiles} loading={loadingProfiles} />}
+      {tab === "members" && <MembersTab profiles={profiles} loading={loadingProfiles} error={profilesError} />}
     </div>
   );
 }

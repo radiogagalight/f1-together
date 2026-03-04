@@ -123,7 +123,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-5 pb-24">
+    <div className="max-w-lg md:max-w-2xl mx-auto px-4 pt-5 pb-28 md:pb-6">
       {/* Back link */}
       <Link
         href="/"
@@ -153,7 +153,7 @@ export default function ProfilePage() {
       >
         <div
           className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black text-white mb-5 shadow-lg"
-          style={{ backgroundColor: "var(--f1-red)" }}
+          style={{ backgroundColor: "var(--team-accent)" }}
         >
           {initials}
         </div>

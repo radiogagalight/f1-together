@@ -12,7 +12,7 @@ const PAGE_SIZE = 6;
 const TOTAL_PAGES = Math.ceil(RACES.length / PAGE_SIZE);
 
 function getNextRaceIndex() {
-  const idx = RACES.findIndex(r => new Date(r.date + "T14:00:00Z").getTime() > Date.now());
+  const idx = RACES.findIndex(r => new Date(r.startUtc).getTime() > Date.now());
   return idx === -1 ? RACES.length - 1 : idx;
 }
 
@@ -126,7 +126,7 @@ export default function HomePage() {
   const pageRaces = RACES.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div className="flex flex-col min-h-screen pb-24" style={{ backgroundColor: "#13131f" }}>
+    <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "#13131f" }}>
       {/* ── Carbon fibre pattern definition (referenced by track menu icons) ── */}
       <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute", pointerEvents: "none" }}>
         <defs>
@@ -332,7 +332,7 @@ export default function HomePage() {
           {/* Race rows */}
           <div className="flex flex-col">
             {pageRaces.map((race) => {
-              const isPast = new Date(race.date + "T14:00:00Z").getTime() < Date.now();
+              const isPast = new Date(race.startUtc).getTime() < Date.now();
               const isNext = race.r === RACES[nextRaceIdx].r;
               return (
                 <Link

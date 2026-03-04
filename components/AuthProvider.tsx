@@ -137,11 +137,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let notifChannel: ReturnType<typeof supabase.channel> | null = null;
+
     // Get initial session
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
       if (user?.id) {
         await Promise.all([loadFavorites(user.id), fetchUnreadCount(user.id)]);
+        // Real-time: bump unread count whenever a new notification arrives
+        notifChannel = supabase
+          .channel(`notifications-${user.id}`)
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+            () => { fetchUnreadCount(user.id); }
+          )
+          .subscribe();
       }
       setAuthReady(true);
     });
@@ -169,7 +180,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (notifChannel) supabase.removeChannel(notifChannel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

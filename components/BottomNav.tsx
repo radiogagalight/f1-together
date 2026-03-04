@@ -21,9 +21,13 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-border bg-surface"
-      style={{ height: "64px" }}
+      className="fixed bottom-0 md:top-0 md:bottom-auto left-0 right-0 z-50 border-t md:border-t-0 md:border-b border-border bg-surface"
+      style={{
+        minHeight: "64px",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
     >
+      <div className="flex h-16">
       {NAV_ITEMS.map((item) => {
         const isActive =
           item.href === "/predictions"
@@ -82,6 +86,7 @@ export default function BottomNav() {
           </Link>
         );
       })}
+      </div>
     </nav>
   );
 }

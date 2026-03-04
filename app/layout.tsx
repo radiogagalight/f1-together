@@ -42,7 +42,7 @@ export default function RootLayout({
         <AuthProvider>
           <CompanionProvider>
             <ProfileGate>
-              <main>{children}</main>
+              <main className="md:pt-16">{children}</main>
               <BottomNav />
             </ProfileGate>
             <Companion />

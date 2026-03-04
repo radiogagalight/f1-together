@@ -8,7 +8,7 @@ export const TEAM_COLORS: Record<string, string> = {
   "williams":     "#64C4FF",
   "audi":         "#C0C0C0",
   "racing-bulls": "#6692FF",
-  "haas":         "#E8002D",
+  "haas":         "#FFFFFF",
   "cadillac":     "#C8A84B",
 };
 

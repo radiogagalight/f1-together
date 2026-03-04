@@ -262,7 +262,7 @@ export default function RaceDetailPage({
   }
 
   return (
-    <div className="max-w-lg mx-auto pb-8">
+    <div className="max-w-lg md:max-w-2xl mx-auto pb-28 md:pb-6">
 
       {/* ── Hero banner (when flag image exists) ── */}
       {heroImage ? (

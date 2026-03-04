@@ -23,28 +23,29 @@ export default function AllPredictionsPage() {
   }, [user?.id]);
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6">
+    <div className="max-w-lg md:max-w-2xl mx-auto px-4 pt-6">
       <h1 className="text-xl font-bold mb-1" style={{ color: "var(--foreground)" }}>
         All Predictions
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
-        {loading ? "Loading…" : `${[...pickCounts.values()].filter(c => c === 8).length} of 24 races complete`}
+        {loading ? "Loading…" : `${[...pickCounts.entries()].filter(([round, count]) => { const race = RACES.find(r => r.r === round); return count === (race?.sprint ? 14 : 8); }).length} of 24 races complete`}
       </p>
 
       <div className="flex flex-col rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
         {RACES.map((race, i) => {
-          const isPast = new Date(race.date + "T14:00:00Z").getTime() < Date.now();
+          const isPast = new Date(race.startUtc).getTime() < Date.now();
           const count = pickCounts.get(race.r) ?? 0;
           const isLast = i === RACES.length - 1;
-          const isComplete = count === 8;
+          const maxPicks = race.sprint ? 14 : 8;
+          const isComplete = count === maxPicks;
 
-          let badgeText = `${count}/8`;
+          let badgeText = `${count}/${maxPicks}`;
           let badgeBg = "rgba(255,255,255,0.04)";
           let badgeColor = "var(--muted)";
           let badgeBorder = "var(--border)";
 
           if (isComplete) {
-            badgeText = "8/8 ✓";
+            badgeText = `${maxPicks}/${maxPicks} ✓`;
             badgeBg = "rgba(34,197,94,0.1)";
             badgeColor = "#22c55e";
             badgeBorder = "rgba(34,197,94,0.3)";
