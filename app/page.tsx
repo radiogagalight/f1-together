@@ -80,7 +80,6 @@ interface TurnItem {
 }
 
 const TURNS: TurnItem[] = [
-  { label: "Predictions", href: "/predictions", left: "72%", top: "24%", active: true,  icon: ICON_FLAG  },
   { label: "Profile",     href: "/profile",     left: "22%", top: "24%", active: true,  icon: ICON_USER  },
   { label: "Coming soon", href: "#",            left: "11%", top: "55%", active: false, icon: ICON_LOCK  },
   { label: "Community",   href: "/members",     left: "73%", top: "80%", active: true,  icon: ICON_GROUP },
