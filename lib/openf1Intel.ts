@@ -133,32 +133,6 @@ async function fetchTop3PositionMap(sessionKey: number): Promise<Map<number, num
   return map;
 }
 
-async function fetchFastestLapDriver(sessionKey: number, driverMap: Map<number, DriverRef>): Promise<DriverRef | null> {
-  const laps = await apiFetch<{ driver_number: number; lap_duration: number | null }>(
-    `/laps?session_key=${sessionKey}`
-  );
-  const valid = laps.filter(
-    (l) => l.lap_duration !== null && l.lap_duration > 60
-  ) as Array<{ driver_number: number; lap_duration: number }>;
-  if (valid.length === 0) return null;
-  const fastest = valid.reduce((best, l) =>
-    l.lap_duration < best.lap_duration ? l : best
-  );
-  return driverMap.get(fastest.driver_number) ?? null;
-}
-
-async function detectSafetyCarInSession(sessionKey: number): Promise<boolean | null> {
-  const events = await apiFetch<{ category: string; message: string }>(
-    `/race_control?session_key=${sessionKey}`
-  );
-  if (events.length === 0) return null;
-  return events.some(
-    (e) =>
-      e.category === "SafetyCar" &&
-      !e.message?.toLowerCase().includes("virtual")
-  );
-}
-
 function positionDriverRef(
   pos: number,
   posMap: Map<number, number>,
@@ -168,6 +142,18 @@ function positionDriverRef(
     if (p === pos) return driverMap.get(num) ?? null;
   }
   return null;
+}
+
+// Fetch driver map + top-3 positions for any session in parallel
+async function fetchSessionTop3(sessionKey: number): Promise<{
+  driverMap: Map<number, DriverRef>;
+  posMap: Map<number, number>;
+}> {
+  const [driverMap, posMap] = await Promise.all([
+    fetchSessionDriverMap(sessionKey),
+    fetchTop3PositionMap(sessionKey),
+  ]);
+  return { driverMap, posMap };
 }
 
 // ─── Main orchestrator ────────────────────────────────────────────────────────
@@ -191,61 +177,72 @@ export async function fetchHistoricalCircuitResult(
     if (!meetingKey) return base;
     base.available = true;
 
+    // Fetch all sessions in one call, extract keys synchronously
+    const sessions = await apiFetch<{ session_key: number; session_name: string }>(
+      `/sessions?meeting_key=${meetingKey}`
+    );
+    function sessionKey(name: string): number | null {
+      return sessions.find((s) => s.session_name.toLowerCase() === name.toLowerCase())?.session_key ?? null;
+    }
+    const qualKey    = sessionKey("Qualifying");
+    const raceKey    = sessionKey("Race");
+    const sqKey      = sessionKey("Sprint Qualifying") ?? sessionKey("Sprint Shootout");
+    const sprintKey  = sessionKey("Sprint");
+
+    // Run all session data fetches in parallel
+    const [qualData, raceData, sqData, sprintData] = await Promise.all([
+      qualKey   ? fetchSessionTop3(qualKey).catch(() => null)   : Promise.resolve(null),
+      raceKey   ? Promise.all([
+                    fetchSessionTop3(raceKey),
+                    apiFetch<{ driver_number: number; lap_duration: number | null }>(`/laps?session_key=${raceKey}`),
+                    apiFetch<{ category: string; message: string }>(`/race_control?session_key=${raceKey}`),
+                  ]).catch(() => null)                           : Promise.resolve(null),
+      sqKey     ? fetchSessionTop3(sqKey).catch(() => null)     : Promise.resolve(null),
+      sprintKey ? fetchSessionTop3(sprintKey).catch(() => null) : Promise.resolve(null),
+    ]);
+
     // ── Qualifying ──────────────────────────────────────────────────────────
-    const qualKey = await getHistoricalSessionKey(meetingKey, "Qualifying");
-    if (qualKey) {
-      try {
-        const [driverMap, posMap] = await Promise.all([
-          fetchSessionDriverMap(qualKey),
-          fetchTop3PositionMap(qualKey),
-        ]);
-        base.qualPole = positionDriverRef(1, posMap, driverMap);
-        base.qualP2   = positionDriverRef(2, posMap, driverMap);
-        base.qualP3   = positionDriverRef(3, posMap, driverMap);
-      } catch { /* ignore */ }
+    if (qualData) {
+      const { driverMap, posMap } = qualData;
+      base.qualPole = positionDriverRef(1, posMap, driverMap);
+      base.qualP2   = positionDriverRef(2, posMap, driverMap);
+      base.qualP3   = positionDriverRef(3, posMap, driverMap);
     }
 
     // ── Race ────────────────────────────────────────────────────────────────
-    const raceKey = await getHistoricalSessionKey(meetingKey, "Race");
-    if (raceKey) {
-      try {
-        const [driverMap, posMap] = await Promise.all([
-          fetchSessionDriverMap(raceKey),
-          fetchTop3PositionMap(raceKey),
-        ]);
-        base.raceWinner = positionDriverRef(1, posMap, driverMap);
-        base.raceP2     = positionDriverRef(2, posMap, driverMap);
-        base.raceP3     = positionDriverRef(3, posMap, driverMap);
-        base.fastestLap = await fetchFastestLapDriver(raceKey, driverMap);
-        base.safetyCar  = await detectSafetyCarInSession(raceKey);
-      } catch { /* ignore */ }
+    if (raceData) {
+      const [{ driverMap, posMap }, laps, scEvents] = raceData;
+      base.raceWinner = positionDriverRef(1, posMap, driverMap);
+      base.raceP2     = positionDriverRef(2, posMap, driverMap);
+      base.raceP3     = positionDriverRef(3, posMap, driverMap);
+
+      const validLaps = laps.filter(
+        (l) => l.lap_duration !== null && l.lap_duration > 60
+      ) as Array<{ driver_number: number; lap_duration: number }>;
+      if (validLaps.length > 0) {
+        const fl = validLaps.reduce((b, l) => l.lap_duration < b.lap_duration ? l : b);
+        base.fastestLap = driverMap.get(fl.driver_number) ?? null;
+      }
+
+      base.safetyCar = scEvents.length > 0
+        ? scEvents.some((e) => e.category === "SafetyCar" && !e.message?.toLowerCase().includes("virtual"))
+        : null;
     }
 
-    // ── Sprint ──────────────────────────────────────────────────────────────
-    const sqKey = await getHistoricalSessionKey(meetingKey, "Sprint Qualifying");
-    if (sqKey) {
-      try {
-        const [driverMap, posMap] = await Promise.all([
-          fetchSessionDriverMap(sqKey),
-          fetchTop3PositionMap(sqKey),
-        ]);
-        base.sprintQualPole = positionDriverRef(1, posMap, driverMap);
-        base.sprintQualP2   = positionDriverRef(2, posMap, driverMap);
-        base.sprintQualP3   = positionDriverRef(3, posMap, driverMap);
-      } catch { /* ignore */ }
+    // ── Sprint Qualifying ────────────────────────────────────────────────────
+    if (sqData) {
+      const { driverMap, posMap } = sqData;
+      base.sprintQualPole = positionDriverRef(1, posMap, driverMap);
+      base.sprintQualP2   = positionDriverRef(2, posMap, driverMap);
+      base.sprintQualP3   = positionDriverRef(3, posMap, driverMap);
     }
 
-    const sprintKey = await getHistoricalSessionKey(meetingKey, "Sprint");
-    if (sprintKey) {
-      try {
-        const [driverMap, posMap] = await Promise.all([
-          fetchSessionDriverMap(sprintKey),
-          fetchTop3PositionMap(sprintKey),
-        ]);
-        base.sprintWinner = positionDriverRef(1, posMap, driverMap);
-        base.sprintP2     = positionDriverRef(2, posMap, driverMap);
-        base.sprintP3     = positionDriverRef(3, posMap, driverMap);
-      } catch { /* ignore */ }
+    // ── Sprint Race ──────────────────────────────────────────────────────────
+    if (sprintData) {
+      const { driverMap, posMap } = sprintData;
+      base.sprintWinner = positionDriverRef(1, posMap, driverMap);
+      base.sprintP2     = positionDriverRef(2, posMap, driverMap);
+      base.sprintP3     = positionDriverRef(3, posMap, driverMap);
     }
   } catch { /* top-level safety net */ }
 
