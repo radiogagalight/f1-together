@@ -105,7 +105,7 @@ export default function Companion() {
               wordBreak: "break-word",
               animation: "companion-bubble-in 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards",
             }}
-            className="companion-bubble bg-surface border border-border text-foreground px-3 py-3 shadow-lg"
+            className={`companion-bubble${isHome ? " companion-bubble-home" : ""} bg-surface border border-border text-foreground px-3 py-3 shadow-lg`}
           >
             {phase === "intro-step-1" ? (
               <div className="flex flex-col gap-3">

@@ -64,8 +64,9 @@
 }
 
 @media (min-width: 768px) {
-  .companion-bubble {
-    max-width: 220px !important;
+  .companion-bubble-home {
+    min-width: 0 !important;
+    max-width: 160px !important;
   }
 }
 
