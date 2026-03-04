@@ -654,54 +654,67 @@ export default function RaceDetailPage({
                   disabled={isRaceLocked}
                   onPick={(v) => pick("fastestLap", v)}
                 />
-              </div>
-            </div>
 
-            {/* ── Safety Car ── */}
-            <div className="rounded-xl p-4" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--team-accent)" }} />
-                <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
-                  Safety Car
-                </h2>
-                <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
-              </div>
-              <p className="text-sm font-semibold mb-3" style={{ color: "var(--foreground)" }}>
-                Will there be a safety car deployment?
-              </p>
-              <div className="flex gap-3">
-                {([true, false] as const).map((option) => {
-                  const isSelected = picks?.safetyCar === option;
-                  const isSaved = savedField === "safetyCar" && isSelected;
-                  const isYes = option === true;
-                  return (
-                    <button
-                      key={String(option)}
-                      onClick={() => pick("safetyCar", isSelected ? null : option)}
-                      disabled={isRaceLocked}
-                      className="flex-1 rounded-xl py-3 text-sm font-bold transition-colors"
-                      style={{
-                        backgroundColor: isSelected
-                          ? isYes ? "rgba(34,197,94,0.15)" : "rgba(225,6,0,0.15)"
-                          : "rgb(12, 8, 10)",
-                        backgroundImage: isSelected
-                          ? "none"
-                          : "repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px)",
-                        border: isSelected
-                          ? `1px solid ${isYes ? "rgba(34,197,94,0.6)" : "var(--f1-red)"}`
-                          : "1px solid rgba(225,6,0,0.35)",
-                        color: isSelected
-                          ? isYes ? "#22c55e" : "var(--f1-red)"
+                {/* Safety Car — inline row matching DriverSelect style */}
+                <div
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    backgroundColor: "rgb(12, 8, 10)",
+                    backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px)",
+                    border: "1px solid rgba(225,6,0,0.2)",
+                    borderLeft: picks?.safetyCar === true ? "3px solid rgba(34,197,94,0.7)" : "2px solid rgba(225,6,0,0.45)",
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3 px-4 py-4" style={{ minHeight: "56px" }}>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+                        Safety Car
+                      </span>
+                      <span className="text-sm leading-tight" style={{
+                        color: savedField === "safetyCar"
+                          ? "var(--f1-red)"
+                          : picks?.safetyCar === true
+                          ? "#22c55e"
                           : "var(--muted)",
-                        opacity: isRaceLocked ? 0.5 : 1,
-                        cursor: isRaceLocked ? "default" : "pointer",
-                      }}
-                    >
-                      {option ? "Yes" : "No"}
-                      {isSaved ? " ✓" : ""}
-                    </button>
-                  );
-                })}
+                      }}>
+                        {savedField === "safetyCar" ? "Saved ✓" : picks?.safetyCar === true ? "Yes" : picks?.safetyCar === false ? "No" : "Make your prediction"}
+                      </span>
+                    </div>
+                    {isRaceLocked ? (
+                      <span className="shrink-0 text-sm" style={{ color: "var(--muted)" }}>🔒</span>
+                    ) : (
+                      <div className="flex gap-2 shrink-0">
+                        {([true, false] as const).map((option) => {
+                          const isSelected = picks?.safetyCar === option;
+                          const isYes = option === true;
+                          return (
+                            <button
+                              key={String(option)}
+                              onClick={() => pick("safetyCar", isSelected ? null : option)}
+                              className="rounded-lg text-xs font-bold transition-colors"
+                              style={{
+                                backgroundColor: isSelected
+                                  ? isYes ? "rgba(34,197,94,0.2)" : "rgba(225,6,0,0.2)"
+                                  : "rgba(255,255,255,0.06)",
+                                border: isSelected
+                                  ? `1px solid ${isYes ? "rgba(34,197,94,0.6)" : "var(--f1-red)"}`
+                                  : "1px solid rgba(255,255,255,0.12)",
+                                color: isSelected
+                                  ? isYes ? "#22c55e" : "var(--f1-red)"
+                                  : "var(--muted)",
+                                minWidth: "44px",
+                                minHeight: "34px",
+                                padding: "0 12px",
+                              }}
+                            >
+                              {option ? "Yes" : "No"}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
