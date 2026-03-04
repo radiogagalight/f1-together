@@ -202,7 +202,7 @@ export default function HomePage() {
         style={{ maxWidth: "1100px" }}
       >
         {/* ── Track image with overlaid buttons ── */}
-        <div className="flex items-center justify-center md:flex-1 md:-ml-[88px]" style={{ marginTop: "-48px" }}>
+        <div className="flex items-center justify-center md:flex-1 md:-ml-[88px] md:-mt-12">
           <div className="relative w-full" style={{ maxWidth: "714px" }}>
             <Image
               src="/images/lv-circuit.webp"
@@ -299,7 +299,7 @@ export default function HomePage() {
         </div>
 
         {/* ── Race Schedule Panel ── */}
-        <div className="md:w-72 lg:w-80 flex flex-col gap-2" style={{ marginTop: "-48px" }}>
+        <div className="md:w-72 lg:w-80 flex flex-col gap-2 md:-mt-12">
 
 
         <div

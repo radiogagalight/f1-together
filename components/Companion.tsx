@@ -83,8 +83,9 @@ export default function Companion() {
       <div
         style={{
           position: "fixed",
-          bottom: "calc(64px + 12px)",
-          right: "16px",
+          ...(isHome
+            ? { top: "72px", right: "16px" }
+            : { bottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 12px)", right: "16px" }),
           zIndex: 60,
         }}
       >
@@ -93,14 +94,15 @@ export default function Companion() {
           <div
             style={{
               position: "absolute",
-              bottom: "calc(100% + 8px)",
+              ...(isHome
+                ? { top: "calc(100% + 8px)", borderRadius: "4px 16px 16px 16px" }
+                : { bottom: "calc(100% + 8px)", borderRadius: "16px 16px 4px 16px" }),
               right: 0,
               width: (phase === "intro-step-1" || phase === "intro-step-2") ? "300px" : undefined,
               minWidth: "220px",
               maxWidth: "300px",
               fontSize: "15px",
               wordBreak: "break-word",
-              borderRadius: "16px 16px 4px 16px",
               animation: "companion-bubble-in 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards",
             }}
             className="bg-surface border border-border text-foreground px-3 py-3 shadow-lg"
@@ -148,7 +150,9 @@ export default function Companion() {
           <div
             style={{
               position: "absolute",
-              bottom: "calc(100% + 8px)",
+              ...(isHome
+                ? { top: "calc(100% + 8px)" }
+                : { bottom: "calc(100% + 8px)" }),
               right: 0,
               width: "220px",
               animation: "companion-menu-in 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards",
