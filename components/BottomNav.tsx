@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { Flag, User, Trophy, Users, SlidersHorizontal } from "lucide-react";
+import { Flag, ClipboardList, Trophy, Users, SlidersHorizontal } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/",            label: "Home",        Icon: Flag },
-  { href: "/profile",     label: "Profile",     Icon: User },
-  { href: "/predictions", label: "Predictions", Icon: Trophy },
+  { href: "/predictions", label: "Predictions", Icon: ClipboardList },
+  { href: "/standings",   label: "Standings",   Icon: Trophy },
   { href: "/members",     label: "Community",   Icon: Users },
   { href: "/settings",    label: "Settings",    Icon: SlidersHorizontal },
 ];
@@ -32,6 +32,8 @@ export default function BottomNav() {
         const isActive =
           item.href === "/predictions"
             ? pathname.startsWith("/predictions")
+            : item.href === "/standings"
+            ? pathname.startsWith("/standings")
             : pathname === item.href;
         return (
           <Link

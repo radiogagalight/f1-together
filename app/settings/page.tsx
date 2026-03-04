@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { clearPicks } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
@@ -49,6 +50,7 @@ const UTC_OFFSETS = [
 export default function SettingsPage() {
   const { user, signOut, timezoneOffset, refreshFavorites } = useAuth();
   const [confirming, setConfirming] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [tzOffset, setTzOffset] = useState(timezoneOffset);
   const [tzSaved, setTzSaved] = useState(false);
   const [tzError, setTzError] = useState<string | null>(null);
@@ -60,6 +62,18 @@ export default function SettingsPage() {
 
   // Sync local state when context loads (after DB fetch)
   useEffect(() => { setTzOffset(timezoneOffset); }, [timezoneOffset]);
+
+  // Check admin status
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(data?.is_admin === true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Check current push permission / subscription status
   useEffect(() => {
@@ -335,6 +349,32 @@ export default function SettingsPage() {
           )}
         </div>
       </section>
+
+      {/* Admin */}
+      {isAdmin && (
+        <section className="mb-6">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+            Admin
+          </h2>
+          <div
+            className="rounded-xl border p-4"
+            style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}
+          >
+            <Link
+              href="/admin/results"
+              className="block w-full rounded-lg px-4 py-3 text-sm font-semibold text-center transition-colors active:opacity-80"
+              style={{
+                minHeight: "44px",
+                backgroundColor: "#e10600",
+                color: "#fff",
+                lineHeight: "1.75rem",
+              }}
+            >
+              Manage Race Results →
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Danger zone */}
       <section>
