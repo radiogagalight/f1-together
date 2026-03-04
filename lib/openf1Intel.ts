@@ -107,24 +107,30 @@ export async function fetchSessionDriverMap(sessionKey: number): Promise<Map<num
   return map;
 }
 
-// ─── Final positions ──────────────────────────────────────────────────────────
+// ─── Final positions (targeted — avoids downloading full telemetry stream) ────
 
-export async function fetchAllFinalPositions(sessionKey: number): Promise<Map<number, number>> {
-  const rows = await apiFetch<{ driver_number: number; position: number; date: string }>(
-    `/position?session_key=${sessionKey}`
-  );
-  const latest = new Map<number, { position: number; date: string }>();
-  for (const row of rows) {
-    const existing = latest.get(row.driver_number);
-    if (!existing || row.date > existing.date) {
-      latest.set(row.driver_number, { position: row.position, date: row.date });
-    }
+// Queries P1, P2, P3 separately. Each returns ~30 rows vs. ~20 000 for the
+// full unfiltered stream, making this safe to call from the browser.
+async function fetchTop3PositionMap(sessionKey: number): Promise<Map<number, number>> {
+  const [p1rows, p2rows, p3rows] = await Promise.all([
+    apiFetch<{ driver_number: number; date: string }>(`/position?session_key=${sessionKey}&position=1`),
+    apiFetch<{ driver_number: number; date: string }>(`/position?session_key=${sessionKey}&position=2`),
+    apiFetch<{ driver_number: number; date: string }>(`/position?session_key=${sessionKey}&position=3`),
+  ]);
+
+  function lastDriver(rows: Array<{ driver_number: number; date: string }>): number | null {
+    if (rows.length === 0) return null;
+    return rows.reduce((best, r) => r.date > best.date ? r : best).driver_number;
   }
-  const result = new Map<number, number>();
-  for (const [num, { position }] of latest.entries()) {
-    result.set(num, position);
-  }
-  return result;
+
+  const map = new Map<number, number>();
+  const d1 = lastDriver(p1rows);
+  const d2 = lastDriver(p2rows);
+  const d3 = lastDriver(p3rows);
+  if (d1 !== null) map.set(d1, 1);
+  if (d2 !== null) map.set(d2, 2);
+  if (d3 !== null) map.set(d3, 3);
+  return map;
 }
 
 async function fetchFastestLapDriver(sessionKey: number, driverMap: Map<number, DriverRef>): Promise<DriverRef | null> {
@@ -191,7 +197,7 @@ export async function fetchHistoricalCircuitResult(
       try {
         const [driverMap, posMap] = await Promise.all([
           fetchSessionDriverMap(qualKey),
-          fetchAllFinalPositions(qualKey),
+          fetchTop3PositionMap(qualKey),
         ]);
         base.qualPole = positionDriverRef(1, posMap, driverMap);
         base.qualP2   = positionDriverRef(2, posMap, driverMap);
@@ -205,7 +211,7 @@ export async function fetchHistoricalCircuitResult(
       try {
         const [driverMap, posMap] = await Promise.all([
           fetchSessionDriverMap(raceKey),
-          fetchAllFinalPositions(raceKey),
+          fetchTop3PositionMap(raceKey),
         ]);
         base.raceWinner = positionDriverRef(1, posMap, driverMap);
         base.raceP2     = positionDriverRef(2, posMap, driverMap);
@@ -221,7 +227,7 @@ export async function fetchHistoricalCircuitResult(
       try {
         const [driverMap, posMap] = await Promise.all([
           fetchSessionDriverMap(sqKey),
-          fetchAllFinalPositions(sqKey),
+          fetchTop3PositionMap(sqKey),
         ]);
         base.sprintQualPole = positionDriverRef(1, posMap, driverMap);
         base.sprintQualP2   = positionDriverRef(2, posMap, driverMap);
@@ -234,7 +240,7 @@ export async function fetchHistoricalCircuitResult(
       try {
         const [driverMap, posMap] = await Promise.all([
           fetchSessionDriverMap(sprintKey),
-          fetchAllFinalPositions(sprintKey),
+          fetchTop3PositionMap(sprintKey),
         ]);
         base.sprintWinner = positionDriverRef(1, posMap, driverMap);
         base.sprintP2     = positionDriverRef(2, posMap, driverMap);
@@ -287,7 +293,7 @@ export async function fetchDriverFormData(year: number, numRaces: number): Promi
     sessions.map(async ({ sessionKey, raceName }) => {
       const [driverMap, posMap] = await Promise.all([
         fetchSessionDriverMap(sessionKey),
-        fetchAllFinalPositions(sessionKey),
+        fetchTop3PositionMap(sessionKey),
       ]);
       return { raceName, driverMap, posMap };
     })
