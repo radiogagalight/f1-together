@@ -3,12 +3,14 @@ import { fullNameToSlug } from "./openf1";
 
 // ─── Circuit keyword map (mirrors openf1.ts — avoids coupling) ─────────────────
 
+// Keywords matched against BOTH circuit_short_name AND meeting_name (case-insensitive).
+// Verified against OpenF1 2024 + 2025 meeting data.
 const CIRCUIT_KEYWORDS: Record<number, string> = {
-  1: "albert",   2: "shanghai",    3: "suzuka",    4: "bahrain",
-  5: "jeddah",   6: "miami",       7: "villeneuve", 8: "monaco",
-  9: "barcelona",10: "spielberg",  11: "silverstone",12: "spa",
+  1: "australia", 2: "shanghai",    3: "suzuka",    4: "bahrain",
+  5: "jeddah",   6: "miami",       7: "montreal",  8: "monaco",
+  9: "catalu",   10: "spielberg",  11: "silverstone",12: "spa",
   13: "hungaroring",14: "zandvoort",15: "monza",   16: "madrid",
-  17: "baku",    18: "marina",     19: "americas", 20: "hermanos",
+  17: "baku",    18: "singapore",  19: "austin",   20: "mexico",
   21: "interlagos",22: "las vegas",23: "lusail",   24: "yas",
 };
 
@@ -69,12 +71,14 @@ function slugToDriverRef(slug: string, rawName: string): DriverRef {
 export async function getHistoricalMeetingKey(round: number, year: number): Promise<number | null> {
   const keyword = CIRCUIT_KEYWORDS[round];
   if (!keyword) return null;
-  const meetings = await apiFetch<{ meeting_key: number; circuit_short_name: string; year: number }>(
+  const meetings = await apiFetch<{ meeting_key: number; circuit_short_name: string; meeting_name: string; year: number }>(
     `/meetings?year=${year}`
   );
-  const match = meetings.find((m) =>
-    (m.circuit_short_name ?? "").toLowerCase().includes(keyword)
-  );
+  const match = meetings.find((m) => {
+    const circuit = (m.circuit_short_name ?? "").toLowerCase();
+    const name    = (m.meeting_name    ?? "").toLowerCase();
+    return circuit.includes(keyword) || name.includes(keyword);
+  });
   return match?.meeting_key ?? null;
 }
 
