@@ -5,37 +5,10 @@ import Link from "next/link";
 import { RACES, DRIVERS } from "@/lib/data";
 import { CIRCUIT_INTEL } from "@/lib/circuitIntel";
 import type { CircuitCharacter } from "@/lib/circuitIntel";
-import { fetchHistoricalCircuitResult, fetchDriverFormData } from "@/lib/openf1Intel";
-import type { HistoricalResult, DriverRef, DriverFormRow } from "@/lib/openf1Intel";
+import { fetchHistoricalCircuitResult } from "@/lib/openf1Intel";
+import type { HistoricalResult, DriverRef } from "@/lib/openf1Intel";
 import { PICK_POINTS } from "@/lib/scoring";
 import { TEAM_COLORS } from "@/lib/teamColors";
-
-// ─── 2025 championship order for Drivers tab ──────────────────────────────────
-
-const DRIVER_ORDER_2025: string[] = [
-  "lando-norris",
-  "oscar-piastri",
-  "charles-leclerc",
-  "george-russell",
-  "lewis-hamilton",
-  "max-verstappen",
-  "carlos-sainz",
-  "fernando-alonso",
-  "pierre-gasly",
-  "lance-stroll",
-  "nico-hulkenberg",
-  "liam-lawson",
-  "esteban-ocon",
-  "oliver-bearman",
-  "franco-colapinto",
-  "valtteri-bottas",
-  "isack-hadjar",
-  "kimi-antonelli",
-  "alexander-albon",
-  "gabriel-bortoleto",
-  "sergio-perez",
-  "arvid-lindblad",
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -60,11 +33,6 @@ function driverDisplay(ref: DriverRef | null): string {
   }
   // Not on 2026 grid — show last name from rawName
   return ref.rawName.split(" ").pop() ?? ref.rawName;
-}
-
-function teamColorById(teamName: string): string {
-  const teamId = teamName.toLowerCase().replace(/\s+/g, "-");
-  return TEAM_COLORS[teamId] ?? "#888888";
 }
 
 // ─── Pill / badge components ──────────────────────────────────────────────────
@@ -110,29 +78,6 @@ function DriverPill({ ref: dRef }: { ref: DriverRef | null }) {
   if (!dRef) return <span style={{ color: "var(--muted)", fontSize: "13px" }}>—</span>;
   return (
     <span style={{ color, fontWeight: 700, fontSize: "13px" }}>{name}</span>
-  );
-}
-
-// ─── Position pill for driver form ────────────────────────────────────────────
-
-function PosPill({ position, raceName }: { position: number | null; raceName: string }) {
-  if (position === null) {
-    return (
-      <span title={raceName} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "32px", height: "24px", borderRadius: "6px", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.25)", fontSize: "11px", fontWeight: 600 }}>
-        —
-      </span>
-    );
-  }
-  const isP1 = position === 1;
-  const isP2 = position === 2;
-  const isP3 = position === 3;
-  const bg = isP1 ? "rgba(255,215,0,0.15)" : isP2 ? "rgba(192,192,192,0.15)" : isP3 ? "rgba(205,127,50,0.15)" : "rgba(255,255,255,0.07)";
-  const border = isP1 ? "1px solid rgba(255,215,0,0.5)" : isP2 ? "1px solid rgba(192,192,192,0.4)" : isP3 ? "1px solid rgba(205,127,50,0.4)" : "1px solid rgba(255,255,255,0.1)";
-  const color = isP1 ? "#ffd700" : isP2 ? "#c0c0c0" : isP3 ? "#cd7f32" : "rgba(255,255,255,0.65)";
-  return (
-    <span title={raceName} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "32px", height: "24px", borderRadius: "6px", background: bg, border, color, fontSize: "11px", fontWeight: 700 }}>
-      {isP1 ? "🥇" : isP2 ? "🥈" : isP3 ? "🥉" : position}
-    </span>
   );
 }
 
@@ -403,13 +348,10 @@ function TipsTab({
 
 export default function IntelPage() {
   const [selectedRound, setSelectedRound] = useState(getNextRaceRound);
-  const [tab, setTab] = useState<"circuit" | "drivers" | "tips">("circuit");
+  const [tab, setTab] = useState<"circuit" | "tips">("circuit");
   const [result2024, setResult2024] = useState<HistoricalResult | null>(null);
   const [result2025, setResult2025] = useState<HistoricalResult | null>(null);
-  const [driverForm, setDriverForm] = useState<DriverFormRow[] | null>(null);
   const [loadingCircuit, setLoadingCircuit] = useState(false);
-  const [loadingDrivers, setLoadingDrivers] = useState(false);
-  const [driversEverLoaded, setDriversEverLoaded] = useState(false);
 
   const race = RACES.find((r) => r.r === selectedRound) ?? RACES[0];
   const circuitChar = CIRCUIT_INTEL.find((c) => c.round === selectedRound);
@@ -427,51 +369,18 @@ export default function IntelPage() {
     setLoadingCircuit(false);
   }, []);
 
-  const loadDriverData = useCallback(async () => {
-    setLoadingDrivers(true);
-    const rows = await fetchDriverFormData(2025, 5);
-    setDriverForm(rows);
-    setDriversEverLoaded(true);
-    setLoadingDrivers(false);
-  }, []);
-
   // Load circuit data on mount + when round changes
   useEffect(() => {
     loadCircuitData(selectedRound);
-    // If drivers tab is open, reset driver form so it re-fetches on next visible
-    setDriverForm(null);
-    setDriversEverLoaded(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRound]);
 
-  // Load driver data on first Drivers tab select (lazy)
-  useEffect(() => {
-    if (tab === "drivers" && !driversEverLoaded && !loadingDrivers) {
-      loadDriverData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
-
   function handleRoundChange(round: number) {
     setSelectedRound(round);
-    setDriversEverLoaded(false);
-    setDriverForm(null);
   }
 
-  // Sort driver form rows by 2025 championship order
-  const sortedDriverForm = driverForm
-    ? [...driverForm].sort((a, b) => {
-        const ai = DRIVER_ORDER_2025.indexOf(a.driverId);
-        const bi = DRIVER_ORDER_2025.indexOf(b.driverId);
-        const aIdx = ai === -1 ? 999 : ai;
-        const bIdx = bi === -1 ? 999 : bi;
-        return aIdx - bIdx;
-      })
-    : null;
-
-  const TABS: { key: "circuit" | "drivers" | "tips"; label: string }[] = [
+  const TABS: { key: "circuit" | "tips"; label: string }[] = [
     { key: "circuit", label: "Circuit" },
-    { key: "drivers", label: "Drivers" },
     { key: "tips", label: "Tips" },
   ];
 
@@ -607,47 +516,6 @@ export default function IntelPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ResultCard result={result2024} raceName="2024" newCircuit={circuitChar?.hasHistory === false} />
                 <ResultCard result={result2025} raceName="2025" newCircuit={circuitChar?.hasHistory === false} />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Drivers tab ── */}
-        {tab === "drivers" && (
-          <div>
-            {loadingDrivers ? (
-              <div style={{ color: "var(--muted)", textAlign: "center", padding: "48px", fontSize: "13px" }}>
-                Loading 2025 driver form…
-              </div>
-            ) : !sortedDriverForm ? (
-              <div style={{ color: "var(--muted)", textAlign: "center", padding: "48px", fontSize: "13px" }}>
-                Fetching data…
-              </div>
-            ) : sortedDriverForm.length === 0 ? (
-              <div style={{ color: "var(--muted)", textAlign: "center", padding: "48px", fontSize: "13px" }}>
-                No driver data available.
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <p style={{ fontSize: "12px", color: "var(--muted)", marginBottom: "8px" }}>
-                  Last 5 races of 2025 — ordered by 2025 championship position
-                </p>
-                {sortedDriverForm.map((row) => {
-                  const teamColor = teamColorById(row.team);
-                  return (
-                    <div key={row.driverId} style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(10,10,18,0.8)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "8px 12px", borderLeft: `4px solid ${teamColor}` }}>
-                      <div style={{ flex: "0 0 140px", minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: "13px", color: "var(--foreground)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.driverName}</div>
-                        <div style={{ fontSize: "11px", color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.team}</div>
-                      </div>
-                      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                        {row.positions.map((p, i) => (
-                          <PosPill key={i} position={p.position} raceName={p.raceName} />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             )}
           </div>
