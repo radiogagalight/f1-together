@@ -661,7 +661,6 @@ function CommentThread({
           '/members'
         );
       }
-    } else {
       setText("");
       setShowEmojis(false);
     }
