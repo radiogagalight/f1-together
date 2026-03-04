@@ -62,7 +62,7 @@ export default function StandingsPage() {
     async function load() {
       setError(false);
       const [
-        { data: results, error: e1 },
+        { data: results },
         { data: picks, error: e2 },
         { data: profiles, error: e3 },
       ] = await Promise.all([
@@ -71,7 +71,8 @@ export default function StandingsPage() {
         supabase.from("profiles").select("id,display_name,fav_team_1"),
       ]);
 
-      if (e1 || e2 || e3) { setError(true); setLoading(false); return; }
+      // Only treat picks/profiles failures as a real error; missing results table = empty state
+      if (e2 || e3) { setError(true); setLoading(false); return; }
 
       const allResults: RaceResult[] = (results ?? []).map((row) => ({
         round:              row.round,
