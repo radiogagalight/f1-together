@@ -5,7 +5,6 @@ import Link from "next/link";
 import { RACES, DRIVERS } from "@/lib/data";
 import { CIRCUIT_INTEL } from "@/lib/circuitIntel";
 import type { CircuitCharacter } from "@/lib/circuitIntel";
-import { fetchHistoricalCircuitResult } from "@/lib/openf1Intel";
 import type { HistoricalResult, DriverRef } from "@/lib/openf1Intel";
 import { PICK_POINTS } from "@/lib/scoring";
 import { TEAM_COLORS } from "@/lib/teamColors";
@@ -361,8 +360,8 @@ export default function IntelPage() {
     setResult2024(null);
     setResult2025(null);
     const [r24, r25] = await Promise.all([
-      fetchHistoricalCircuitResult(round, 2024),
-      fetchHistoricalCircuitResult(round, 2025),
+      fetch(`/api/intel?round=${round}&year=2024`).then((r) => r.json() as Promise<HistoricalResult>),
+      fetch(`/api/intel?round=${round}&year=2025`).then((r) => r.json() as Promise<HistoricalResult>),
     ]);
     setResult2024(r24);
     setResult2025(r25);
