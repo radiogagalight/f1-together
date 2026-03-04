@@ -63,10 +63,10 @@ const ICON_GROUP = (
     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </svg>
 );
-const ICON_LOCK = (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+const ICON_BULB = (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21h6"/>
+    <path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.21 4.16-3 5.2V17H9v-2.8A6.002 6.002 0 0 1 6 9a6 6 0 0 1 6-6z"/>
   </svg>
 );
 
@@ -81,7 +81,7 @@ interface TurnItem {
 
 const TURNS: TurnItem[] = [
   { label: "Profile",     href: "/profile",     left: "22%", top: "24%", active: true,  icon: ICON_USER  },
-  { label: "Coming soon", href: "#",            left: "11%", top: "55%", active: false, icon: ICON_LOCK  },
+  { label: "Help me predict", href: "/intel",   left: "11%", top: "55%", active: true,  icon: ICON_BULB },
   { label: "Community",   href: "/members",     left: "73%", top: "80%", active: true,  icon: ICON_GROUP },
 ];
 
