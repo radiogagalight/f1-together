@@ -15,7 +15,6 @@ const NEXT_RACE_IDX = Math.max(
 );
 
 const TOP_TABS = [
-  { href: "/predictions",        label: "All"    },
   { href: "/predictions/season", label: "Season" },
   { href: "/predictions/race",   label: "Race"   },
 ];
@@ -29,8 +28,7 @@ export default function PredictionsNav({ mobile = false }: Props) {
   const currentRound = roundMatch ? parseInt(roundMatch[1]) : null;
   const currentRace = currentRound ? RACES.find((r) => r.r === currentRound) ?? null : null;
 
-  const isRaceSection = pathname.startsWith("/predictions/race");
-  const isAllActive    = pathname === "/predictions";
+  const isRaceSection  = pathname.startsWith("/predictions/race");
   const isSeasonActive = pathname === "/predictions/season";
 
   // ── Mobile ──────────────────────────────────────────────────
@@ -63,8 +61,6 @@ export default function PredictionsNav({ mobile = false }: Props) {
           const isActive =
             tab.href === "/predictions/race"
               ? isRaceSection
-              : tab.href === "/predictions"
-              ? isAllActive
               : pathname === tab.href;
           return (
             <Link
@@ -107,18 +103,6 @@ export default function PredictionsNav({ mobile = false }: Props) {
 
       {/* Top-level nav items */}
       <nav className="flex flex-col gap-0.5">
-        {/* All Predictions */}
-        <Link
-          href="/predictions"
-          className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-          style={{
-            backgroundColor: isAllActive ? "rgba(225,6,0,0.12)" : "transparent",
-            color: isAllActive ? "var(--f1-red)" : "var(--muted)",
-          }}
-        >
-          All Predictions
-        </Link>
-
         {/* Season Predictions */}
         <Link
           href="/predictions/season"
