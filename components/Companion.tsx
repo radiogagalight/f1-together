@@ -31,7 +31,7 @@ export default function Companion() {
   useEffect(() => {
     if (prevPhaseRef.current !== "dismissed" && phase === "dismissed") {
       setIsDismissing(true);
-      const t = setTimeout(() => setIsDismissing(false), 850);
+      const t = setTimeout(() => setIsDismissing(false), 400);
       return () => clearTimeout(t);
     }
     prevPhaseRef.current = phase;
@@ -46,14 +46,12 @@ export default function Companion() {
     pose = "quarter-front";
   } else if (phase === "waiting-home") {
     pose = "front";
-  } else if (isDismissing) {
-    pose = "side-left";
   }
 
   // Car animation
   let carAnimation = "none";
   if (isDismissing) {
-    carAnimation = "companion-dismiss 0.8s forwards";
+    carAnimation = "companion-dismiss 0.35s ease-out forwards";
   } else if (phase === "active" || phase === "intro-step-1" || phase === "intro-step-2") {
     carAnimation = "companion-float 3s ease-in-out infinite";
   } else if (phase === "waiting-home") {
