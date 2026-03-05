@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { RACES, CONSTRUCTORS, formatRaceDate, flagToCC } from "@/lib/data";
 import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
+import PredictionsWidget from "@/components/PredictionsWidget";
 
 const PAGE_SIZE = 6;
 const TOTAL_PAGES = Math.ceil(RACES.length / PAGE_SIZE);
@@ -285,6 +286,7 @@ export default function HomePage() {
         {/* ── Race Schedule Panel ── */}
         <div className="md:w-72 lg:w-80 flex flex-col gap-2 md:-mt-12">
 
+        <PredictionsWidget />
 
         <div
           className="flex flex-col rounded-xl overflow-hidden"
