@@ -15,6 +15,21 @@ export const PAGE_MESSAGES: Record<string, string[]> = {
     "No pressure, but everyone's watching your pick. 😅",
     "This race could change everything — choose wisely.",
   ],
+  "/predictions/season": [
+    "Big picture picks — who wins it all? 🏆",
+    "Season predictions locked in? These are the long-game calls.",
+    "Championship picks are where legends are made. No pressure.",
+  ],
+  "/intel": [
+    "Race intel incoming! Use this to sharpen your picks. 🧠",
+    "Study the history, then back yourself.",
+    "Data doesn't lie — let's find an edge before the race.",
+  ],
+  "/standings": [
+    "The leaderboard — truth hurts sometimes! 📊",
+    "Who's top of the pile? Let's find out.",
+    "Check the standings — you might surprise yourself.",
+  ],
   "/members": [
     "Check out the competition! 👀",
     "Scouting the enemy paddock, are we?",
@@ -29,21 +44,19 @@ export const PAGE_MESSAGES: Record<string, string[]> = {
     "Adjusting the car setup? Good call.",
     "Every tenth counts — get your settings right.",
   ],
-  "/notifications": [
-    "Checking for messages from the pit wall!",
-    "Any @mentions from your group? Let's find out.",
-  ],
 };
 
 // One contextual help string per page
 export const PAGE_HELP: Record<string, string> = {
   "/": "Welcome to the pit wall! 🏎️ Tap the track buttons to navigate the app, and use the race schedule to jump straight to any race prediction. The race highlighted in red is up next — don't miss it!",
-  "/predictions": "This is your season predictions hub! 🏁 Set your overall season picks at the top, then tap any race to lock in your podium prediction. Picks close the moment the lights go out — get in early!",
+  "/predictions": "This is your predictions hub! 🏁 Tap any race to lock in your podium picks, or head to Season Picks for the big-picture calls. Picks close the moment the lights go out — get in early!",
   "/predictions/race/[round]": "Lock in your picks before the lights go out — they're frozen at race start! Race scoring: Winner 25 pts, P2 18 pts, P3 15 pts. Qualifying: Pole 5, P2 3, P3 1. Fastest Lap & Safety Car: 5 pts each. Exact match only, no partial credit. Choose wisely! 🎯",
+  "/predictions/season": "These are your season-long calls — WDC, WCC, most wins, most poles, and more. 🏆 Pick carefully, because these lock in early and don't change all season. Bold predictions = big bragging rights.",
+  "/intel": "Use the Race Intel page to sharpen your picks before each round! 🧠 The Circuit tab shows 2024 and 2025 results for this circuit plus live 2026 data as the season unfolds. The Tips tab turns all that history into pick hints.",
+  "/standings": "This is the group leaderboard — points scored across all races so far this season. 📊 Each correct pick earns points: Race Winner is worth 25 pts, right down to 1 pt for Qualifying P3. Most points at season end wins!",
   "/members": "Your league's fan cards are all here! 👥 See everyone's favourite teams and drivers, and leave comments on their cards. Use @name in a comment to send someone a direct notification — great for a bit of trash talk. 😄",
   "/profile": "This is your driver profile! Set your display name, then rank your favourite teams and drivers. Your top team pick sets the colour theme across the whole app — so choose your true colours! 🎨",
   "/settings": "Here you can update your display name, toggle push notifications for @mentions, and manage your account. Turn on notifications so you never miss when someone calls you out on the Members page! 🔔",
-  "/notifications": "These are your @mention alerts — when someone tags you in a comment on the Members page, it lands here. Tap any notification to jump straight to the conversation. 💬",
 };
 
 // F1-themed jokes
@@ -103,7 +116,7 @@ export const SEASON_FACTS: string[] = [
   "Audi officially enters F1 in 2026 — the first German manufacturer since BMW departed in 2009. They've taken over the Sauber entry to do it. 🇩🇪",
   "Ford is back in Formula 1 as a power unit partner with Red Bull and RB — their first serious F1 involvement in over 20 years. The Blue Oval returns! 🇺🇸",
   "Honda is partnering with Aston Martin in 2026 for a full works relationship — their biggest F1 commitment since leaving McLaren after the 2021 season. 🍀",
-  "General Motors enters F1 in 2026 through the Andretti team — the first American constructor on the grid in decades. Stars and stripes on the starting grid! 🇺🇸",
+  "The Cadillac F1 Team makes its debut in 2026 — backed by General Motors, it's the first new American constructor on the grid in decades. Stars and stripes on the starting grid! 🇺🇸",
   // Rookie drivers
   "Arvid Lindblad is one of the most hyped rookies in years — the British-Swedish prodigy dominated junior categories and is considered by many scouts as a generational talent. Watch this space. 🌟",
   "Oliver Bearman became one of the youngest ever points scorers when he stepped in for Ferrari at just 18 in 2024. Now he's a full-time F1 driver — and he's only just getting started. 💪",
@@ -129,7 +142,7 @@ export const SEASON_FACTS: string[] = [
   "Lewis Hamilton moved to Ferrari for 2025 — one of the most seismic driver moves in the sport's history. The 7-time champion swapped the team he dominated with for F1's most iconic brand. 🔴",
   "Fernando Alonso made his F1 debut in 2001. He's still racing in 2026 — that's a career spanning a quarter of a century. Absolute iron man. 🇪🇸",
   "Max Verstappen set the record for most wins in a single season — 19 victories in 2023. A record that may stand for a very long time. 👑",
-  "Lando Norris scored his first F1 race win at Miami in 2024, ending years of near-misses. McLaren's resurgence and Lando's evolution into a title contender was one of the stories of the era. 🍋",
+  "Lando Norris scored his first F1 race win at Miami in 2024 — then went all the way to become 2025 World Champion. McLaren's resurgence and Lando's rise is one of F1's great recent stories. 🍋",
   "Oscar Piastri went from Formula 2 champion to F1 race winner within two seasons. The quiet Australian is widely regarded as one of the most complete young drivers in the paddock. 🦘",
   "Arvid Lindblad is considered by many scouts and team principals to have the kind of raw pace that comes along once in a generation. Some comparisons to a young Max Verstappen have already been made — no pressure! ⭐",
   // More regulation/technical
@@ -139,7 +152,7 @@ export const SEASON_FACTS: string[] = [
   "The 2026 cars use a 'manual override' system for the active aerodynamics — drivers press a button to switch between high-downforce and low-drag modes. It's a new tactical layer for overtaking. 🕹️",
   "With the 2026 regulation reset, every team starts from a cleaner slate than usual. New regs have historically reshuffled the order dramatically — expect the unexpected this season! 🎲",
   // Team facts
-  "McLaren won the Constructors' Championship in 2024 — their first since 1998. A 26-year wait finally ended. The Woking team's rebuild is one of F1's great comeback stories. 🧡",
+  "McLaren won back-to-back Constructors' Championships in 2024 and 2025 — their first titles since 1998. A 26-year wait ended, and they followed it up immediately. The Woking rebuild is one of F1's great comeback stories. 🧡",
   "Ferrari's last Constructors' Championship was in 2008. The Scuderia have the most wins and championships in F1 history — but the wait for another title has been long and painful. 🐴",
   "Williams holds the record for most Constructors' Championships by a private (non-manufacturer) team — seven titles, all between 1980 and 1997. A legendary era. 💙",
   "Red Bull Racing only entered F1 in 2005 — and have already won six Constructors' Championships. One of the fastest rises in the sport's history. 🐂",
