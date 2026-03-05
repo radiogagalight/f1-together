@@ -6,6 +6,7 @@ import { RACES, DRIVERS } from "@/lib/data";
 import { CIRCUIT_INTEL } from "@/lib/circuitIntel";
 import type { CircuitCharacter } from "@/lib/circuitIntel";
 import type { HistoricalResult, DriverRef } from "@/lib/openf1Intel";
+import { getStaticHistoricalResult } from "@/lib/historicalResults";
 import { PICK_POINTS } from "@/lib/scoring";
 import { TEAM_COLORS } from "@/lib/teamColors";
 
@@ -348,32 +349,27 @@ function TipsTab({
 export default function IntelPage() {
   const [selectedRound, setSelectedRound] = useState(getNextRaceRound);
   const [tab, setTab] = useState<"circuit" | "tips">("circuit");
-  const [result2024, setResult2024] = useState<HistoricalResult | null>(null);
-  const [result2025, setResult2025] = useState<HistoricalResult | null>(null);
+  const [result2026, setResult2026] = useState<HistoricalResult | null>(null);
   const [loadingCircuit, setLoadingCircuit] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
   const race = RACES.find((r) => r.r === selectedRound) ?? RACES[0];
   const circuitChar = CIRCUIT_INTEL.find((c) => c.round === selectedRound);
 
-  const loadCircuitData = useCallback(async (round: number) => {
+  // 2024 and 2025 are hardcoded — always instant
+  const result2024 = getStaticHistoricalResult(selectedRound, 2024);
+  const result2025 = getStaticHistoricalResult(selectedRound, 2025);
+
+  const load2026Data = useCallback(async (round: number) => {
     setLoadingCircuit(true);
-    setResult2024(null);
-    setResult2025(null);
+    setResult2026(null);
     setLoadError(false);
     try {
-      const [r24, r25] = await Promise.all([
-        fetch(`/api/intel?round=${round}&year=2024`).then((r) => {
-          if (!r.ok) throw new Error(`${r.status}`);
-          return r.json() as Promise<HistoricalResult>;
-        }),
-        fetch(`/api/intel?round=${round}&year=2025`).then((r) => {
-          if (!r.ok) throw new Error(`${r.status}`);
-          return r.json() as Promise<HistoricalResult>;
-        }),
-      ]);
-      setResult2024(r24);
-      setResult2025(r25);
+      const r26 = await fetch(`/api/intel?round=${round}&year=2026`).then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json() as Promise<HistoricalResult>;
+      });
+      setResult2026(r26);
     } catch {
       setLoadError(true);
     } finally {
@@ -381,9 +377,9 @@ export default function IntelPage() {
     }
   }, []);
 
-  // Load circuit data on mount + when round changes
+  // Load 2026 data on mount + when round changes
   useEffect(() => {
-    loadCircuitData(selectedRound);
+    load2026Data(selectedRound);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRound]);
 
@@ -519,21 +515,22 @@ export default function IntelPage() {
               </Card>
             ) : null}
 
-            {/* Historical result cards */}
-            {loadingCircuit ? (
-              <div style={{ color: "var(--muted)", textAlign: "center", padding: "32px", fontSize: "13px" }}>
-                Loading historical results…
-              </div>
-            ) : loadError ? (
-              <div style={{ color: "#ef4444", textAlign: "center", padding: "32px", fontSize: "13px" }}>
-                Could not load historical results. Check your connection and try again.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ResultCard result={result2024} raceName="2024" newCircuit={circuitChar?.hasHistory === false} />
-                <ResultCard result={result2025} raceName="2025" newCircuit={circuitChar?.hasHistory === false} />
-              </div>
-            )}
+            {/* Historical result cards — 2024 & 2025 instant, 2026 fetched */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ResultCard result={result2024} raceName="2024" newCircuit={circuitChar?.hasHistory === false} />
+              <ResultCard result={result2025} raceName="2025" newCircuit={circuitChar?.hasHistory === false} />
+              {loadingCircuit ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "120px", color: "var(--muted)", fontSize: "13px", background: "rgba(10,10,18,0.85)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "14px" }}>
+                  Loading 2026…
+                </div>
+              ) : loadError ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "120px", color: "#ef4444", fontSize: "13px", background: "rgba(10,10,18,0.85)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "14px", padding: "16px", textAlign: "center" }}>
+                  Could not load 2026 results.
+                </div>
+              ) : result2026 ? (
+                <ResultCard result={result2026} raceName="2026" newCircuit={false} />
+              ) : null}
+            </div>
           </div>
         )}
 
