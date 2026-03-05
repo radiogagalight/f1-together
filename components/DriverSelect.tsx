@@ -10,9 +10,10 @@ interface Props {
   isSaved: boolean;
   disabled: boolean;
   onPick: (value: string | null) => void;
+  points?: number;
 }
 
-export default function DriverSelect({ label, value, isSaved, disabled, onPick }: Props) {
+export default function DriverSelect({ label, value, isSaved, disabled, onPick, points }: Props) {
   const [open, setOpen] = useState(false);
 
   const driver = value ? DRIVERS.find((d) => d.id === value) : null;
@@ -47,12 +48,27 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick }
         aria-expanded={open}
       >
         <div className="flex flex-col gap-0.5 min-w-0">
-          <span
-            className="text-xs font-bold uppercase tracking-wider"
-            style={{ color: "var(--muted)" }}
-          >
-            {label}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="text-xs font-bold uppercase tracking-wider"
+              style={{ color: "var(--muted)" }}
+            >
+              {label}
+            </span>
+            {points !== undefined && (
+              <span
+                className="text-[10px] font-bold px-1.5 py-px rounded-full"
+                style={{
+                  backgroundColor: "rgba(255,200,0,0.12)",
+                  color: "#ffc800",
+                  border: "1px solid rgba(255,200,0,0.3)",
+                  lineHeight: 1.4,
+                }}
+              >
+                {points} pts
+              </span>
+            )}
+          </div>
           <span
             className="text-sm leading-tight truncate"
             style={{

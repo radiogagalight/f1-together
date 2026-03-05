@@ -9,6 +9,7 @@ import type { RaceFact, RaceSession } from "@/lib/raceFacts";
 import { useRacePick } from "@/hooks/useRacePick";
 import DriverSelect from "@/components/DriverSelect";
 import type { RacePick } from "@/lib/types";
+import { PICK_POINTS } from "@/lib/scoring";
 
 function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label: string; target: string }) {
   const [timeLeft, setTimeLeft] = useState(() =>
@@ -482,6 +483,7 @@ export default function RaceDetailPage({
                   >
                     Sprint Qualifying
                   </h2>
+                  <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,200,0,0.65)" }}>5 / 3 / 1 pts</span>
                   <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,200,0,0.2)" }} />
                   {isSprintQualLocked && (
                     <span
@@ -503,6 +505,7 @@ export default function RaceDetailPage({
                     isSaved={savedField === "sprintQualPole"}
                     disabled={isSprintQualLocked}
                     onPick={(v) => pick("sprintQualPole", v)}
+                    points={PICK_POINTS.sprintQualPole}
                   />
                   <DriverSelect
                     label="P2"
@@ -510,6 +513,7 @@ export default function RaceDetailPage({
                     isSaved={savedField === "sprintQualP2"}
                     disabled={isSprintQualLocked}
                     onPick={(v) => pick("sprintQualP2", v)}
+                    points={PICK_POINTS.sprintQualP2}
                   />
                   <DriverSelect
                     label="P3"
@@ -517,6 +521,7 @@ export default function RaceDetailPage({
                     isSaved={savedField === "sprintQualP3"}
                     disabled={isSprintQualLocked}
                     onPick={(v) => pick("sprintQualP3", v)}
+                    points={PICK_POINTS.sprintQualP3}
                   />
                 </div>
               </div>
@@ -542,6 +547,7 @@ export default function RaceDetailPage({
                   >
                     Sprint Race
                   </h2>
+                  <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,200,0,0.65)" }}>8 / 7 / 6 pts</span>
                   <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,200,0,0.2)" }} />
                   {isSprintLocked && (
                     <span
@@ -563,6 +569,7 @@ export default function RaceDetailPage({
                     isSaved={savedField === "sprintWinner"}
                     disabled={isSprintLocked}
                     onPick={(v) => pick("sprintWinner", v)}
+                    points={PICK_POINTS.sprintWinner}
                   />
                   <DriverSelect
                     label="P2"
@@ -570,6 +577,7 @@ export default function RaceDetailPage({
                     isSaved={savedField === "sprintP2"}
                     disabled={isSprintLocked}
                     onPick={(v) => pick("sprintP2", v)}
+                    points={PICK_POINTS.sprintP2}
                   />
                   <DriverSelect
                     label="P3"
@@ -577,6 +585,7 @@ export default function RaceDetailPage({
                     isSaved={savedField === "sprintP3"}
                     disabled={isSprintLocked}
                     onPick={(v) => pick("sprintP3", v)}
+                    points={PICK_POINTS.sprintP3}
                   />
                 </div>
               </div>
@@ -589,6 +598,7 @@ export default function RaceDetailPage({
                 <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
                   Qualifying
                 </h2>
+                <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>5 / 3 / 1 pts</span>
                 <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
               </div>
               <div className="flex flex-col gap-2">
@@ -598,6 +608,7 @@ export default function RaceDetailPage({
                   isSaved={savedField === "qualPole"}
                   disabled={isQualLocked}
                   onPick={(v) => pick("qualPole", v)}
+                  points={PICK_POINTS.qualPole}
                 />
                 <DriverSelect
                   label="P2"
@@ -605,6 +616,7 @@ export default function RaceDetailPage({
                   isSaved={savedField === "qualP2"}
                   disabled={isQualLocked}
                   onPick={(v) => pick("qualP2", v)}
+                  points={PICK_POINTS.qualP2}
                 />
                 <DriverSelect
                   label="P3"
@@ -612,6 +624,7 @@ export default function RaceDetailPage({
                   isSaved={savedField === "qualP3"}
                   disabled={isQualLocked}
                   onPick={(v) => pick("qualP3", v)}
+                  points={PICK_POINTS.qualP3}
                 />
               </div>
             </div>
@@ -623,6 +636,7 @@ export default function RaceDetailPage({
                 <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
                   Race
                 </h2>
+                <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>25 / 18 / 15 pts</span>
                 <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
               </div>
               <div className="flex flex-col gap-2">
@@ -632,6 +646,7 @@ export default function RaceDetailPage({
                   isSaved={savedField === "raceWinner"}
                   disabled={isRaceLocked}
                   onPick={(v) => pick("raceWinner", v)}
+                  points={PICK_POINTS.raceWinner}
                 />
                 <DriverSelect
                   label="P2"
@@ -639,6 +654,7 @@ export default function RaceDetailPage({
                   isSaved={savedField === "raceP2"}
                   disabled={isRaceLocked}
                   onPick={(v) => pick("raceP2", v)}
+                  points={PICK_POINTS.raceP2}
                 />
                 <DriverSelect
                   label="P3"
@@ -646,6 +662,7 @@ export default function RaceDetailPage({
                   isSaved={savedField === "raceP3"}
                   disabled={isRaceLocked}
                   onPick={(v) => pick("raceP3", v)}
+                  points={PICK_POINTS.raceP3}
                 />
                 <DriverSelect
                   label="Fastest Lap"
@@ -653,6 +670,7 @@ export default function RaceDetailPage({
                   isSaved={savedField === "fastestLap"}
                   disabled={isRaceLocked}
                   onPick={(v) => pick("fastestLap", v)}
+                  points={PICK_POINTS.fastestLap}
                 />
 
                 {/* Safety Car — inline row matching DriverSelect style */}
@@ -667,9 +685,22 @@ export default function RaceDetailPage({
                 >
                   <div className="flex items-center justify-between gap-3 px-4 py-4" style={{ minHeight: "56px" }}>
                     <div className="flex flex-col gap-0.5 min-w-0">
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
-                        Safety Car
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+                          Safety Car
+                        </span>
+                        <span
+                          className="text-[10px] font-bold px-1.5 py-px rounded-full"
+                          style={{
+                            backgroundColor: "rgba(255,200,0,0.12)",
+                            color: "#ffc800",
+                            border: "1px solid rgba(255,200,0,0.3)",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {PICK_POINTS.safetyCar} pts
+                        </span>
+                      </div>
                       <span className="text-sm leading-tight" style={{
                         color: savedField === "safetyCar"
                           ? "var(--f1-red)"
