@@ -46,8 +46,8 @@ const SEASON_FIELD_LABELS: Record<keyof SeasonPicks, string> = {
   mostWins:           "Most Race Wins",
   mostPoles:          "Most Poles",
   mostPodiums:        "Most Podiums",
-  firstDnfDriver:     "First DNF — Driver",
-  firstDnfConstructor:"First DNF — Constructor",
+  mostDnfsDriver:     "Most DNFs — Driver",
+  mostDnfsConstructor:"Most DNFs — Constructor",
 };
 
 function unpickedRaceFields(picks: RacePick | null, fields: (keyof RacePick)[]): (keyof RacePick)[] {

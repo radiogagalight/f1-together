@@ -157,7 +157,7 @@ export default function LoginPage() {
               "WDC & WCC champion picks",
               "Race winner & podium predictions",
               "Most wins, poles & podiums",
-              "First DNF driver & constructor",
+              "Most DNFs — driver & constructor",
             ].map((feat) => (
               <li
                 key={feat}

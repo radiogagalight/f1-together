@@ -12,7 +12,7 @@ const SEASON_LOCK_UTC = RACES[0].startUtc; // locks at Race 1 lights out
 const GROUPS: { label: string; keys: (keyof SeasonPicks)[] }[] = [
   { label: "Championship", keys: ["wdcWinner", "wccWinner"] },
   { label: "Dominance",    keys: ["mostWins", "mostPoles", "mostPodiums"] },
-  { label: "Black Sheep",  keys: ["firstDnfDriver", "firstDnfConstructor"] },
+  { label: "Black Sheep",  keys: ["mostDnfsDriver", "mostDnfsConstructor"] },
 ];
 
 export default function SeasonPredictions() {

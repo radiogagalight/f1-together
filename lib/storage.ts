@@ -7,8 +7,8 @@ const DEFAULT_PICKS: SeasonPicks = {
   mostWins: null,
   mostPoles: null,
   mostPodiums: null,
-  firstDnfDriver: null,
-  firstDnfConstructor: null,
+  mostDnfsDriver: null,
+  mostDnfsConstructor: null,
 };
 
 // Maps camelCase SeasonPicks keys → snake_case DB columns
@@ -18,8 +18,8 @@ const KEY_MAP: Record<keyof SeasonPicks, string> = {
   mostWins: "most_wins",
   mostPoles: "most_poles",
   mostPodiums: "most_podiums",
-  firstDnfDriver: "first_dnf_driver",
-  firstDnfConstructor: "first_dnf_constructor",
+  mostDnfsDriver: "most_dnfs_driver",
+  mostDnfsConstructor: "most_dnfs_constructor",
 };
 
 function dbRowToPicks(row: Record<string, string | null>): SeasonPicks {
@@ -29,8 +29,8 @@ function dbRowToPicks(row: Record<string, string | null>): SeasonPicks {
     mostWins: row.most_wins ?? null,
     mostPoles: row.most_poles ?? null,
     mostPodiums: row.most_podiums ?? null,
-    firstDnfDriver: row.first_dnf_driver ?? null,
-    firstDnfConstructor: row.first_dnf_constructor ?? null,
+    mostDnfsDriver: row.most_dnfs_driver ?? null,
+    mostDnfsConstructor: row.most_dnfs_constructor ?? null,
   };
 }
 

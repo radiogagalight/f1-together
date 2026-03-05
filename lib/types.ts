@@ -22,8 +22,8 @@ export interface SeasonPicks {
   mostWins: string | null;
   mostPoles: string | null;
   mostPodiums: string | null;
-  firstDnfDriver: string | null;
-  firstDnfConstructor: string | null;
+  mostDnfsDriver: string | null;
+  mostDnfsConstructor: string | null;
 }
 
 export interface MidseasonPicks {

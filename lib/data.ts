@@ -144,15 +144,15 @@ export const CATEGORIES: Category[] = [
     type: "driver",
   },
   {
-    key: "firstDnfDriver",
-    label: "First DNF — Driver",
-    description: "Which driver gets the first DNF of the season?",
+    key: "mostDnfsDriver",
+    label: "Most Season DNFs — Driver",
+    description: "Which driver will have the most DNFs by season end?",
     type: "driver",
   },
   {
-    key: "firstDnfConstructor",
-    label: "First DNF — Constructor",
-    description: "Which team has the first DNF of the season?",
+    key: "mostDnfsConstructor",
+    label: "Most Season DNFs — Constructor",
+    description: "Which team will have the most DNFs by season end?",
     type: "constructor",
   },
 ];
