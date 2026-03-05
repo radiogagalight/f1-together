@@ -39,7 +39,7 @@ export const PAGE_MESSAGES: Record<string, string[]> = {
 export const PAGE_HELP: Record<string, string> = {
   "/": "Welcome to the pit wall! 🏎️ Tap the track buttons to navigate the app, and use the race schedule to jump straight to any race prediction. The race highlighted in red is up next — don't miss it!",
   "/predictions": "This is your season predictions hub! 🏁 Set your overall season picks at the top, then tap any race to lock in your podium prediction. Picks close the moment the lights go out — get in early!",
-  "/predictions/race/[round]": "Pick who you think will finish P1, P2, and P3. You can update your picks right up until the race starts — after that, they're locked in for good. Exact position = 3 pts, podium placement = 1 pt. Choose wisely! 🎯",
+  "/predictions/race/[round]": "Lock in your picks before the lights go out — they're frozen at race start! Race scoring: Winner 25 pts, P2 18 pts, P3 15 pts. Qualifying: Pole 5, P2 3, P3 1. Fastest Lap & Safety Car: 5 pts each. Exact match only, no partial credit. Choose wisely! 🎯",
   "/members": "Your league's fan cards are all here! 👥 See everyone's favourite teams and drivers, and leave comments on their cards. Use @name in a comment to send someone a direct notification — great for a bit of trash talk. 😄",
   "/profile": "This is your driver profile! Set your display name, then rank your favourite teams and drivers. Your top team pick sets the colour theme across the whole app — so choose your true colours! 🎨",
   "/settings": "Here you can update your display name, toggle push notifications for @mentions, and manage your account. Turn on notifications so you never miss when someone calls you out on the Members page! 🔔",

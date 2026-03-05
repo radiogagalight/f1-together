@@ -258,8 +258,8 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
         showMessage(pickRandom(SEASON_FACTS), 12000);
       } else if (action === "scoring") {
         showMessage(
-          "Scoring: 3 pts for exact position, 1 pt for podium placement, 0 pts otherwise. Most points at season end wins! 🏆",
-          14000
+          "Race: Winner 25 pts · P2 18 pts · P3 15 pts. Qualifying: Pole 5 pts · P2 3 pts · P3 1 pt. Fastest Lap & Safety Car: 5 pts each. Sprint race: 8/7/6 pts · Sprint Qual: 5/3/1 pts. Exact match only — no partial credit! 🏆",
+          16000
         );
       } else if (action === "dismiss") {
         dismiss();
