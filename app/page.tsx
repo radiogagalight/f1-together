@@ -44,19 +44,19 @@ const SPEED_LINES = [
 
 // ── Turn buttons on the track image ────────────────────────────
 const ICON_FLAG = (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-[18px] h-[18px] md:w-[26px] md:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
     <line x1="4" y1="22" x2="4" y2="15"/>
   </svg>
 );
 const ICON_USER = (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-[18px] h-[18px] md:w-[26px] md:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
     <circle cx="12" cy="7" r="4"/>
   </svg>
 );
 const ICON_GROUP = (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-[18px] h-[18px] md:w-[26px] md:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
     <circle cx="9" cy="7" r="4"/>
     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -64,7 +64,7 @@ const ICON_GROUP = (
   </svg>
 );
 const ICON_BULB = (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-[18px] h-[18px] md:w-[26px] md:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 21h6"/>
     <path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.21 4.16-3 5.2V17H9v-2.8A6.002 6.002 0 0 1 6 9a6 6 0 0 1 6-6z"/>
   </svg>
@@ -222,24 +222,16 @@ export default function HomePage() {
                 {turn.active ? (
                   <button
                     onClick={() => navigate(turn.href)}
-                    className="flex flex-col items-center active:scale-95 transition-transform duration-150"
-                    style={{ gap: "8px" }}
+                    className="flex flex-col items-center gap-[5px] md:gap-2 active:scale-95 transition-transform duration-150"
                     aria-label={turn.label}
                   >
                     {/* Single-ring circle with frosted glass fill */}
-                    <div style={{
-                      position: "relative",
-                      width: "68px",
-                      height: "68px",
-                      borderRadius: "50%",
+                    <div className="relative w-[50px] h-[50px] md:w-[68px] md:h-[68px] rounded-full flex items-center justify-center" style={{
                       backgroundColor: `rgba(${hexToRgb(teamAccent)}, 0.12)`,
                       border: `1.5px solid rgba(${hexToRgb(teamAccent)}, 0.5)`,
                       boxShadow: `0 0 18px rgba(${hexToRgb(teamAccent)}, 0.28), inset 0 0 10px rgba(${hexToRgb(teamAccent)}, 0.08)`,
                       backdropFilter: "blur(8px)",
                       WebkitBackdropFilter: "blur(8px)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
                     }}>
                       {turn.icon}
                       {turn.href === "/members" && unreadCount > 0 && (
@@ -250,31 +242,24 @@ export default function HomePage() {
                     </div>
 
                     {/* Frosted glass pill label */}
-                    <div style={{
+                    <div className="px-2 py-[2px] md:px-3 md:py-1" style={{
                       backdropFilter: "blur(12px)",
                       WebkitBackdropFilter: "blur(12px)",
                       backgroundColor: "rgba(8,8,16,0.78)",
                       border: `1px solid rgba(${hexToRgb(teamAccent)}, 0.45)`,
                       borderRadius: "999px",
-                      padding: "4px 12px",
                     }}>
-                      <span style={{ fontSize: "15px", fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2, whiteSpace: "nowrap", letterSpacing: "0.01em", fontFamily: "var(--font-orbitron)" }}>
+                      <span className="text-[11px] md:text-[15px]" style={{ fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2, whiteSpace: "nowrap", letterSpacing: "0.01em", fontFamily: "var(--font-orbitron)" }}>
                         {turn.label}
                       </span>
                     </div>
                   </button>
                 ) : (
-                  <div className="flex flex-col items-center" style={{ gap: "8px" }}>
+                  <div className="flex flex-col items-center gap-[5px] md:gap-2">
                     {/* Inactive circle */}
-                    <div style={{
-                      width: "68px",
-                      height: "68px",
-                      borderRadius: "50%",
+                    <div className="w-[50px] h-[50px] md:w-[68px] md:h-[68px] rounded-full flex items-center justify-center" style={{
                       backgroundColor: "rgba(255,255,255,0.03)",
                       border: "1.5px solid rgba(255,255,255,0.08)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
                       color: "rgba(255,255,255,0.2)",
                     }}>
                       {turn.icon}
