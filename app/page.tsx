@@ -91,7 +91,34 @@ function NextRaceHero({
         <div className="absolute inset-0 animate-pulse" style={{ background: "rgba(225,6,0,0.07)", pointerEvents: "none", zIndex: 1 }} />
       )}
 
-      <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "360px", height: "100%" }}>
+      <div className="relative z-10 flex flex-col" style={{ minHeight: "360px", height: "100%" }}>
+        {/* Full-width live banner */}
+        {isLive && (
+          <div style={{
+            background: "linear-gradient(90deg, #a00300, #e10600, #ff2200, #e10600, #a00300)",
+            backgroundSize: "200% 100%",
+            animation: "live-shine 2.5s linear infinite",
+            padding: "8px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}>
+            <span
+              className="animate-pulse"
+              style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ffffff", flexShrink: 0, display: "inline-block" }}
+            />
+            <span style={{
+              fontSize: "12px", fontWeight: 800, letterSpacing: "0.18em",
+              textTransform: "uppercase", color: "#ffffff",
+              fontFamily: "var(--font-orbitron)",
+            }}>
+              Race Weekend Live
+            </span>
+          </div>
+        )}
+
+        {/* Padded content */}
+        <div className="flex flex-col justify-between flex-1 p-4">
         {/* Top badges */}
         <div className="flex items-center gap-2 flex-wrap">
           <span
@@ -100,15 +127,6 @@ function NextRaceHero({
           >
             Round {race.r}
           </span>
-          {isLive && (
-            <span
-              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "rgba(225,6,0,0.2)", color: "#e10600", border: "1px solid rgba(225,6,0,0.5)" }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ backgroundColor: "#e10600" }} />
-              Race Weekend Live
-            </span>
-          )}
           {race.sprint && (
             <span
               className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
@@ -249,6 +267,7 @@ function NextRaceHero({
           >
             {hasPicks ? "Edit picks →" : "Make your picks →"}
           </Link>
+        </div>
         </div>
       </div>
     </div>

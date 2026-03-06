@@ -25,6 +25,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@keyframes live-shine {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
 @keyframes speed-rush {
   from { transform: translateX(-100%); }
   to   { transform: translateX(200%); }
