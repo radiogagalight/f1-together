@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
@@ -43,7 +42,7 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div className="relative rounded-xl overflow-hidden" style={{ minHeight: "230px" }}>
+    <div className="relative rounded-xl overflow-hidden md:flex-1" style={{ minHeight: "230px" }}>
       {heroImage ? (
         <Image src={heroImage} alt="" fill style={{ objectFit: "cover", objectPosition: "center", opacity: 0.45 }} />
       ) : (
@@ -51,7 +50,7 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
       )}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.85) 55%, rgba(8,8,16,0.98) 100%)" }} />
 
-      <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "230px" }}>
+      <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "230px", height: "100%" }}>
         {/* Top badges */}
         <div className="flex items-center gap-2 flex-wrap">
           <span
@@ -167,52 +166,9 @@ const SPEED_LINES = [
   { top: 97, width: 47, dur: 3.9, delay: 4.0,  opacity: 0.33 },
 ];
 
-// ── Turn buttons on the track image ────────────────────────────
-const ICON_FLAG = (
-  <svg className="w-[18px] h-[18px] md:w-[26px] md:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-    <line x1="4" y1="22" x2="4" y2="15"/>
-  </svg>
-);
-const ICON_USER = (
-  <svg className="w-[18px] h-[18px] md:w-[26px] md:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
-  </svg>
-);
-const ICON_GROUP = (
-  <svg className="w-[18px] h-[18px] md:w-[26px] md:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-  </svg>
-);
-const ICON_BULB = (
-  <svg className="w-[18px] h-[18px] md:w-[26px] md:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="url(#cf)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 21h6"/>
-    <path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.21 4.16-3 5.2V17H9v-2.8A6.002 6.002 0 0 1 6 9a6 6 0 0 1 6-6z"/>
-  </svg>
-);
-
-interface TurnItem {
-  label: string;
-  href: string;
-  left: string;
-  top: string;
-  active: boolean;
-  icon: React.ReactNode;
-}
-
-const TURNS: TurnItem[] = [
-  { label: "Profile",     href: "/profile",     left: "22%", top: "24%", active: true,  icon: ICON_USER  },
-  { label: "Help me predict", href: "/intel",   left: "11%", top: "55%", active: true,  icon: ICON_BULB },
-  { label: "Community",   href: "/members",     left: "73%", top: "80%", active: true,  icon: ICON_GROUP },
-];
 
 export default function HomePage() {
-  const router = useRouter();
-  const { user, authReady, displayName, teamAccent, timezoneOffset, favTeams, unreadCount } = useAuth();
+  const { user, authReady, displayName, teamAccent, timezoneOffset, favTeams } = useAuth();
 
   const nextRaceIdx = getNextRaceIndex();
   const [page, setPage] = useState(Math.floor(nextRaceIdx / PAGE_SIZE));
@@ -243,29 +199,11 @@ export default function HomePage() {
   const currentTeamName = currentTeamId ? (CONSTRUCTORS.find((c) => c.id === currentTeamId)?.name ?? null) : null;
   const currentTeamColor = currentTeamId ? (TEAM_COLORS[currentTeamId] ?? null) : null;
 
-  function navigate(href: string) {
-    if (href !== "#") router.push(href);
-  }
-
   const pageRaces = RACES.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <>
     <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "#13131f" }}>
-      {/* ── Carbon fibre pattern definition (referenced by track menu icons) ── */}
-      <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute", pointerEvents: "none" }}>
-        <defs>
-          <pattern id="cf" patternUnits="userSpaceOnUse" width="4" height="4">
-            <rect width="4" height="4" fill="#4a4a4a"/>
-            <rect x="0" y="0" width="2" height="2" fill="#5e5e5e"/>
-            <rect x="2" y="2" width="2" height="2" fill="#5e5e5e"/>
-            <rect x="0" y="0" width="2" height="0.8" fill="#7a7a7a"/>
-            <rect x="2" y="2" width="2" height="0.8" fill="#7a7a7a"/>
-            <rect x="0" y="0.1" width="2" height="0.35" fill="#999" opacity="0.8"/>
-            <rect x="2" y="2.1" width="2" height="0.35" fill="#999" opacity="0.8"/>
-          </pattern>
-        </defs>
-      </svg>
       {/* ── Speed lines background ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         {SPEED_LINES.map((line, i) => (
@@ -316,102 +254,23 @@ export default function HomePage() {
           </div>
         ) : (
           <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
-            Tap a turn to navigate
+            Pick your races. Back the grid.
           </p>
         )}
       </header>
 
-      {/* ── Main content: track + schedule ── */}
+      {/* ── Main content: hero + schedule ── */}
       <div
         className="relative z-10 flex-1 flex flex-col md:flex-row gap-4 px-4 pb-2 w-full mx-auto"
         style={{ maxWidth: "1100px" }}
       >
-        {/* ── Track image with overlaid buttons ── */}
-        <div className="flex items-center justify-center md:flex-1 md:-ml-[88px] md:-mt-12">
-          <div className="relative w-full" style={{ maxWidth: "714px" }}>
-            <Image
-              src="/images/lv-circuit.webp"
-              alt="Las Vegas Grand Prix track layout"
-              width={1040}
-              height={830}
-              className="w-full h-auto"
-              style={{ filter: "invert(1)", opacity: 0.5 }}
-              priority
-            />
-
-            {TURNS.map((turn) => (
-              <div
-                key={turn.href + turn.left}
-                className="absolute"
-                style={{ left: turn.left, top: turn.top, transform: "translate(-50%, -50%)" }}
-              >
-                {turn.active ? (
-                  <button
-                    onClick={() => navigate(turn.href)}
-                    className="flex flex-col items-center gap-[5px] md:gap-2 active:scale-95 transition-transform duration-150"
-                    aria-label={turn.label}
-                  >
-                    {/* Single-ring circle with frosted glass fill */}
-                    <div className="relative w-[50px] h-[50px] md:w-[68px] md:h-[68px] rounded-full flex items-center justify-center" style={{
-                      backgroundColor: `rgba(${hexToRgb(teamAccent)}, 0.12)`,
-                      border: `1.5px solid rgba(${hexToRgb(teamAccent)}, 0.5)`,
-                      boxShadow: `0 0 18px rgba(${hexToRgb(teamAccent)}, 0.28), inset 0 0 10px rgba(${hexToRgb(teamAccent)}, 0.08)`,
-                      backdropFilter: "blur(8px)",
-                      WebkitBackdropFilter: "blur(8px)",
-                    }}>
-                      {turn.icon}
-                      {turn.href === "/members" && unreadCount > 0 && (
-                        <div style={{ position: "absolute", top: "-3px", right: "-3px", minWidth: "18px", height: "18px", borderRadius: "9px", backgroundColor: "#e10600", color: "#fff", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px", border: "2px solid #13131f" }}>
-                          {unreadCount > 9 ? "9+" : unreadCount}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Frosted glass pill label */}
-                    <div className="px-2 py-[2px] md:px-3 md:py-1" style={{
-                      backdropFilter: "blur(12px)",
-                      WebkitBackdropFilter: "blur(12px)",
-                      backgroundColor: "rgba(8,8,16,0.78)",
-                      border: `1px solid rgba(${hexToRgb(teamAccent)}, 0.45)`,
-                      borderRadius: "999px",
-                    }}>
-                      <span className="text-[11px] md:text-[15px]" style={{ fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2, whiteSpace: "nowrap", letterSpacing: "0.01em", fontFamily: "var(--font-orbitron)" }}>
-                        {turn.label}
-                      </span>
-                    </div>
-                  </button>
-                ) : (
-                  <div className="flex flex-col items-center gap-[5px] md:gap-2">
-                    {/* Inactive circle */}
-                    <div className="w-[50px] h-[50px] md:w-[68px] md:h-[68px] rounded-full flex items-center justify-center" style={{
-                      backgroundColor: "rgba(255,255,255,0.03)",
-                      border: "1.5px solid rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.2)",
-                    }}>
-                      {turn.icon}
-                    </div>
-                    {/* Inactive pill */}
-                    <div style={{
-                      backgroundColor: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      borderRadius: "999px",
-                      padding: "4px 12px",
-                    }}>
-                      <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.2)", whiteSpace: "nowrap" }}>
-                        {turn.label}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+        {/* ── Next Race Hero ── */}
+        <div className="md:flex-1 md:-mt-12 md:flex md:flex-col">
+          <NextRaceHero race={RACES[nextRaceIdx]} />
         </div>
 
         {/* ── Race Schedule Panel ── */}
         <div className="md:w-72 lg:w-80 flex flex-col gap-2 md:-mt-12">
-
-        <NextRaceHero race={RACES[nextRaceIdx]} />
 
         <PredictionsWidget />
 

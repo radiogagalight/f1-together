@@ -17,6 +17,7 @@ const NEXT_RACE_IDX = Math.max(
 const TOP_TABS = [
   { href: "/predictions/season", label: "Season" },
   { href: "/predictions/race",   label: "Race"   },
+  { href: "/intel",              label: "Intel"  },
 ];
 
 export default function PredictionsNav({ mobile = false }: Props) {
@@ -61,6 +62,8 @@ export default function PredictionsNav({ mobile = false }: Props) {
           const isActive =
             tab.href === "/predictions/race"
               ? isRaceSection
+              : tab.href === "/intel"
+              ? pathname === "/intel"
               : pathname === tab.href;
           return (
             <Link
@@ -113,6 +116,18 @@ export default function PredictionsNav({ mobile = false }: Props) {
           }}
         >
           Season Predictions
+        </Link>
+
+        {/* Intel */}
+        <Link
+          href="/intel"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          style={{
+            backgroundColor: pathname === "/intel" ? "rgba(225,6,0,0.12)" : "transparent",
+            color: pathname === "/intel" ? "var(--f1-red)" : "var(--muted)",
+          }}
+        >
+          Race Intel
         </Link>
 
         {/* Race Predictions + nested list */}

@@ -126,11 +126,11 @@ export default function ProfilePage() {
     <div className="max-w-lg md:max-w-2xl mx-auto px-4 pt-5 pb-28 md:pb-6">
       {/* Back link */}
       <Link
-        href="/"
+        href="/settings"
         className="inline-flex items-center gap-1 text-sm font-medium mb-6"
         style={{ color: "var(--muted)" }}
       >
-        ← Back to track
+        ← Settings
       </Link>
 
       {/* Page header */}
