@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { RACES, CONSTRUCTORS, DRIVERS, formatRaceDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
@@ -129,22 +130,38 @@ function NextRaceHero({
 
         {/* Padded content */}
         <div className="flex flex-col justify-between flex-1 p-4">
-        {/* Top badges */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
-          >
-            Round {race.r}
-          </span>
-          {race.sprint && (
+        {/* Top badges + chat button */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <span
               className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "rgba(255,200,0,0.12)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.35)" }}
+              style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
             >
-              Sprint
+              Round {race.r}
             </span>
-          )}
+            {race.sprint && (
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: "rgba(255,200,0,0.12)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.35)" }}
+              >
+                Sprint
+              </span>
+            )}
+          </div>
+          <Link
+            href={`/members?tab=races&round=${race.r}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.14)",
+              color: "#ffffff",
+              border: "1px solid rgba(255,255,255,0.22)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+            }}
+          >
+            <Users size={12} strokeWidth={2} />
+            Chat about the race
+          </Link>
         </div>
 
         {/* Bottom content */}
@@ -282,22 +299,13 @@ function NextRaceHero({
             </p>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/predictions/race/${race.r}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
-              style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
-            >
-              {hasPicks ? "Edit picks →" : "Make your picks →"}
-            </Link>
-            <Link
-              href={`/members?tab=races&round=${race.r}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold"
-              style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)" }}
-            >
-              Race chat →
-            </Link>
-          </div>
+          <Link
+            href={`/predictions/race/${race.r}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
+            style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
+          >
+            {hasPicks ? "Edit picks →" : "Make your picks →"}
+          </Link>
         </div>
         </div>
       </div>
