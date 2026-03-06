@@ -95,29 +95,27 @@ function NextRaceHero({
         {/* Scrolling live ticker banner */}
         {isLive && (
           <div style={{
-            background: "linear-gradient(90deg, #b00000, #ff0000, #ff2000, #ff0000, #b00000)",
-            backgroundSize: "200% 100%",
-            animation: "live-shine 2s linear infinite",
+            background: "rgba(0,0,0,0.35)",
             overflow: "hidden",
             padding: "9px 0",
-            borderBottom: "2px solid rgba(255,255,255,0.2)",
+            borderBottom: "1px solid rgba(255,255,255,0.12)",
           }}>
             <div style={{
               display: "inline-flex",
               whiteSpace: "nowrap",
-              animation: "ticker-scroll 14s linear infinite",
+              animation: "ticker-scroll 18s linear infinite",
             }}>
               {[0, 1].map((i) => (
                 <span
                   key={i}
                   style={{
                     fontSize: "12px", fontWeight: 800,
-                    letterSpacing: "0.16em", textTransform: "uppercase",
+                    letterSpacing: "0.14em", textTransform: "uppercase",
                     color: "#ffffff", fontFamily: "var(--font-orbitron)",
-                    paddingRight: "48px",
+                    paddingRight: "64px",
                   }}
                 >
-                  🏁 RACE WEEKEND LIVE! &nbsp;·&nbsp; 🏁 RACE WEEKEND LIVE! &nbsp;·&nbsp;
+                  {race.name} Race Weekend -- Live Now!
                 </span>
               ))}
             </div>
