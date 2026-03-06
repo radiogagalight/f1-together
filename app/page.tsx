@@ -404,12 +404,12 @@ export default function HomePage() {
         style={{ maxWidth: "1100px" }}
       >
         {/* ── Next Race Hero ── */}
-        <div className="md:flex-1 md:-mt-12 md:flex md:flex-col">
+        <div className="md:flex-1 md:flex md:flex-col">
           <NextRaceHero race={RACES[nextRaceIdx]} picks={heroPicks} />
         </div>
 
         {/* ── Race Schedule Panel ── */}
-        <div className="md:w-72 lg:w-80 flex flex-col gap-2 md:-mt-12">
+        <div className="md:w-72 lg:w-80 flex flex-col gap-2">
 
         <PredictionsWidget />
 
