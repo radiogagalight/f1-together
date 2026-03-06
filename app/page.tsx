@@ -92,27 +92,36 @@ function NextRaceHero({
       )}
 
       <div className="relative z-10 flex flex-col" style={{ minHeight: "360px", height: "100%" }}>
-        {/* Full-width live banner */}
+        {/* Broadcast bar */}
         {isLive && (
           <div style={{
-            background: "linear-gradient(90deg, #a00300, #e10600, #ff2200, #e10600, #a00300)",
-            backgroundSize: "200% 100%",
-            animation: "live-shine 2.5s linear infinite",
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
             padding: "8px 16px",
             display: "flex",
             alignItems: "center",
-            gap: "10px",
+            justifyContent: "space-between",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
           }}>
-            <span
-              className="animate-pulse"
-              style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ffffff", flexShrink: 0, display: "inline-block" }}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{
+                width: "8px", height: "8px", borderRadius: "50%",
+                backgroundColor: "#e10600", flexShrink: 0, display: "inline-block",
+                animation: "broadcast-flash 1.5s ease-in-out infinite",
+              }} />
+              <span style={{
+                fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em",
+                color: "#e10600", fontFamily: "var(--font-orbitron)",
+              }}>
+                LIVE
+              </span>
+            </div>
             <span style={{
-              fontSize: "12px", fontWeight: 800, letterSpacing: "0.18em",
-              textTransform: "uppercase", color: "#ffffff",
-              fontFamily: "var(--font-orbitron)",
+              fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em",
+              textTransform: "uppercase", color: "rgba(255,255,255,0.75)",
             }}>
-              Race Weekend Live
+              {race.name.replace(" Grand Prix", " GP")}
             </span>
           </div>
         )}
