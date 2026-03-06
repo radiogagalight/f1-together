@@ -127,6 +127,7 @@ export default function HomePage() {
   const pageRaces = RACES.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
+    <>
     <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "#13131f" }}>
       {/* ── Carbon fibre pattern definition (referenced by track menu icons) ── */}
       <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute", pointerEvents: "none" }}>
@@ -442,5 +443,6 @@ export default function HomePage() {
       </div>
     </div>
     <Companion />
+    </>
   );
 }
