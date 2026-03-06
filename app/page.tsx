@@ -10,13 +10,18 @@ import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 import PredictionsWidget from "@/components/PredictionsWidget";
 import Companion from "@/components/Companion";
 import { createClient } from "@/lib/supabase/client";
+import { loadRaceResult } from "@/lib/resultsStorage";
+import { scoreRound } from "@/lib/scoring";
+import type { RacePick } from "@/lib/types";
 
 function NextRaceHero({
   race,
   picks,
+  lastRaceScore,
 }: {
   race: (typeof RACES)[number];
   picks: { pole: string | null; winner: string | null };
+  lastRaceScore?: { raceName: string; totalPoints: number; flag: string } | null;
 }) {
   const heroImage = RACE_FACTS[race.r]?.heroImage;
 
@@ -242,6 +247,18 @@ function NextRaceHero({
             </div>
           ) : null}
 
+          {/* Last race score */}
+          {lastRaceScore && (
+            <div className="mb-2 flex items-center gap-1.5">
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
+                {lastRaceScore.flag} {lastRaceScore.raceName.replace(" Grand Prix", " GP")}:{" "}
+                <span style={{ color: lastRaceScore.totalPoints > 0 ? "#22c55e" : "rgba(255,255,255,0.4)", fontWeight: 700 }}>
+                  {lastRaceScore.totalPoints} pts
+                </span>
+              </span>
+            </div>
+          )}
+
           {/* Pick preview */}
           {hasPicks ? (
             <div className="mb-3 flex flex-col gap-0.5">
@@ -265,13 +282,22 @@ function NextRaceHero({
             </p>
           )}
 
-          <Link
-            href={`/predictions/race/${race.r}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
-            style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
-          >
-            {hasPicks ? "Edit picks →" : "Make your picks →"}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/predictions/race/${race.r}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
+              style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
+            >
+              {hasPicks ? "Edit picks →" : "Make your picks →"}
+            </Link>
+            <Link
+              href={`/members?tab=races&round=${race.r}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold"
+              style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)" }}
+            >
+              Race chat →
+            </Link>
+          </div>
         </div>
         </div>
       </div>
@@ -335,6 +361,41 @@ export default function HomePage() {
         setHeroPicks({ pole: data?.qual_pole ?? null, winner: data?.race_winner ?? null });
       });
   }, [user, nextRaceIdx]);
+
+  // Fetch last race score
+  const lastRaceIdx = nextRaceIdx > 0 ? nextRaceIdx - 1 : -1;
+  const lastRace = lastRaceIdx >= 0 ? RACES[lastRaceIdx] : null;
+  const [lastRaceScore, setLastRaceScore] = useState<{ raceName: string; totalPoints: number; flag: string } | null>(null);
+
+  useEffect(() => {
+    if (!user || !lastRace) return;
+    const supabase = createClient();
+    Promise.all([
+      supabase.from("race_picks").select("*").eq("user_id", user.id).eq("round", lastRace.r).maybeSingle(),
+      loadRaceResult(lastRace.r, supabase),
+    ]).then(([{ data: pickRow }, result]) => {
+      if (!pickRow || !result) return;
+      const pick: RacePick = {
+        qualPole: pickRow.qual_pole ?? null,
+        qualP2: pickRow.qual_p2 ?? null,
+        qualP3: pickRow.qual_p3 ?? null,
+        raceWinner: pickRow.race_winner ?? null,
+        raceP2: pickRow.race_p2 ?? null,
+        raceP3: pickRow.race_p3 ?? null,
+        fastestLap: pickRow.fastest_lap ?? null,
+        safetyCar: pickRow.safety_car ?? null,
+        sprintQualPole: pickRow.sprint_qual_pole ?? null,
+        sprintQualP2: pickRow.sprint_qual_p2 ?? null,
+        sprintQualP3: pickRow.sprint_qual_p3 ?? null,
+        sprintWinner: pickRow.sprint_winner ?? null,
+        sprintP2: pickRow.sprint_p2 ?? null,
+        sprintP3: pickRow.sprint_p3 ?? null,
+      };
+      const { totalPoints } = scoreRound(user.id, pick, result);
+      setLastRaceScore({ raceName: lastRace.name, totalPoints, flag: lastRace.flag });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, lastRace?.r]);
 
   // ── Rotating favourite team greeting ──
   const activeTeams = favTeams.filter((t): t is string => t !== null);
@@ -428,7 +489,7 @@ export default function HomePage() {
       >
         {/* ── Next Race Hero ── */}
         <div className="md:w-[620px] md:shrink-0">
-          <NextRaceHero race={RACES[nextRaceIdx]} picks={heroPicks} />
+          <NextRaceHero race={RACES[nextRaceIdx]} picks={heroPicks} lastRaceScore={lastRaceScore} />
         </div>
 
         {/* ── Race Schedule Panel ── */}

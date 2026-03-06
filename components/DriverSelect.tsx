@@ -11,9 +11,11 @@ interface Props {
   disabled: boolean;
   onPick: (value: string | null) => void;
   points?: number;
+  resultStatus?: "correct" | "partial" | "wrong";
+  pointsEarned?: number;
 }
 
-export default function DriverSelect({ label, value, isSaved, disabled, onPick, points }: Props) {
+export default function DriverSelect({ label, value, isSaved, disabled, onPick, points, resultStatus, pointsEarned }: Props) {
   const [open, setOpen] = useState(false);
 
   const driver = value ? DRIVERS.find((d) => d.id === value) : null;
@@ -30,6 +32,14 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
 
   const carbonBg = "repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px)";
 
+  const resultBorderLeft = resultStatus === "correct"
+    ? "3px solid rgba(34,197,94,0.8)"
+    : resultStatus === "partial"
+    ? "3px solid rgba(245,158,11,0.7)"
+    : resultStatus === "wrong"
+    ? "3px solid rgba(239,68,68,0.6)"
+    : null;
+
   return (
     <div
       className="rounded-xl overflow-hidden"
@@ -37,7 +47,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
         backgroundColor: "rgb(12, 8, 10)",
         backgroundImage: carbonBg,
         border: "1px solid rgba(225,6,0,0.2)",
-        borderLeft: hasPick && teamColor ? `3px solid ${teamColor}` : "2px solid rgba(225,6,0,0.45)",
+        borderLeft: resultBorderLeft ?? (hasPick && teamColor ? `3px solid ${teamColor}` : "2px solid rgba(225,6,0,0.45)"),
       }}
     >
       {/* Header */}
@@ -83,7 +93,20 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
           </span>
         </div>
         {disabled ? (
-          <span className="shrink-0 text-sm" style={{ color: "var(--muted)" }}>🔒</span>
+          resultStatus ? (
+            <span
+              className="shrink-0 text-xs font-black"
+              style={{
+                color: resultStatus === "correct" ? "#22c55e"
+                     : resultStatus === "partial" ? "#f59e0b"
+                     : "#ef4444",
+              }}
+            >
+              {resultStatus === "correct" ? `✓ +${pointsEarned}` : resultStatus === "partial" ? `~ +${pointsEarned}` : "✗"}
+            </span>
+          ) : (
+            <span className="shrink-0 text-sm" style={{ color: "var(--muted)" }}>🔒</span>
+          )
         ) : (
           <span
             className="shrink-0 text-lg transition-transform duration-200"

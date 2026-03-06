@@ -8,8 +8,10 @@ import { RACE_FACTS } from "@/lib/raceFacts";
 import type { RaceFact, RaceSession } from "@/lib/raceFacts";
 import { useRacePick } from "@/hooks/useRacePick";
 import DriverSelect from "@/components/DriverSelect";
-import type { RacePick } from "@/lib/types";
-import { PICK_POINTS } from "@/lib/scoring";
+import type { RacePick, RaceResult, ScoreBreakdown } from "@/lib/types";
+import { PICK_POINTS, scoreRound } from "@/lib/scoring";
+import { loadRaceResult } from "@/lib/resultsStorage";
+import { createClient } from "@/lib/supabase/client";
 
 function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label: string; target: string }) {
   const [timeLeft, setTimeLeft] = useState(() =>
@@ -270,10 +272,32 @@ export default function RaceDetailPage({
 
   const [now, setNow] = useState(Date.now());
   const [openInfo, setOpenInfo] = useState<string | null>(null);
+  const [result, setResult] = useState<RaceResult | null>(null);
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 5_000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    loadRaceResult(round, supabase).then(setResult);
+  }, [round]);
+
+  const breakdown: ScoreBreakdown | null =
+    picks && result && user ? scoreRound(user.id, picks, result).breakdown : null;
+
+  function pickResult(field: keyof ScoreBreakdown): { status: "correct" | "partial" | "wrong"; pts: number } | undefined {
+    if (!result || !picks || !breakdown) return undefined;
+    const resultVal = result[field as keyof RaceResult] as string | boolean | null | undefined;
+    const pickVal = picks[field as keyof RacePick] as string | boolean | null | undefined;
+    if (resultVal === null || resultVal === undefined) return undefined;
+    if (pickVal === null || pickVal === undefined) return undefined;
+    const pts = breakdown[field];
+    if (pts === PICK_POINTS[field]) return { status: "correct", pts };
+    if (pts > 0) return { status: "partial", pts };
+    return { status: "wrong", pts: 0 };
+  }
 
   if (!race) {
     return (
@@ -562,6 +586,8 @@ export default function RaceDetailPage({
                     disabled={isSprintQualLocked}
                     onPick={(v) => pick("sprintQualPole", v)}
                     points={PICK_POINTS.sprintQualPole}
+                    resultStatus={pickResult("sprintQualPole")?.status}
+                    pointsEarned={pickResult("sprintQualPole")?.pts}
                   />
                   <DriverSelect
                     label="P2"
@@ -570,6 +596,8 @@ export default function RaceDetailPage({
                     disabled={isSprintQualLocked}
                     onPick={(v) => pick("sprintQualP2", v)}
                     points={PICK_POINTS.sprintQualP2}
+                    resultStatus={pickResult("sprintQualP2")?.status}
+                    pointsEarned={pickResult("sprintQualP2")?.pts}
                   />
                   <DriverSelect
                     label="P3"
@@ -578,6 +606,8 @@ export default function RaceDetailPage({
                     disabled={isSprintQualLocked}
                     onPick={(v) => pick("sprintQualP3", v)}
                     points={PICK_POINTS.sprintQualP3}
+                    resultStatus={pickResult("sprintQualP3")?.status}
+                    pointsEarned={pickResult("sprintQualP3")?.pts}
                   />
                 </div>
               </div>
@@ -637,6 +667,8 @@ export default function RaceDetailPage({
                     disabled={isSprintLocked}
                     onPick={(v) => pick("sprintWinner", v)}
                     points={PICK_POINTS.sprintWinner}
+                    resultStatus={pickResult("sprintWinner")?.status}
+                    pointsEarned={pickResult("sprintWinner")?.pts}
                   />
                   <DriverSelect
                     label="P2"
@@ -645,6 +677,8 @@ export default function RaceDetailPage({
                     disabled={isSprintLocked}
                     onPick={(v) => pick("sprintP2", v)}
                     points={PICK_POINTS.sprintP2}
+                    resultStatus={pickResult("sprintP2")?.status}
+                    pointsEarned={pickResult("sprintP2")?.pts}
                   />
                   <DriverSelect
                     label="P3"
@@ -653,6 +687,8 @@ export default function RaceDetailPage({
                     disabled={isSprintLocked}
                     onPick={(v) => pick("sprintP3", v)}
                     points={PICK_POINTS.sprintP3}
+                    resultStatus={pickResult("sprintP3")?.status}
+                    pointsEarned={pickResult("sprintP3")?.pts}
                   />
                 </div>
               </div>
@@ -687,6 +723,8 @@ export default function RaceDetailPage({
                   disabled={isQualLocked}
                   onPick={(v) => pick("qualPole", v)}
                   points={PICK_POINTS.qualPole}
+                  resultStatus={pickResult("qualPole")?.status}
+                  pointsEarned={pickResult("qualPole")?.pts}
                 />
                 <DriverSelect
                   label="P2"
@@ -695,6 +733,8 @@ export default function RaceDetailPage({
                   disabled={isQualLocked}
                   onPick={(v) => pick("qualP2", v)}
                   points={PICK_POINTS.qualP2}
+                  resultStatus={pickResult("qualP2")?.status}
+                  pointsEarned={pickResult("qualP2")?.pts}
                 />
                 <DriverSelect
                   label="P3"
@@ -703,6 +743,8 @@ export default function RaceDetailPage({
                   disabled={isQualLocked}
                   onPick={(v) => pick("qualP3", v)}
                   points={PICK_POINTS.qualP3}
+                  resultStatus={pickResult("qualP3")?.status}
+                  pointsEarned={pickResult("qualP3")?.pts}
                 />
               </div>
             </div>
@@ -736,6 +778,8 @@ export default function RaceDetailPage({
                   disabled={isRaceLocked}
                   onPick={(v) => pick("raceWinner", v)}
                   points={PICK_POINTS.raceWinner}
+                  resultStatus={pickResult("raceWinner")?.status}
+                  pointsEarned={pickResult("raceWinner")?.pts}
                 />
                 <DriverSelect
                   label="P2"
@@ -744,6 +788,8 @@ export default function RaceDetailPage({
                   disabled={isRaceLocked}
                   onPick={(v) => pick("raceP2", v)}
                   points={PICK_POINTS.raceP2}
+                  resultStatus={pickResult("raceP2")?.status}
+                  pointsEarned={pickResult("raceP2")?.pts}
                 />
                 <DriverSelect
                   label="P3"
@@ -752,6 +798,8 @@ export default function RaceDetailPage({
                   disabled={isRaceLocked}
                   onPick={(v) => pick("raceP3", v)}
                   points={PICK_POINTS.raceP3}
+                  resultStatus={pickResult("raceP3")?.status}
+                  pointsEarned={pickResult("raceP3")?.pts}
                 />
                 <DriverSelect
                   label="Fastest Lap"
@@ -760,16 +808,26 @@ export default function RaceDetailPage({
                   disabled={isRaceLocked}
                   onPick={(v) => pick("fastestLap", v)}
                   points={PICK_POINTS.fastestLap}
+                  resultStatus={pickResult("fastestLap")?.status}
+                  pointsEarned={pickResult("fastestLap")?.pts}
                 />
 
                 {/* Safety Car — inline row matching DriverSelect style */}
+                {(() => {
+                  const scResult = pickResult("safetyCar");
+                  const scBorderLeft = scResult?.status === "correct"
+                    ? "3px solid rgba(34,197,94,0.8)"
+                    : scResult?.status === "wrong"
+                    ? "3px solid rgba(239,68,68,0.6)"
+                    : picks?.safetyCar === true ? "3px solid rgba(34,197,94,0.7)" : "2px solid rgba(225,6,0,0.45)";
+                  return (
                 <div
                   className="rounded-xl overflow-hidden"
                   style={{
                     backgroundColor: "rgb(12, 8, 10)",
                     backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px)",
                     border: "1px solid rgba(225,6,0,0.2)",
-                    borderLeft: picks?.safetyCar === true ? "3px solid rgba(34,197,94,0.7)" : "2px solid rgba(225,6,0,0.45)",
+                    borderLeft: scBorderLeft,
                   }}
                 >
                   <div className="flex items-center justify-between gap-3 px-4 py-4" style={{ minHeight: "56px" }}>
@@ -801,7 +859,18 @@ export default function RaceDetailPage({
                       </span>
                     </div>
                     {isRaceLocked ? (
-                      <span className="shrink-0 text-sm" style={{ color: "var(--muted)" }}>🔒</span>
+                      scResult ? (
+                        <span
+                          className="shrink-0 text-xs font-black"
+                          style={{
+                            color: scResult.status === "correct" ? "#22c55e" : "#ef4444",
+                          }}
+                        >
+                          {scResult.status === "correct" ? `✓ +${scResult.pts}` : "✗"}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-sm" style={{ color: "var(--muted)" }}>🔒</span>
+                      )
                     ) : (
                       <div className="flex gap-2 shrink-0">
                         {([true, false] as const).map((option) => {
@@ -835,6 +904,8 @@ export default function RaceDetailPage({
                     )}
                   </div>
                 </div>
+                  );
+                })()}
               </div>
             </div>
 

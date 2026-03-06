@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { CONSTRUCTORS, DRIVERS, RACES } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
 import { sendPushToUser } from "@/lib/pushActions";
+import type { RaceResult } from "@/lib/types";
+import { loadRaceResult } from "@/lib/resultsStorage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -484,14 +487,42 @@ const PICK_LABELS: { key: keyof PicksRow; label: string }[] = [
   { key: "safety_car",  label: "Safety"   },
 ];
 
+const PICKS_TO_RESULT_KEY: Record<string, keyof RaceResult> = {
+  qual_pole: "qualPole", qual_p2: "qualP2", qual_p3: "qualP3",
+  race_winner: "raceWinner", race_p2: "raceP2", race_p3: "raceP3",
+  fastest_lap: "fastestLap", safety_car: "safetyCar",
+};
+const QUAL_PICK_KEYS = new Set(["qual_pole", "qual_p2", "qual_p3"]);
+
+function pickStatusForMember(
+  key: string,
+  pickVal: string | boolean | null,
+  result: RaceResult | null
+): "correct" | "partial" | "wrong" | undefined {
+  if (!result) return undefined;
+  const rk = PICKS_TO_RESULT_KEY[key];
+  if (!rk) return undefined;
+  const resultVal = result[rk] as string | boolean | null;
+  if (resultVal === null) return undefined;
+  if (pickVal === null || pickVal === undefined) return undefined;
+  if (pickVal === resultVal) return "correct";
+  if (QUAL_PICK_KEYS.has(key)) {
+    const qualVals = [result.qualPole, result.qualP2, result.qualP3];
+    if (typeof pickVal === "string" && qualVals.includes(pickVal)) return "partial";
+  }
+  return "wrong";
+}
+
 function PicksGrid({
   picks,
   profileMap,
   loading,
+  result,
 }: {
   picks: PicksRow[];
   profileMap: Map<string, Profile>;
   loading: boolean;
+  result?: RaceResult | null;
 }) {
   if (loading) {
     return <p className="text-sm py-4" style={{ color: "var(--muted)" }}>Loading predictions…</p>;
@@ -537,6 +568,12 @@ function PicksGrid({
                   displayColor = driverTeamColor(strVal) ?? "var(--foreground)";
                 }
 
+                const status = pickStatusForMember(key, val, result ?? null);
+                const dotColor = status === "correct" ? "#22c55e"
+                  : status === "partial" ? "#f59e0b"
+                  : status === "wrong" ? "#ef4444"
+                  : null;
+
                 return (
                   <div key={key} className="flex items-start gap-1">
                     <span
@@ -545,6 +582,11 @@ function PicksGrid({
                     >
                       {label}
                     </span>
+                    {dotColor && (
+                      <span style={{ color: dotColor, fontSize: "10px", lineHeight: "1.4", flexShrink: 0 }}>
+                        {status === "correct" ? "✓" : status === "partial" ? "~" : "✗"}
+                      </span>
+                    )}
                     <span
                       className="text-xs font-medium truncate"
                       style={{ color: displayVal ? displayColor : "var(--muted)" }}
@@ -560,6 +602,20 @@ function PicksGrid({
       })}
     </div>
   );
+}
+
+// ─── Reaction emojis + localStorage helpers ───────────────────────────────────
+
+const REACTION_EMOJIS = ["👍", "❤️", "😂", "🔥", "😮", "👏"];
+
+function getLastRead(round: number): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem(`f1_thread_last_read_${round}`) ?? "0", 10);
+}
+
+function markAsRead(round: number): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(`f1_thread_last_read_${round}`, Date.now().toString());
 }
 
 // ─── Emoji list ───────────────────────────────────────────────────────────────
@@ -590,7 +646,59 @@ function CommentThread({
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
+  const [reactions, setReactions] = useState<Record<string, Record<string, { count: number; userReacted: boolean }>>>({});
+  const [showPickerFor, setShowPickerFor] = useState<string | null>(null);
   const supabase = createClient();
+
+  async function loadReactions(commentIds: string[]) {
+    if (!commentIds.length) return;
+    const { data } = await supabase
+      .from("comment_reactions")
+      .select("comment_id, emoji, user_id")
+      .in("comment_id", commentIds);
+    setReactions((prev) => {
+      const map = { ...prev };
+      for (const id of commentIds) map[id] = {};
+      for (const row of data ?? []) {
+        if (!map[row.comment_id]) map[row.comment_id] = {};
+        const cur = map[row.comment_id][row.emoji] ?? { count: 0, userReacted: false };
+        map[row.comment_id][row.emoji] = {
+          count: cur.count + 1,
+          userReacted: cur.userReacted || row.user_id === currentUser?.id,
+        };
+      }
+      return map;
+    });
+  }
+
+  async function toggleReaction(commentId: string, emoji: string) {
+    if (!currentUser) return;
+    const userReacted = reactions[commentId]?.[emoji]?.userReacted;
+    setReactions((prev) => {
+      const cr = { ...(prev[commentId] ?? {}) };
+      const cur = cr[emoji] ?? { count: 0, userReacted: false };
+      if (userReacted) {
+        const newCount = cur.count - 1;
+        if (newCount <= 0) {
+          const u = { ...cr };
+          delete u[emoji];
+          return { ...prev, [commentId]: u };
+        }
+        return { ...prev, [commentId]: { ...cr, [emoji]: { count: newCount, userReacted: false } } };
+      }
+      return { ...prev, [commentId]: { ...cr, [emoji]: { count: cur.count + 1, userReacted: true } } };
+    });
+    setShowPickerFor(null);
+    if (userReacted) {
+      await supabase.from("comment_reactions").delete()
+        .eq("comment_id", commentId).eq("user_id", currentUser.id).eq("emoji", emoji);
+    } else {
+      await supabase.from("comment_reactions").upsert(
+        { comment_id: commentId, user_id: currentUser.id, emoji },
+        { onConflict: "comment_id,user_id,emoji" }
+      );
+    }
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -602,8 +710,11 @@ function CommentThread({
       .eq("round", round)
       .order("created_at", { ascending: true })
       .then(({ data, error }) => {
-        if (error) { setLoadError(true); } else { setComments(data ?? []); }
-        setLoading(false);
+        if (error) { setLoadError(true); } else {
+        setComments(data ?? []);
+        loadReactions((data ?? []).map((c) => c.id));
+      }
+      setLoading(false);
       });
 
     // Real-time: append new comments as they arrive
@@ -614,8 +725,8 @@ function CommentThread({
         { event: "INSERT", schema: "public", table: "race_comments", filter: `round=eq.${round}` },
         (payload) => {
           setComments((prev) => {
-            // Avoid duplicates (our own submit already appends optimistically)
             if (prev.some((c) => c.id === payload.new.id)) return prev;
+            loadReactions([payload.new.id]);
             return [...prev, payload.new as Comment];
           });
         }
@@ -727,6 +838,50 @@ function CommentThread({
                   <p className="text-sm leading-snug" style={{ color: "var(--foreground)" }}>
                     {renderText(c.content, profileMap)}
                   </p>
+                  {/* Reactions */}
+                  <div className="flex items-center flex-wrap gap-1 mt-1.5">
+                    {Object.entries(reactions[c.id] ?? {}).map(([emoji, { count, userReacted }]) => (
+                      <button
+                        key={emoji}
+                        onClick={() => toggleReaction(c.id, emoji)}
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-colors"
+                        style={{
+                          backgroundColor: userReacted ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.06)",
+                          border: userReacted ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                          color: userReacted ? "var(--f1-red)" : "var(--muted)",
+                        }}
+                      >
+                        {emoji} <span>{count}</span>
+                      </button>
+                    ))}
+                    {currentUser && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowPickerFor((prev) => prev === c.id ? null : c.id)}
+                          className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs transition-colors"
+                          style={{
+                            backgroundColor: "rgba(255,255,255,0.06)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            color: "var(--muted)",
+                          }}
+                        >+</button>
+                        {showPickerFor === c.id && (
+                          <div
+                            className="absolute bottom-8 left-0 flex gap-1 p-1.5 rounded-xl z-10"
+                            style={{ backgroundColor: "#13131f", border: "1px solid rgba(255,255,255,0.15)", boxShadow: "0 4px 20px rgba(0,0,0,0.6)" }}
+                          >
+                            {REACTION_EMOJIS.map((e) => (
+                              <button
+                                key={e}
+                                onClick={() => toggleReaction(c.id, e)}
+                                className="text-lg p-1 rounded-lg hover:bg-white/10 active:bg-white/10 transition-colors"
+                              >{e}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -870,14 +1025,52 @@ function RacesTab({
   const now = new Date();
   const [picks, setPicks] = useState<PicksRow[]>([]);
   const [loadingPicks, setLoadingPicks] = useState(false);
+  const [raceResult, setRaceResult] = useState<RaceResult | null>(null);
+  const [raceActivity, setRaceActivity] = useState<Record<number, { content: string; userId: string; createdAt: string }>>({});
+  const [lastReadTimes, setLastReadTimes] = useState<Record<number, number>>({});
   const supabase = createClient();
 
   const race = RACES.find((r) => r.r === selectedRound)!;
   const isRevealed = new Date(race.startUtc) < now;
 
+  // Load last-read timestamps + latest comment per revealed round
+  useEffect(() => {
+    const times: Record<number, number> = {};
+    for (const r of RACES) {
+      const val = localStorage.getItem(`f1_thread_last_read_${r.r}`);
+      if (val) times[r.r] = parseInt(val, 10);
+    }
+    setLastReadTimes(times);
+
+    const revealedRounds = RACES.filter((r) => new Date(r.startUtc) < new Date()).map((r) => r.r);
+    if (!revealedRounds.length) return;
+    supabase
+      .from("race_comments")
+      .select("round, content, user_id, created_at")
+      .in("round", revealedRounds)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        const activity: Record<number, { content: string; userId: string; createdAt: string }> = {};
+        for (const row of data ?? []) {
+          if (!activity[row.round]) {
+            activity[row.round] = { content: row.content, userId: row.user_id, createdAt: row.created_at };
+          }
+        }
+        setRaceActivity(activity);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function selectRound(round: number) {
+    setSelectedRound(round);
+    markAsRead(round);
+    setLastReadTimes((prev) => ({ ...prev, [round]: Date.now() }));
+  }
+
   useEffect(() => {
     if (!isRevealed) {
       setPicks([]);
+      setRaceResult(null);
       return;
     }
     setLoadingPicks(true);
@@ -889,39 +1082,70 @@ function RacesTab({
         setPicks(data ?? []);
         setLoadingPicks(false);
       });
+    loadRaceResult(selectedRound, supabase).then(setRaceResult);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRound]);
 
   return (
     <div>
-      {/* Race selector */}
-      <select
-        value={selectedRound}
-        onChange={(e) => setSelectedRound(Number(e.target.value))}
-        className="w-full mb-6 px-3 py-3 rounded-xl text-sm font-medium"
-        style={{
-          backgroundColor: "rgba(255,255,255,0.06)",
-          color: "var(--foreground)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          outline: "none",
-        }}
+      {/* Custom race selector */}
+      <div
+        className="mb-6 rounded-xl overflow-hidden"
+        style={{ border: "1px solid rgba(255,255,255,0.1)", maxHeight: "280px", overflowY: "auto" }}
       >
-        {RACES.map((r) => (
-          <option
-            key={r.r}
-            value={r.r}
-            style={{ backgroundColor: "#0c0810", color: "#fff" }}
-          >
-            Round {r.r} — {r.name}
-          </option>
-        ))}
-      </select>
+        {RACES.map((r, i) => {
+          const isPast = new Date(r.startUtc) < new Date();
+          const isSelected = selectedRound === r.r;
+          const activity = raceActivity[r.r];
+          const lastRead = lastReadTimes[r.r] ?? 0;
+          const hasUnread = isPast && !!activity && new Date(activity.createdAt).getTime() > lastRead;
+          const previewAuthor = activity ? (profileMap.get(activity.userId)?.display_name?.split(" ")[0] ?? "Someone") : null;
+          return (
+            <button
+              key={r.r}
+              onClick={() => selectRound(r.r)}
+              className="w-full text-left px-3 py-2.5 transition-colors active:bg-white/5"
+              style={{
+                backgroundColor: isSelected ? "rgba(255,255,255,0.07)" : "transparent",
+                borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                borderLeft: isSelected ? "3px solid var(--team-accent)" : "3px solid transparent",
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm shrink-0">{r.flag}</span>
+                <span
+                  className="text-sm font-semibold flex-1 truncate"
+                  style={{ color: isSelected ? "var(--foreground)" : isPast ? "var(--muted)" : "rgba(255,255,255,0.3)" }}
+                >
+                  {r.name.replace(" Grand Prix", " GP")}
+                </span>
+                {hasUnread && (
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#e10600" }} />
+                )}
+                {!isPast && (
+                  <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,255,255,0.2)" }}>
+                    upcoming
+                  </span>
+                )}
+              </div>
+              {isPast && previewAuthor && activity && (
+                <p
+                  className="text-xs mt-0.5 truncate"
+                  style={{ color: hasUnread ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.22)", paddingLeft: "22px" }}
+                >
+                  {previewAuthor}: {activity.content}
+                </p>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Predictions */}
       <div className="mb-6">
         <SectionHeader label="Predictions" />
         {isRevealed ? (
-          <PicksGrid picks={picks} profileMap={profileMap} loading={loadingPicks} />
+          <PicksGrid picks={picks} profileMap={profileMap} loading={loadingPicks} result={raceResult} />
         ) : (
           <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
             Predictions are revealed once the race weekend begins.
@@ -1027,15 +1251,25 @@ function MembersTab({ profiles, loading, error }: { profiles: Profile[]; loading
 
 export default function GroupPage() {
   const { user, refreshNotifications } = useAuth();
-  const [tab, setTab] = useState<"feed" | "races" | "members">("feed");
+  const searchParams = useSearchParams();
+  const now = new Date();
+
+  const [tab, setTab] = useState<"feed" | "races" | "members">(() => {
+    const t = searchParams.get("tab");
+    return t === "races" || t === "members" || t === "feed" ? t : "feed";
+  });
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [profilesError, setProfilesError] = useState(false);
   const supabase = createClient();
 
   // selectedRound lives here so FeedTab can deep-link into a race
-  const now = new Date();
   const [selectedRound, setSelectedRound] = useState<number>(() => {
+    const r = searchParams.get("round");
+    if (r) {
+      const parsed = parseInt(r, 10);
+      if (RACES.some((race) => race.r === parsed)) return parsed;
+    }
     const past = RACES.filter((r) => new Date(r.startUtc) < now);
     return past.length > 0 ? past[past.length - 1].r : RACES[0].r;
   });
