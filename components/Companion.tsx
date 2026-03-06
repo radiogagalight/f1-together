@@ -49,6 +49,11 @@ export default function Companion() {
     prevPhaseRef.current = phase;
   }, [phase]);
 
+  // Reset user-triggered flag when the bubble hides — must be before early returns
+  useEffect(() => {
+    if (!showBubble) userTriggeredRef.current = false;
+  }, [showBubble]);
+
   if (phase === "hidden") return null;
   if (phase === "dismissed" && !isDismissing) return null;
 
@@ -69,11 +74,6 @@ export default function Companion() {
   } else if (phase === "waiting-home") {
     carAnimation = "companion-idle 2s ease-in-out infinite";
   }
-
-  // Reset user-triggered flag when the bubble hides
-  useEffect(() => {
-    if (!showBubble) userTriggeredRef.current = false;
-  }, [showBubble]);
 
   function handleCarClick() {
     if (phase === "waiting-home") {
