@@ -8,6 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { RACES, CONSTRUCTORS, formatRaceDate, flagToCC } from "@/lib/data";
 import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 import PredictionsWidget from "@/components/PredictionsWidget";
+import Companion from "@/components/Companion";
 
 const PAGE_SIZE = 6;
 const TOTAL_PAGES = Math.ceil(RACES.length / PAGE_SIZE);
@@ -440,5 +441,6 @@ export default function HomePage() {
         </div>
       </div>
     </div>
+    <Companion />
   );
 }

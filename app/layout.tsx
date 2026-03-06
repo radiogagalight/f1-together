@@ -6,7 +6,6 @@ import BottomNav from "@/components/BottomNav";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ProfileGate } from "@/components/ProfileGate";
 import { CompanionProvider } from "@/components/CompanionProvider";
-import Companion from "@/components/Companion";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,7 +44,6 @@ export default function RootLayout({
               <main className="md:pt-16">{children}</main>
               <BottomNav />
             </ProfileGate>
-            <Companion />
           </CompanionProvider>
         </AuthProvider>
       </body>
