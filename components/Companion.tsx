@@ -24,6 +24,18 @@ export default function Companion() {
   const pathname = usePathname();
   const isHome = pathname === "/";
 
+  // Detect mobile (no hover / narrow screen)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // On mobile, only show the bubble when the user explicitly triggered it
+  const userTriggeredRef = useRef(false);
+
   // Keep the component alive during dismiss animation
   const [isDismissing, setIsDismissing] = useState(false);
   const prevPhaseRef = useRef(phase);
@@ -58,13 +70,30 @@ export default function Companion() {
     carAnimation = "companion-idle 2s ease-in-out infinite";
   }
 
+  // Reset user-triggered flag when the bubble hides
+  useEffect(() => {
+    if (!showBubble) userTriggeredRef.current = false;
+  }, [showBubble]);
+
   function handleCarClick() {
     if (phase === "waiting-home") {
+      userTriggeredRef.current = true;
       wakeUp();
     } else if (phase === "active") {
       openMenu();
     }
   }
+
+  function handleMenuActionWrapped(action: Parameters<typeof handleMenuAction>[0]) {
+    userTriggeredRef.current = true;
+    handleMenuAction(action);
+  }
+
+  const canShowBubble =
+    phase === "intro-step-1" ||
+    phase === "intro-step-2" ||
+    !isMobile ||
+    userTriggeredRef.current;
 
   return (
     <>
@@ -88,7 +117,7 @@ export default function Companion() {
         }}
       >
         {/* Speech bubble */}
-        {showBubble && !showMenu && message && (
+        {showBubble && !showMenu && message && canShowBubble && (
           <div
             style={{
               position: "absolute",
@@ -171,7 +200,7 @@ export default function Companion() {
             ).filter(({ action }) => !(action === "dismiss" && isHome)).map(({ action, label }) => (
               <button
                 key={action}
-                onClick={() => handleMenuAction(action)}
+                onClick={() => handleMenuActionWrapped(action)}
                 className="w-full text-left px-4 text-sm text-foreground hover:bg-surface-hover transition-colors"
                 style={{
                   minHeight: "44px",
