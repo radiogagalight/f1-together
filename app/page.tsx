@@ -386,7 +386,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Header ── */}
-      <header className="relative z-10 w-full px-6 md:px-20 pt-8 pb-4">
+      <header className="relative z-10 w-full px-6 md:pl-40 md:pr-10 pt-8 pb-4">
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)", opacity: authReady ? 1 : 0, transition: "opacity 0.15s ease", fontFamily: "var(--font-orbitron)" }}>
           Hi, {displayName ?? "driver"}
         </h1>
@@ -424,7 +424,7 @@ export default function HomePage() {
 
       {/* ── Main content: hero + schedule ── */}
       <div
-        className="relative z-10 flex-1 flex flex-col md:flex-row md:items-start gap-4 md:gap-10 px-4 md:px-20 pb-2 w-full"
+        className="relative z-10 flex-1 flex flex-col md:flex-row md:items-start gap-4 md:gap-10 px-4 md:pl-40 md:pr-10 pb-2 w-full"
       >
         {/* ── Next Race Hero ── */}
         <div className="md:w-[620px] md:shrink-0">
