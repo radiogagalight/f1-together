@@ -213,6 +213,50 @@ function FactCard({ facts }: { facts: RaceFact[] }) {
   );
 }
 
+const SECTION_INFO: Record<string, {
+  title: string;
+  rows: Array<{ label: string; pts?: string; note?: boolean }>;
+}> = {
+  qual: {
+    title: "Qualifying Scoring",
+    rows: [
+      { label: "Pole Position — exact position", pts: "8 pts" },
+      { label: "P2 — exact position", pts: "5 pts" },
+      { label: "P3 — exact position", pts: "3 pts" },
+      { label: "Right driver, wrong slot", pts: "2 pts" },
+    ],
+  },
+  race: {
+    title: "Race Scoring",
+    rows: [
+      { label: "Race Winner", pts: "25 pts" },
+      { label: "P2", pts: "18 pts" },
+      { label: "P3", pts: "15 pts" },
+      { label: "Fastest Lap", pts: "5 pts" },
+      { label: "Safety Car deployed", pts: "5 pts" },
+      { label: "Exact match only — no partial credit", note: true },
+    ],
+  },
+  sprintQual: {
+    title: "Sprint Qualifying Scoring",
+    rows: [
+      { label: "Pole Position — exact position", pts: "8 pts" },
+      { label: "P2 — exact position", pts: "5 pts" },
+      { label: "P3 — exact position", pts: "3 pts" },
+      { label: "Right driver, wrong slot", pts: "2 pts" },
+    ],
+  },
+  sprintRace: {
+    title: "Sprint Race Scoring",
+    rows: [
+      { label: "Sprint Winner", pts: "8 pts" },
+      { label: "P2", pts: "7 pts" },
+      { label: "P3", pts: "6 pts" },
+      { label: "Exact match only — no partial credit", note: true },
+    ],
+  },
+};
+
 export default function RaceDetailPage({
   params,
 }: {
@@ -225,6 +269,7 @@ export default function RaceDetailPage({
   const { picks, setPick, savedField, loading } = useRacePick(user?.id, round);
 
   const [now, setNow] = useState(Date.now());
+  const [openInfo, setOpenInfo] = useState<string | null>(null);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 5_000);
     return () => clearInterval(id);
@@ -485,6 +530,17 @@ export default function RaceDetailPage({
                   </h2>
                   <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,200,0,0.65)" }}>8 / 5 / 3 pts · +2 partial</span>
                   <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,200,0,0.2)" }} />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "sprintQual" ? null : "sprintQual"); }}
+                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                    style={{
+                      backgroundColor: openInfo === "sprintQual" ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)",
+                      border: openInfo === "sprintQual" ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.14)",
+                      color: openInfo === "sprintQual" ? "var(--f1-red)" : "var(--muted)",
+                      fontSize: "10px", fontWeight: 700, cursor: "pointer",
+                    }}
+                    aria-label="Sprint qualifying scoring info"
+                  >?</button>
                   {isSprintQualLocked && (
                     <span
                       className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
@@ -549,6 +605,17 @@ export default function RaceDetailPage({
                   </h2>
                   <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,200,0,0.65)" }}>8 / 7 / 6 pts</span>
                   <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,200,0,0.2)" }} />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "sprintRace" ? null : "sprintRace"); }}
+                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                    style={{
+                      backgroundColor: openInfo === "sprintRace" ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)",
+                      border: openInfo === "sprintRace" ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.14)",
+                      color: openInfo === "sprintRace" ? "var(--f1-red)" : "var(--muted)",
+                      fontSize: "10px", fontWeight: 700, cursor: "pointer",
+                    }}
+                    aria-label="Sprint race scoring info"
+                  >?</button>
                   {isSprintLocked && (
                     <span
                       className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
@@ -600,6 +667,17 @@ export default function RaceDetailPage({
                 </h2>
                 <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>8 / 5 / 3 pts · +2 partial</span>
                 <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "qual" ? null : "qual"); }}
+                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                  style={{
+                    backgroundColor: openInfo === "qual" ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)",
+                    border: openInfo === "qual" ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.14)",
+                    color: openInfo === "qual" ? "var(--f1-red)" : "var(--muted)",
+                    fontSize: "10px", fontWeight: 700, cursor: "pointer",
+                  }}
+                  aria-label="Qualifying scoring info"
+                >?</button>
               </div>
               <div className="flex flex-col gap-2">
                 <DriverSelect
@@ -638,6 +716,17 @@ export default function RaceDetailPage({
                 </h2>
                 <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>25 / 18 / 15 pts</span>
                 <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "race" ? null : "race"); }}
+                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                  style={{
+                    backgroundColor: openInfo === "race" ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)",
+                    border: openInfo === "race" ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.14)",
+                    color: openInfo === "race" ? "var(--f1-red)" : "var(--muted)",
+                    fontSize: "10px", fontWeight: 700, cursor: "pointer",
+                  }}
+                  aria-label="Race scoring info"
+                >?</button>
               </div>
               <div className="flex flex-col gap-2">
                 <DriverSelect
@@ -752,6 +841,63 @@ export default function RaceDetailPage({
           </div>
         )}
       </div>
+
+      {/* ── Scoring info bottom sheet ── */}
+      {openInfo && (
+        <>
+          <div
+            className="fixed inset-0 z-[99]"
+            style={{ backgroundColor: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }}
+            onClick={() => setOpenInfo(null)}
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-[100] rounded-t-2xl"
+            style={{
+              backgroundColor: "#13131f",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderBottom: "none",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.18)" }} />
+            </div>
+            <div className="px-6 pt-2 pb-14">
+              <div className="flex items-center justify-between mb-5">
+                <h3
+                  className="text-sm font-bold uppercase tracking-widest"
+                  style={{ color: "var(--foreground)", fontFamily: "var(--font-orbitron)" }}
+                >
+                  {SECTION_INFO[openInfo].title}
+                </h3>
+                <button
+                  onClick={() => setOpenInfo(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                  style={{ backgroundColor: "rgba(255,255,255,0.07)", color: "var(--muted)", border: "1px solid rgba(255,255,255,0.1)" }}
+                >✕</button>
+              </div>
+              <div className="flex flex-col">
+                {SECTION_INFO[openInfo].rows.map((row, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-4 py-3"
+                    style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
+                  >
+                    <span className="text-sm" style={{ color: row.note ? "var(--muted)" : "var(--foreground)" }}>
+                      {row.label}
+                    </span>
+                    {row.pts && (
+                      <span className="text-sm font-bold shrink-0" style={{ color: "var(--f1-red)" }}>
+                        {row.pts}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
