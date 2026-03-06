@@ -66,7 +66,7 @@ function NextRaceHero({
     <div
       className="relative rounded-xl overflow-hidden md:flex-1"
       style={{
-        minHeight: "300px",
+        minHeight: "360px",
         border: isLive ? "1px solid rgba(225,6,0,0.55)" : "1px solid transparent",
         boxShadow: isLive ? "0 0 0 1px rgba(225,6,0,0.2), 0 0 40px rgba(225,6,0,0.3)" : "none",
       }}
@@ -91,7 +91,7 @@ function NextRaceHero({
         <div className="absolute inset-0 animate-pulse" style={{ background: "rgba(225,6,0,0.07)", pointerEvents: "none", zIndex: 1 }} />
       )}
 
-      <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "300px", height: "100%" }}>
+      <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "360px", height: "100%" }}>
         {/* Top badges */}
         <div className="flex items-center gap-2 flex-wrap">
           <span
