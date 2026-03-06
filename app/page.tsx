@@ -64,7 +64,7 @@ function NextRaceHero({
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden md:flex-1 min-h-[360px] md:min-h-[220px]"
+      className="relative rounded-xl overflow-hidden min-h-[360px] md:min-h-[220px]"
       style={{
         border: isLive ? "1px solid rgba(225,6,0,0.55)" : "1px solid transparent",
         boxShadow: isLive ? "0 0 0 1px rgba(225,6,0,0.2), 0 0 40px rgba(225,6,0,0.3)" : "none",
@@ -385,7 +385,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Header ── */}
-      <header className="relative z-10 w-full px-6 pt-8 pb-4" style={{ maxWidth: "1100px", margin: "0 auto" }}>
+      <header className="relative z-10 w-full px-6 pt-8 pb-4">
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)", opacity: authReady ? 1 : 0, transition: "opacity 0.15s ease", fontFamily: "var(--font-orbitron)" }}>
           Hi, {displayName ?? "driver"}
         </h1>
@@ -423,11 +423,10 @@ export default function HomePage() {
 
       {/* ── Main content: hero + schedule ── */}
       <div
-        className="relative z-10 flex-1 flex flex-col md:flex-row md:items-start gap-4 px-4 pb-2 w-full mx-auto"
-        style={{ maxWidth: "1100px" }}
+        className="relative z-10 flex-1 flex flex-col md:flex-row md:items-start gap-4 px-4 pb-2 w-full"
       >
         {/* ── Next Race Hero ── */}
-        <div className="md:flex-1 md:flex md:flex-col">
+        <div className="md:w-[420px] md:shrink-0">
           <NextRaceHero race={RACES[nextRaceIdx]} picks={heroPicks} />
         </div>
 
