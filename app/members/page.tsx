@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -29,6 +29,7 @@ type Comment = {
   user_id: string;
   content: string;
   created_at: string;
+  reply_to_id: string | null;
 };
 
 type PicksRow = {
@@ -648,7 +649,30 @@ function CommentThread({
   const [showEmojis, setShowEmojis] = useState(false);
   const [reactions, setReactions] = useState<Record<string, Record<string, { count: number; userReacted: boolean }>>>({});
   const [showPickerFor, setShowPickerFor] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [showMenuFor, setShowMenuFor] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const atBottomRef = useRef(true);
   const supabase = createClient();
+
+  // Track whether the bottom sentinel is visible
+  useEffect(() => {
+    const el = bottomRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        atBottomRef.current = entry.isIntersecting;
+        if (entry.isIntersecting) setHasNewMessages(false);
+      },
+      { threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [loading]);
 
   async function loadReactions(commentIds: string[]) {
     if (!commentIds.length) return;
@@ -704,20 +728,23 @@ function CommentThread({
     setLoading(true);
     setComments([]);
     setLoadError(false);
+    setReplyingTo(null);
+    setEditingId(null);
+    setConfirmDeleteId(null);
+    setHasNewMessages(false);
     supabase
       .from("race_comments")
-      .select("id,user_id,content,created_at")
+      .select("id,user_id,content,created_at,reply_to_id")
       .eq("round", round)
       .order("created_at", { ascending: true })
       .then(({ data, error }) => {
         if (error) { setLoadError(true); } else {
-        setComments(data ?? []);
-        loadReactions((data ?? []).map((c) => c.id));
-      }
-      setLoading(false);
+          setComments(data ?? []);
+          loadReactions((data ?? []).map((c) => c.id));
+        }
+        setLoading(false);
       });
 
-    // Real-time: append new comments as they arrive
     const channel = supabase
       .channel(`race-comments-${round}`)
       .on(
@@ -727,8 +754,25 @@ function CommentThread({
           setComments((prev) => {
             if (prev.some((c) => c.id === payload.new.id)) return prev;
             loadReactions([payload.new.id]);
+            if (!atBottomRef.current) setHasNewMessages(true);
             return [...prev, payload.new as Comment];
           });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "race_comments", filter: `round=eq.${round}` },
+        (payload) => {
+          setComments((prev) =>
+            prev.map((c) => c.id === payload.new.id ? { ...c, content: payload.new.content } : c)
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "race_comments" },
+        (payload) => {
+          setComments((prev) => prev.filter((c) => c.id !== payload.old.id));
         }
       )
       .subscribe();
@@ -737,6 +781,20 @@ function CommentThread({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round]);
 
+  async function saveEdit(commentId: string) {
+    const trimmed = editText.trim();
+    if (!trimmed) { setEditingId(null); return; }
+    setComments((prev) => prev.map((c) => c.id === commentId ? { ...c, content: trimmed } : c));
+    setEditingId(null);
+    await supabase.from("race_comments").update({ content: trimmed }).eq("id", commentId);
+  }
+
+  async function deleteComment(commentId: string) {
+    setConfirmDeleteId(null);
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    await supabase.from("race_comments").delete().eq("id", commentId);
+  }
+
   async function submit() {
     if (!currentUser || !text.trim() || submitting) return;
     setSubmitting(true);
@@ -744,14 +802,13 @@ function CommentThread({
     const content = text.trim();
     const { data } = await supabase
       .from("race_comments")
-      .insert({ user_id: currentUser.id, round, content })
-      .select("id,user_id,content,created_at")
+      .insert({ user_id: currentUser.id, round, content, reply_to_id: replyingTo?.id ?? null })
+      .select("id,user_id,content,created_at,reply_to_id")
       .single();
     if (!data) {
       setSubmitError(true);
     } else {
       setComments((prev) => [...prev, data]);
-      // Write a notification for each @mentioned user
       const mentionedIds = parseMentionIds(content, profileMap, currentUser.id);
       for (const userId of mentionedIds) {
         await supabase.from("notifications").insert({
@@ -761,7 +818,6 @@ function CommentThread({
           round,
         });
       }
-      // Send push notifications to mentioned users
       const senderName = profileMap.get(currentUser.id)?.display_name ?? 'Someone';
       const raceName = RACES.find((r) => r.r === round)?.name ?? `Round ${round}`;
       for (const userId of mentionedIds) {
@@ -774,11 +830,12 @@ function CommentThread({
       }
       setText("");
       setShowEmojis(false);
+      setReplyingTo(null);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
     setSubmitting(false);
   }
 
-  // Compute @mention autocomplete suggestions from the current text
   const mentionMatch = text.match(/(^|\s)@(\w*)$/);
   const mentionQuery = mentionMatch ? mentionMatch[2].toLowerCase() : null;
   const mentionSuggestions =
@@ -811,6 +868,10 @@ function CommentThread({
             const profile = profileMap.get(c.user_id);
             const accent = profileAccent(profile);
             const rgb = hexToRgb(accent);
+            const isOwn = currentUser?.id === c.user_id;
+            const parentComment = c.reply_to_id ? comments.find((p) => p.id === c.reply_to_id) : null;
+            const parentProfile = parentComment ? profileMap.get(parentComment.user_id) : null;
+            const parentAccent = parentProfile ? profileAccent(parentProfile) : "#888";
             return (
               <div
                 key={c.id}
@@ -821,76 +882,208 @@ function CommentThread({
                 }}
               >
                 <div
-                  className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold"
+                  className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold mt-0.5"
                   style={{ backgroundColor: `rgba(${rgb},0.2)`, color: accent }}
                 >
                   {(profile?.display_name?.trim() || "?")[0].toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2 mb-0.5">
-                    <span className="text-xs font-semibold" style={{ color: accent }}>
-                      {profile?.display_name ?? "Unknown"}
-                    </span>
-                    <span className="text-xs" style={{ color: "var(--muted)" }}>
-                      {timeAgo(c.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-snug" style={{ color: "var(--foreground)" }}>
-                    {renderText(c.content, profileMap)}
-                  </p>
-                  {/* Reactions */}
-                  <div className="flex items-center flex-wrap gap-1 mt-1.5">
-                    {Object.entries(reactions[c.id] ?? {}).map(([emoji, { count, userReacted }]) => (
-                      <button
-                        key={emoji}
-                        onClick={() => toggleReaction(c.id, emoji)}
-                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-colors"
-                        style={{
-                          backgroundColor: userReacted ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.06)",
-                          border: userReacted ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.1)",
-                          color: userReacted ? "var(--f1-red)" : "var(--muted)",
-                        }}
-                      >
-                        {emoji} <span>{count}</span>
-                      </button>
-                    ))}
-                    {currentUser && (
-                      <div className="relative">
+                  <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-semibold" style={{ color: accent }}>
+                        {profile?.display_name ?? "Unknown"}
+                      </span>
+                      <span className="text-xs" style={{ color: "var(--muted)" }}>
+                        {timeAgo(c.created_at)}
+                      </span>
+                    </div>
+                    {isOwn && (
+                      <div className="relative shrink-0">
                         <button
-                          onClick={() => setShowPickerFor((prev) => prev === c.id ? null : c.id)}
-                          className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs transition-colors"
-                          style={{
-                            backgroundColor: "rgba(255,255,255,0.06)",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            color: "var(--muted)",
-                          }}
-                        >+</button>
-                        {showPickerFor === c.id && (
+                          onClick={() => setShowMenuFor((prev) => prev === c.id ? null : c.id)}
+                          className="w-6 h-6 flex items-center justify-center rounded text-sm leading-none"
+                          style={{ color: "var(--muted)" }}
+                        >···</button>
+                        {showMenuFor === c.id && (
                           <div
-                            className="absolute bottom-8 left-0 flex gap-1 p-1.5 rounded-xl z-10"
-                            style={{ backgroundColor: "#13131f", border: "1px solid rgba(255,255,255,0.15)", boxShadow: "0 4px 20px rgba(0,0,0,0.6)" }}
+                            className="absolute right-0 top-7 z-20 rounded-xl overflow-hidden"
+                            style={{ backgroundColor: "#1a1a1a", border: "1px solid rgba(255,255,255,0.15)", boxShadow: "0 4px 20px rgba(0,0,0,0.6)", minWidth: "100px" }}
                           >
-                            {REACTION_EMOJIS.map((e) => (
-                              <button
-                                key={e}
-                                onClick={() => toggleReaction(c.id, e)}
-                                className="text-lg p-1 rounded-lg hover:bg-white/10 active:bg-white/10 transition-colors"
-                              >{e}</button>
-                            ))}
+                            <button
+                              onClick={() => { setEditingId(c.id); setEditText(c.content); setShowMenuFor(null); }}
+                              className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-left active:bg-white/10"
+                              style={{ color: "var(--foreground)" }}
+                            >✏️ Edit</button>
+                            <button
+                              onClick={() => { setShowMenuFor(null); setConfirmDeleteId(c.id); }}
+                              className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-left active:bg-white/10"
+                              style={{ color: "#ef4444", borderTop: "1px solid rgba(255,255,255,0.08)" }}
+                            >🗑️ Delete</button>
                           </div>
                         )}
                       </div>
                     )}
                   </div>
+                  {/* Reply-to quote */}
+                  {parentComment && (
+                    <div
+                      className="mb-1.5 px-2 py-1 rounded text-xs"
+                      style={{ borderLeft: `2px solid ${parentAccent}`, backgroundColor: "rgba(255,255,255,0.04)", color: "var(--muted)" }}
+                    >
+                      <span className="font-semibold" style={{ color: parentAccent }}>
+                        {parentProfile?.display_name ?? "Unknown"}
+                      </span>{" "}
+                      {parentComment.content.slice(0, 80)}{parentComment.content.length > 80 ? "…" : ""}
+                    </div>
+                  )}
+                  {/* Comment content or edit box */}
+                  {editingId === c.id ? (
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        autoFocus
+                        rows={2}
+                        maxLength={500}
+                        className="w-full px-2 py-1.5 text-sm rounded-lg resize-none"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.06)",
+                          color: "var(--foreground)",
+                          border: "1px solid rgba(255,255,255,0.2)",
+                          outline: "none",
+                        }}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => saveEdit(c.id)}
+                          className="px-3 py-1 text-xs font-semibold rounded-lg"
+                          style={{ backgroundColor: "var(--team-accent)", color: "#fff" }}
+                        >Save</button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="px-3 py-1 text-xs rounded-lg"
+                          style={{ color: "var(--muted)", backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+                        >Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm leading-snug" style={{ color: "var(--foreground)" }}>
+                        {renderText(c.content, profileMap)}
+                      </p>
+                      {confirmDeleteId === c.id && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs" style={{ color: "var(--muted)" }}>Delete this comment?</span>
+                          <button
+                            onClick={() => deleteComment(c.id)}
+                            className="px-2 py-0.5 text-xs font-semibold rounded"
+                            style={{ backgroundColor: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}
+                          >Delete</button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="px-2 py-0.5 text-xs rounded"
+                            style={{ color: "var(--muted)", border: "1px solid rgba(255,255,255,0.1)" }}
+                          >Cancel</button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {/* Reactions + Reply button */}
+                  {editingId !== c.id && (
+                    <div className="flex items-center flex-wrap gap-1 mt-1.5">
+                      {Object.entries(reactions[c.id] ?? {}).map(([emoji, { count, userReacted }]) => (
+                        <button
+                          key={emoji}
+                          onClick={() => toggleReaction(c.id, emoji)}
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-colors"
+                          style={{
+                            backgroundColor: userReacted ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.06)",
+                            border: userReacted ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                            color: userReacted ? "var(--f1-red)" : "var(--muted)",
+                          }}
+                        >
+                          {emoji} <span>{count}</span>
+                        </button>
+                      ))}
+                      {currentUser && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowPickerFor((prev) => prev === c.id ? null : c.id)}
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs transition-colors"
+                            style={{
+                              backgroundColor: "rgba(255,255,255,0.06)",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              color: "var(--muted)",
+                            }}
+                          >+</button>
+                          {showPickerFor === c.id && (
+                            <div
+                              className="absolute bottom-8 left-0 flex gap-1 p-1.5 rounded-xl z-10"
+                              style={{ backgroundColor: "#13131f", border: "1px solid rgba(255,255,255,0.15)", boxShadow: "0 4px 20px rgba(0,0,0,0.6)" }}
+                            >
+                              {REACTION_EMOJIS.map((e) => (
+                                <button
+                                  key={e}
+                                  onClick={() => toggleReaction(c.id, e)}
+                                  className="text-lg p-1 rounded-lg hover:bg-white/10 active:bg-white/10 transition-colors"
+                                >{e}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {currentUser && (
+                        <button
+                          onClick={() => { setReplyingTo(c); setText(""); setShowEmojis(false); setConfirmDeleteId(null); }}
+                          className="text-xs px-2 py-0.5 rounded-full transition-colors"
+                          style={{ color: "var(--muted)", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                        >↩ Reply</button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
+          {/* Bottom sentinel for jump-to-latest */}
+          <div ref={bottomRef} />
+        </div>
+      )}
+
+      {/* Jump-to-latest pill */}
+      {hasNewMessages && (
+        <div className="flex justify-center mb-2">
+          <button
+            onClick={() => {
+              bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+              setHasNewMessages(false);
+            }}
+            className="px-4 py-1.5 text-xs font-semibold rounded-full shadow-lg"
+            style={{ backgroundColor: "var(--team-accent)", color: "#fff" }}
+          >
+            ↓ New messages
+          </button>
         </div>
       )}
 
       {currentUser ? (
         <div className="mt-3">
+          {/* Replying-to banner */}
+          {replyingTo && (
+            <div
+              className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl mb-2"
+              style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              <p className="text-xs truncate" style={{ color: "var(--muted)" }}>
+                Replying to{" "}
+                <span className="font-semibold" style={{ color: profileAccent(profileMap.get(replyingTo.user_id)) }}>
+                  {profileMap.get(replyingTo.user_id)?.display_name ?? "Unknown"}
+                </span>
+              </p>
+              <button onClick={() => setReplyingTo(null)} className="text-xs shrink-0" style={{ color: "var(--muted)" }}>✕</button>
+            </div>
+          )}
+
           {/* @mention suggestions */}
           {mentionSuggestions.length > 0 && (
             <div
@@ -1270,6 +1463,15 @@ function GroupPageInner() {
       const parsed = parseInt(r, 10);
       if (RACES.some((race) => race.r === parsed)) return parsed;
     }
+    // Live race weekend?
+    const liveRace = RACES.find(
+      (r) => r.weekendStartUtc && new Date(r.weekendStartUtc) <= now && new Date(r.startUtc) >= now
+    );
+    if (liveRace) return liveRace.r;
+    // Next upcoming race
+    const nextRace = RACES.find((r) => new Date(r.startUtc) > now);
+    if (nextRace) return nextRace.r;
+    // Fall back to last past race
     const past = RACES.filter((r) => new Date(r.startUtc) < now);
     return past.length > 0 ? past[past.length - 1].r : RACES[0].r;
   });
@@ -1289,6 +1491,24 @@ function GroupPageInner() {
 
   const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const tabOrder: Array<"feed" | "races" | "members"> = ["feed", "races", "members"];
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (!touchStartRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const idx = tabOrder.indexOf(tab);
+    if (dx < 0 && idx < tabOrder.length - 1) setTab(tabOrder[idx + 1]);
+    if (dx > 0 && idx > 0) setTab(tabOrder[idx - 1]);
+  }
+
   function goToRace(round: number) {
     setSelectedRound(round);
     setTab("races");
@@ -1296,7 +1516,7 @@ function GroupPageInner() {
 
   const tabs = [
     { id: "feed" as const,    label: "Feed"    },
-    { id: "races" as const,   label: "Races"   },
+    { id: "races" as const,   label: "Race Chat"   },
     { id: "members" as const, label: "Members" },
   ];
 
@@ -1338,24 +1558,26 @@ function GroupPageInner() {
         ))}
       </div>
 
-      {/* Tab content */}
-      {tab === "feed" && (
-        <FeedTab
-          profileMap={profileMap}
-          currentUser={user}
-          refreshNotifications={refreshNotifications}
-          onViewRace={goToRace}
-        />
-      )}
-      {tab === "races" && (
-        <RacesTab
-          profileMap={profileMap}
-          currentUser={user}
-          selectedRound={selectedRound}
-          setSelectedRound={setSelectedRound}
-        />
-      )}
-      {tab === "members" && <MembersTab profiles={profiles} loading={loadingProfiles} error={profilesError} />}
+      {/* Tab content — swipe left/right to switch tabs */}
+      <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        {tab === "feed" && (
+          <FeedTab
+            profileMap={profileMap}
+            currentUser={user}
+            refreshNotifications={refreshNotifications}
+            onViewRace={goToRace}
+          />
+        )}
+        {tab === "races" && (
+          <RacesTab
+            profileMap={profileMap}
+            currentUser={user}
+            selectedRound={selectedRound}
+            setSelectedRound={setSelectedRound}
+          />
+        )}
+        {tab === "members" && <MembersTab profiles={profiles} loading={loadingProfiles} error={profilesError} />}
+      </div>
     </div>
   );
 }
