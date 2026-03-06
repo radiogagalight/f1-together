@@ -851,18 +851,17 @@ export default function RaceDetailPage({
             onClick={() => setOpenInfo(null)}
           />
           <div
-            className="fixed bottom-0 left-0 right-0 z-[100] rounded-t-2xl"
+            className="fixed bottom-0 left-0 right-0 z-[100] rounded-t-2xl md:bottom-auto md:top-1/2 md:left-1/2 md:right-auto md:w-96 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl"
             style={{
               backgroundColor: "#13131f",
               border: "1px solid rgba(255,255,255,0.12)",
-              borderBottom: "none",
               boxShadow: "0 -8px 40px rgba(0,0,0,0.6)",
             }}
           >
-            <div className="flex justify-center pt-3 pb-2">
+            <div className="flex justify-center pt-3 pb-2 md:hidden">
               <div className="w-10 h-1 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.18)" }} />
             </div>
-            <div className="px-6 pt-2 pb-14">
+            <div className="px-6 pt-2 pb-14 md:py-6">
               <div className="flex items-center justify-between mb-5">
                 <h3
                   className="text-sm font-bold uppercase tracking-widest"
