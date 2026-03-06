@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -1249,7 +1249,7 @@ function MembersTab({ profiles, loading, error }: { profiles: Profile[]; loading
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function GroupPage() {
+function GroupPageInner() {
   const { user, refreshNotifications } = useAuth();
   const searchParams = useSearchParams();
   const now = new Date();
@@ -1357,5 +1357,13 @@ export default function GroupPage() {
       )}
       {tab === "members" && <MembersTab profiles={profiles} loading={loadingProfiles} error={profilesError} />}
     </div>
+  );
+}
+
+export default function GroupPage() {
+  return (
+    <Suspense>
+      <GroupPageInner />
+    </Suspense>
   );
 }
