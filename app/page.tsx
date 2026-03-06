@@ -423,7 +423,7 @@ export default function HomePage() {
 
       {/* ── Main content: hero + schedule ── */}
       <div
-        className="relative z-10 flex-1 flex flex-col md:flex-row gap-4 px-4 pb-2 w-full mx-auto"
+        className="relative z-10 flex-1 flex flex-col md:flex-row md:items-start gap-4 px-4 pb-2 w-full mx-auto"
         style={{ maxWidth: "1100px" }}
       >
         {/* ── Next Race Hero ── */}
