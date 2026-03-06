@@ -483,7 +483,7 @@ export default function RaceDetailPage({
                   >
                     Sprint Qualifying
                   </h2>
-                  <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,200,0,0.65)" }}>5 / 3 / 1 pts</span>
+                  <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,200,0,0.65)" }}>8 / 5 / 3 pts · +2 partial</span>
                   <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,200,0,0.2)" }} />
                   {isSprintQualLocked && (
                     <span
@@ -598,7 +598,7 @@ export default function RaceDetailPage({
                 <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
                   Qualifying
                 </h2>
-                <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>5 / 3 / 1 pts</span>
+                <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>8 / 5 / 3 pts · +2 partial</span>
                 <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
               </div>
               <div className="flex flex-col gap-2">
