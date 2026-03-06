@@ -92,37 +92,35 @@ function NextRaceHero({
       )}
 
       <div className="relative z-10 flex flex-col" style={{ minHeight: "360px", height: "100%" }}>
-        {/* Broadcast bar */}
+        {/* Scrolling live ticker banner */}
         {isLive && (
           <div style={{
-            background: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            padding: "8px 16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            background: "linear-gradient(90deg, #b00000, #ff0000, #ff2000, #ff0000, #b00000)",
+            backgroundSize: "200% 100%",
+            animation: "live-shine 2s linear infinite",
+            overflow: "hidden",
+            padding: "9px 0",
+            borderBottom: "2px solid rgba(255,255,255,0.2)",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{
-                width: "8px", height: "8px", borderRadius: "50%",
-                backgroundColor: "#e10600", flexShrink: 0, display: "inline-block",
-                animation: "broadcast-flash 1.5s ease-in-out infinite",
-              }} />
-              <span style={{
-                fontSize: "13px", fontWeight: 800, letterSpacing: "0.12em",
-                color: "#e10600", fontFamily: "var(--font-orbitron)",
-              }}>
-                LIVE
-              </span>
-            </div>
-            <span style={{
-              fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em",
-              textTransform: "uppercase", color: "rgba(255,255,255,0.75)",
+            <div style={{
+              display: "inline-flex",
+              whiteSpace: "nowrap",
+              animation: "ticker-scroll 14s linear infinite",
             }}>
-              {race.name.replace(" Grand Prix", " GP")}
-            </span>
+              {[0, 1].map((i) => (
+                <span
+                  key={i}
+                  style={{
+                    fontSize: "12px", fontWeight: 800,
+                    letterSpacing: "0.16em", textTransform: "uppercase",
+                    color: "#ffffff", fontFamily: "var(--font-orbitron)",
+                    paddingRight: "48px",
+                  }}
+                >
+                  🏁 RACE WEEKEND LIVE! &nbsp;·&nbsp; 🏁 RACE WEEKEND LIVE! &nbsp;·&nbsp;
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
