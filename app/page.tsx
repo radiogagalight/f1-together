@@ -64,7 +64,7 @@ function NextRaceHero({
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden min-h-[360px] md:min-h-[400px]"
+      className="relative rounded-xl overflow-hidden min-h-[360px] md:min-h-[520px]"
       style={{
         border: isLive ? "1px solid rgba(225,6,0,0.55)" : "1px solid transparent",
         boxShadow: isLive ? "0 0 0 1px rgba(225,6,0,0.2), 0 0 40px rgba(225,6,0,0.3)" : "none",
@@ -90,7 +90,7 @@ function NextRaceHero({
         <div className="absolute inset-0 animate-pulse" style={{ background: "rgba(225,6,0,0.07)", pointerEvents: "none", zIndex: 1 }} />
       )}
 
-      <div className="relative z-10 flex flex-col min-h-[360px] md:min-h-[400px]" style={{ height: "100%" }}>
+      <div className="relative z-10 flex flex-col min-h-[360px] md:min-h-[520px]" style={{ height: "100%" }}>
         {/* Scrolling live ticker banner */}
         {isLive && (
           <div style={{
