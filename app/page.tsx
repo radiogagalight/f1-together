@@ -9,6 +9,129 @@ import { RACES, CONSTRUCTORS, formatRaceDate, flagToCC } from "@/lib/data";
 import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 import PredictionsWidget from "@/components/PredictionsWidget";
 import Companion from "@/components/Companion";
+import { RACE_FACTS } from "@/lib/raceFacts";
+
+function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
+  const heroImage = RACE_FACTS[race.r]?.heroImage;
+
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const weekendStarted = race.weekendStartUtc
+    ? new Date(race.weekendStartUtc).getTime() <= now
+    : false;
+  const raceStarted = new Date(race.startUtc).getTime() <= now;
+  const isLive = weekendStarted && !raceStarted;
+
+  const sessions = [
+    ...(race.sprintQualifyingUtc ? [{ label: "Until Sprint Qualifying", utc: race.sprintQualifyingUtc }] : []),
+    ...(race.sprintStartUtc      ? [{ label: "Until Sprint",             utc: race.sprintStartUtc      }] : []),
+    { label: "Until Qualifying", utc: race.qualifyingUtc },
+    { label: "Until Lights Out",  utc: race.startUtc },
+  ] as { label: string; utc: string }[];
+
+  const nextSession = sessions.find(s => new Date(s.utc).getTime() > now);
+  const targetMs = nextSession ? Math.max(0, new Date(nextSession.utc).getTime() - now) : 0;
+
+  const days    = Math.floor(targetMs / 86_400_000);
+  const hours   = Math.floor((targetMs % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((targetMs % 3_600_000) / 60_000);
+  const seconds = Math.floor((targetMs % 60_000) / 1_000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  return (
+    <div className="relative rounded-xl overflow-hidden" style={{ minHeight: "230px" }}>
+      {heroImage ? (
+        <Image src={heroImage} alt="" fill style={{ objectFit: "cover", objectPosition: "center", opacity: 0.45 }} />
+      ) : (
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(225,6,0,0.4) 0%, rgba(8,8,16,1) 70%)" }} />
+      )}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.85) 55%, rgba(8,8,16,0.98) 100%)" }} />
+
+      <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "230px" }}>
+        {/* Top badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
+          >
+            Round {race.r}
+          </span>
+          {isLive && (
+            <span
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: "rgba(225,6,0,0.2)", color: "#e10600", border: "1px solid rgba(225,6,0,0.5)" }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ backgroundColor: "#e10600" }} />
+              Race Weekend Live
+            </span>
+          )}
+          {race.sprint && (
+            <span
+              className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: "rgba(255,200,0,0.12)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.35)" }}
+            >
+              Sprint
+            </span>
+          )}
+        </div>
+
+        {/* Race name + countdown + CTA */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+            {race.circuit}
+          </p>
+          <h2 className="font-black leading-none mb-4" style={{ fontFamily: "var(--font-orbitron)", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>
+            <span className="block text-2xl" style={{ color: "#ffffff" }}>
+              {race.name.replace(" Grand Prix", "")}
+            </span>
+            <span className="block text-base" style={{ color: "rgba(255,255,255,0.5)" }}>
+              Grand Prix
+            </span>
+          </h2>
+
+          {raceStarted ? (
+            <p className="text-sm font-bold mb-4" style={{ color: "var(--f1-red)" }}>Lights out! 🏁</p>
+          ) : nextSession ? (
+            <div className="mb-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+                {nextSession.label}
+              </p>
+              <div className="flex gap-4">
+                {[
+                  { v: days,    u: "Days" },
+                  { v: hours,   u: "Hrs"  },
+                  { v: minutes, u: "Mins" },
+                  { v: seconds, u: "Secs" },
+                ].map(({ v, u }) => (
+                  <div key={u} className="flex flex-col">
+                    <span className="text-2xl font-black tabular-nums leading-none" style={{ color: "#ffffff" }}>
+                      {u === "Days" ? v : pad(v)}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      {u}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <Link
+            href={`/predictions/race/${race.r}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
+            style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
+          >
+            Make your picks →
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const PAGE_SIZE = 6;
 const TOTAL_PAGES = Math.ceil(RACES.length / PAGE_SIZE);
@@ -287,6 +410,8 @@ export default function HomePage() {
 
         {/* ── Race Schedule Panel ── */}
         <div className="md:w-72 lg:w-80 flex flex-col gap-2 md:-mt-12">
+
+        <NextRaceHero race={RACES[nextRaceIdx]} />
 
         <PredictionsWidget />
 
