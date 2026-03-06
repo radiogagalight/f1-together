@@ -96,7 +96,7 @@ function NextRaceHero({
           <div style={{
             background: "rgba(0,0,0,0.35)",
             overflow: "hidden",
-            padding: "9px 0",
+            padding: "13px 0",
             borderBottom: "1px solid rgba(255,255,255,0.12)",
           }}>
             <div style={{
@@ -108,13 +108,14 @@ function NextRaceHero({
                 <span
                   key={i}
                   style={{
-                    fontSize: "12px", fontWeight: 800,
+                    fontSize: "14px", fontWeight: 800,
                     letterSpacing: "0.14em", textTransform: "uppercase",
                     color: "#ffffff", fontFamily: "var(--font-orbitron)",
-                    paddingRight: "64px",
+                    paddingRight: "80px",
                   }}
                 >
-                  {race.name} Race Weekend -- Live Now!
+                  {race.name} Race Weekend --{" "}
+                  <span style={{ color: "#00e05a" }}>Live Now</span>
                 </span>
               ))}
             </div>
@@ -423,7 +424,7 @@ export default function HomePage() {
 
       {/* ── Main content: hero + schedule ── */}
       <div
-        className="relative z-10 flex-1 flex flex-col md:flex-row md:items-start gap-4 px-4 md:px-20 pb-2 w-full"
+        className="relative z-10 flex-1 flex flex-col md:flex-row md:items-start gap-4 md:gap-10 px-4 md:px-20 pb-2 w-full"
       >
         {/* ── Next Race Hero ── */}
         <div className="md:w-[620px] md:shrink-0">
