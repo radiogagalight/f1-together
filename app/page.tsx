@@ -25,12 +25,13 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
   const raceStarted = new Date(race.startUtc).getTime() <= now;
   const isLive = weekendStarted && !raceStarted;
 
+  // Sessions used for both the timeline strip and countdown
   const sessions = [
-    ...(race.sprintQualifyingUtc ? [{ label: "Until Sprint Qualifying", utc: race.sprintQualifyingUtc }] : []),
-    ...(race.sprintStartUtc      ? [{ label: "Until Sprint",             utc: race.sprintStartUtc      }] : []),
-    { label: "Until Qualifying", utc: race.qualifyingUtc },
-    { label: "Until Lights Out",  utc: race.startUtc },
-  ] as { label: string; utc: string }[];
+    ...(race.sprintQualifyingUtc ? [{ short: "Sprint Q",  label: "Sprint Qualifying", utc: race.sprintQualifyingUtc }] : []),
+    ...(race.sprintStartUtc      ? [{ short: "Sprint",    label: "Sprint Race",        utc: race.sprintStartUtc      }] : []),
+    { short: "Quali",              label: "Qualifying",                                 utc: race.qualifyingUtc },
+    { short: "Race",               label: "Race",                                       utc: race.startUtc },
+  ] as { short: string; label: string; utc: string }[];
 
   const nextSession = sessions.find(s => new Date(s.utc).getTime() > now);
   const targetMs = nextSession ? Math.max(0, new Date(nextSession.utc).getTime() - now) : 0;
@@ -41,14 +42,48 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
   const seconds = Math.floor((targetMs % 60_000) / 1_000);
   const pad = (n: number) => String(n).padStart(2, "0");
 
+  // Urgency escalation — only applies during live weekend
+  const under1h  = isLive && targetMs > 0 && targetMs <= 3_600_000;
+  const under24h = isLive && targetMs > 0 && targetMs <= 86_400_000;
+  const countdownColor = under1h ? "#e10600" : under24h ? "#f59e0b" : "#ffffff";
+
+  // Live headline
+  const dayLabel = !nextSession ? null
+    : nextSession.label === "Race"             ? "RACE DAY"
+    : nextSession.label === "Qualifying"       ? "QUALIFYING DAY"
+    : nextSession.label === "Sprint Race"      ? "SPRINT DAY"
+    : "SPRINT QUALIFYING";
+
   return (
-    <div className="relative rounded-xl overflow-hidden md:flex-1" style={{ minHeight: "230px" }}>
+    <div
+      className="relative rounded-xl overflow-hidden md:flex-1"
+      style={{
+        minHeight: "230px",
+        border: isLive ? "1px solid rgba(225,6,0,0.55)" : "1px solid transparent",
+        boxShadow: isLive ? "0 0 0 1px rgba(225,6,0,0.2), 0 0 40px rgba(225,6,0,0.3)" : "none",
+      }}
+    >
       {heroImage ? (
-        <Image src={heroImage} alt="" fill style={{ objectFit: "cover", objectPosition: "center", opacity: 0.45 }} />
+        <Image
+          src={heroImage} alt="" fill
+          style={{ objectFit: "cover", objectPosition: "center", opacity: isLive ? 0.65 : 0.45 }}
+        />
       ) : (
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(225,6,0,0.4) 0%, rgba(8,8,16,1) 70%)" }} />
       )}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.85) 55%, rgba(8,8,16,0.98) 100%)" }} />
+
+      {/* Overlay — reduced when live so the hero image breathes */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: isLive
+          ? "linear-gradient(to bottom, rgba(8,8,16,0.05) 0%, rgba(8,8,16,0.50) 45%, rgba(8,8,16,0.85) 100%)"
+          : "linear-gradient(to bottom, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.85) 55%, rgba(8,8,16,0.98) 100%)",
+      }} />
+
+      {/* Red pulse tint when < 1h to session */}
+      {under1h && (
+        <div className="absolute inset-0 animate-pulse" style={{ background: "rgba(225,6,0,0.07)", pointerEvents: "none", zIndex: 1 }} />
+      )}
 
       <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "230px", height: "100%" }}>
         {/* Top badges */}
@@ -78,12 +113,28 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
           )}
         </div>
 
-        {/* Race name + countdown + CTA */}
+        {/* Bottom content */}
         <div>
+          {/* RACE DAY / QUALIFYING DAY headline — live only */}
+          {isLive && dayLabel && (
+            <p
+              className="font-black leading-none mb-2"
+              style={{
+                fontFamily: "var(--font-orbitron)",
+                fontSize: "clamp(20px, 5.5vw, 30px)",
+                color: "#e10600",
+                letterSpacing: "0.06em",
+                textShadow: "0 0 24px rgba(225,6,0,0.7), 0 2px 12px rgba(0,0,0,0.9)",
+              }}
+            >
+              {dayLabel}
+            </p>
+          )}
+
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
             {race.circuit}
           </p>
-          <h2 className="font-black leading-none mb-4" style={{ fontFamily: "var(--font-orbitron)", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>
+          <h2 className="font-black leading-none mb-3" style={{ fontFamily: "var(--font-orbitron)", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>
             <span className="block text-2xl" style={{ color: "#ffffff" }}>
               {race.name.replace(" Grand Prix", "")}
             </span>
@@ -92,12 +143,47 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
             </span>
           </h2>
 
+          {/* Session timeline strip — live only */}
+          {isLive && (
+            <div className="flex items-start mb-3">
+              {sessions.map((s, i) => {
+                const sPast = new Date(s.utc).getTime() <= now;
+                const sNext = s === nextSession;
+                return (
+                  <div key={s.label} className="flex items-start">
+                    <div className="flex flex-col items-center gap-1">
+                      <div style={{
+                        width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0,
+                        backgroundColor: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)",
+                        boxShadow: sNext ? "0 0 8px 2px rgba(225,6,0,0.7)" : "none",
+                      }} />
+                      <span style={{
+                        fontSize: "8px", fontWeight: 700, letterSpacing: "0.05em",
+                        textTransform: "uppercase", whiteSpace: "nowrap",
+                        color: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.4)",
+                      }}>
+                        {s.short}
+                      </span>
+                    </div>
+                    {i < sessions.length - 1 && (
+                      <div style={{
+                        width: "18px", height: "1px", flexShrink: 0, marginTop: "3px",
+                        backgroundColor: sPast ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.2)",
+                      }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Countdown */}
           {raceStarted ? (
-            <p className="text-sm font-bold mb-4" style={{ color: "var(--f1-red)" }}>Lights out! 🏁</p>
+            <p className="text-sm font-bold mb-3" style={{ color: "var(--f1-red)" }}>Lights out! 🏁</p>
           ) : nextSession ? (
-            <div className="mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>
-                {nextSession.label}
+            <div className="mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+                {isLive ? `${nextSession.label} starts in` : `Until ${nextSession.label}`}
               </p>
               <div className="flex gap-4">
                 {[
@@ -107,7 +193,15 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
                   { v: seconds, u: "Secs" },
                 ].map(({ v, u }) => (
                   <div key={u} className="flex flex-col">
-                    <span className="text-2xl font-black tabular-nums leading-none" style={{ color: "#ffffff" }}>
+                    <span
+                      className={under1h ? "animate-pulse" : ""}
+                      style={{
+                        fontSize: "1.5rem", fontWeight: 900,
+                        fontVariantNumeric: "tabular-nums", lineHeight: 1,
+                        color: countdownColor,
+                        textShadow: under24h ? `0 0 16px ${countdownColor}55` : "none",
+                      }}
+                    >
                       {u === "Days" ? v : pad(v)}
                     </span>
                     <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
