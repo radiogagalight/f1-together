@@ -150,7 +150,7 @@ function NextRaceHero({
           </div>
           <Link
             href={`/members?tab=races&round=${race.r}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0"
             style={{
               backgroundColor: "rgba(255,255,255,0.14)",
               color: "#ffffff",
