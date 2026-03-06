@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
-import { RACES, CONSTRUCTORS, formatRaceDate, flagToCC } from "@/lib/data";
+import { RACES, CONSTRUCTORS, DRIVERS, formatRaceDate, flagToCC } from "@/lib/data";
 import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 import PredictionsWidget from "@/components/PredictionsWidget";
 import Companion from "@/components/Companion";
-import { RACE_FACTS } from "@/lib/raceFacts";
+import { createClient } from "@/lib/supabase/client";
 
-function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
-  const heroImage = RACE_FACTS[race.r]?.heroImage;
-
+function NextRaceHero({
+  race,
+  picks,
+}: {
+  race: (typeof RACES)[number];
+  picks: { pole: string | null; winner: string | null };
+}) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -25,12 +28,11 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
   const raceStarted = new Date(race.startUtc).getTime() <= now;
   const isLive = weekendStarted && !raceStarted;
 
-  // Sessions used for both the timeline strip and countdown
   const sessions = [
-    ...(race.sprintQualifyingUtc ? [{ short: "Sprint Q",  label: "Sprint Qualifying", utc: race.sprintQualifyingUtc }] : []),
-    ...(race.sprintStartUtc      ? [{ short: "Sprint",    label: "Sprint Race",        utc: race.sprintStartUtc      }] : []),
-    { short: "Quali",              label: "Qualifying",                                 utc: race.qualifyingUtc },
-    { short: "Race",               label: "Race",                                       utc: race.startUtc },
+    ...(race.sprintQualifyingUtc ? [{ short: "Sprint Q", label: "Sprint Qualifying", utc: race.sprintQualifyingUtc }] : []),
+    ...(race.sprintStartUtc      ? [{ short: "Sprint",   label: "Sprint Race",       utc: race.sprintStartUtc      }] : []),
+    { short: "Quali",              label: "Qualifying",                                utc: race.qualifyingUtc },
+    { short: "Race",               label: "Race",                                      utc: race.startUtc },
   ] as { short: string; label: string; utc: string }[];
 
   const nextSession = sessions.find(s => new Date(s.utc).getTime() > now);
@@ -42,184 +44,224 @@ function NextRaceHero({ race }: { race: (typeof RACES)[number] }) {
   const seconds = Math.floor((targetMs % 60_000) / 1_000);
   const pad = (n: number) => String(n).padStart(2, "0");
 
-  // Urgency escalation — only applies during live weekend
   const under1h  = isLive && targetMs > 0 && targetMs <= 3_600_000;
   const under24h = isLive && targetMs > 0 && targetMs <= 86_400_000;
   const countdownColor = under1h ? "#e10600" : under24h ? "#f59e0b" : "#ffffff";
 
-  // Live headline
   const dayLabel = !nextSession ? null
     : nextSession.label === "Race"             ? "RACE DAY"
     : nextSession.label === "Qualifying"       ? "QUALIFYING DAY"
     : nextSession.label === "Sprint Race"      ? "SPRINT DAY"
     : "SPRINT QUALIFYING";
 
+  const poleName   = picks.pole   ? (DRIVERS.find(d => d.id === picks.pole)?.name   ?? null) : null;
+  const winnerName = picks.winner ? (DRIVERS.find(d => d.id === picks.winner)?.name ?? null) : null;
+  const hasPicks   = !!(poleName || winnerName);
+
   return (
+    // Outer wrapper — provides the checkered border frame when live
     <div
-      className="relative rounded-xl overflow-hidden md:flex-1"
-      style={{
-        minHeight: "230px",
-        border: isLive ? "1px solid rgba(225,6,0,0.55)" : "1px solid transparent",
-        boxShadow: isLive ? "0 0 0 1px rgba(225,6,0,0.2), 0 0 40px rgba(225,6,0,0.3)" : "none",
-      }}
+      className="relative md:flex-1 md:flex md:flex-col"
+      style={{ borderRadius: "12px", padding: isLive ? "2px" : "0" }}
     >
-      {heroImage ? (
-        <Image
-          src={heroImage} alt="" fill
-          style={{ objectFit: "cover", objectPosition: "center", opacity: isLive ? 0.65 : 0.45 }}
+      {/* Animated checkered border — live only */}
+      {isLive && (
+        <div style={{
+          position: "absolute", inset: 0, borderRadius: "12px",
+          background: "repeating-conic-gradient(#111 0% 25%, #ddd 0% 50%) 0 0 / 10px 10px",
+          animation: "checkered-march 1.5s linear infinite",
+        }} />
+      )}
+
+      {/* Card */}
+      <div className="relative rounded-xl overflow-hidden md:flex-1" style={{ minHeight: "230px" }}>
+
+        {/* Flag background */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`https://flagcdn.com/w640/${flagToCC(race.flag)}.png`}
+          alt=""
+          style={{
+            position: "absolute", inset: 0, width: "100%", height: "100%",
+            objectFit: "cover", objectPosition: "center",
+            opacity: 0.55, filter: "blur(3px) saturate(1.4)",
+          }}
         />
-      ) : (
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(225,6,0,0.4) 0%, rgba(8,8,16,1) 70%)" }} />
-      )}
 
-      {/* Overlay — reduced when live so the hero image breathes */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: isLive
-          ? "linear-gradient(to bottom, rgba(8,8,16,0.05) 0%, rgba(8,8,16,0.50) 45%, rgba(8,8,16,0.85) 100%)"
-          : "linear-gradient(to bottom, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.85) 55%, rgba(8,8,16,0.98) 100%)",
-      }} />
+        {/* Diagonal slash — dark content zone (bottom-left) + visible slash line */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(315deg, rgba(8,8,16,0.97) 0%, rgba(8,8,16,0.93) 36%, rgba(8,8,16,0.2) 56%, rgba(8,8,16,0.05) 100%)",
+        }} />
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(315deg, transparent 35%, rgba(255,255,255,0.2) 36.5%, rgba(255,255,255,0.2) 37%, transparent 38.5%)",
+        }} />
 
-      {/* Red pulse tint when < 1h to session */}
-      {under1h && (
-        <div className="absolute inset-0 animate-pulse" style={{ background: "rgba(225,6,0,0.07)", pointerEvents: "none", zIndex: 1 }} />
-      )}
+        {/* Red pulse tint when < 1h */}
+        {under1h && (
+          <div className="absolute inset-0 animate-pulse" style={{ background: "rgba(225,6,0,0.07)", pointerEvents: "none", zIndex: 1 }} />
+        )}
 
-      <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "230px", height: "100%" }}>
-        {/* Top badges */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
-          >
-            Round {race.r}
-          </span>
-          {isLive && (
-            <span
-              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "rgba(225,6,0,0.2)", color: "#e10600", border: "1px solid rgba(225,6,0,0.5)" }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ backgroundColor: "#e10600" }} />
-              Race Weekend Live
-            </span>
-          )}
-          {race.sprint && (
+        <div className="relative z-10 flex flex-col justify-between p-4" style={{ minHeight: "230px", height: "100%" }}>
+          {/* Top badges */}
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "rgba(255,200,0,0.12)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.35)" }}
+              style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
             >
-              Sprint
+              Round {race.r}
             </span>
-          )}
-        </div>
+            {isLive && (
+              <span
+                className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: "rgba(225,6,0,0.2)", color: "#e10600", border: "1px solid rgba(225,6,0,0.5)" }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ backgroundColor: "#e10600" }} />
+                Race Weekend Live
+              </span>
+            )}
+            {race.sprint && (
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: "rgba(255,200,0,0.12)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.35)" }}
+              >
+                Sprint
+              </span>
+            )}
+          </div>
 
-        {/* Bottom content */}
-        <div>
-          {/* RACE DAY / QUALIFYING DAY headline — live only */}
-          {isLive && dayLabel && (
-            <p
-              className="font-black leading-none mb-2"
-              style={{
-                fontFamily: "var(--font-orbitron)",
-                fontSize: "clamp(20px, 5.5vw, 30px)",
-                color: "#e10600",
-                letterSpacing: "0.06em",
-                textShadow: "0 0 24px rgba(225,6,0,0.7), 0 2px 12px rgba(0,0,0,0.9)",
-              }}
-            >
-              {dayLabel}
+          {/* Bottom content */}
+          <div>
+            {/* RACE DAY headline — live only */}
+            {isLive && dayLabel && (
+              <p
+                className="font-black leading-none mb-2"
+                style={{
+                  fontFamily: "var(--font-orbitron)",
+                  fontSize: "clamp(20px, 5.5vw, 30px)",
+                  color: "#e10600",
+                  letterSpacing: "0.06em",
+                  textShadow: "0 0 24px rgba(225,6,0,0.7), 0 2px 12px rgba(0,0,0,0.9)",
+                }}
+              >
+                {dayLabel}
+              </p>
+            )}
+
+            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+              {race.circuit}
             </p>
-          )}
+            <h2 className="font-black leading-none mb-3" style={{ fontFamily: "var(--font-orbitron)", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>
+              <span className="block text-2xl" style={{ color: "#ffffff" }}>
+                {race.name.replace(" Grand Prix", "")}
+              </span>
+              <span className="block text-base" style={{ color: "rgba(255,255,255,0.5)" }}>
+                Grand Prix
+              </span>
+            </h2>
 
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
-            {race.circuit}
-          </p>
-          <h2 className="font-black leading-none mb-3" style={{ fontFamily: "var(--font-orbitron)", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>
-            <span className="block text-2xl" style={{ color: "#ffffff" }}>
-              {race.name.replace(" Grand Prix", "")}
-            </span>
-            <span className="block text-base" style={{ color: "rgba(255,255,255,0.5)" }}>
-              Grand Prix
-            </span>
-          </h2>
+            {/* Session timeline strip — live only */}
+            {isLive && (
+              <div className="flex items-start mb-3">
+                {sessions.map((s, i) => {
+                  const sPast = new Date(s.utc).getTime() <= now;
+                  const sNext = s === nextSession;
+                  return (
+                    <div key={s.label} className="flex items-start">
+                      <div className="flex flex-col items-center gap-1">
+                        <div style={{
+                          width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0,
+                          backgroundColor: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)",
+                          boxShadow: sNext ? "0 0 8px 2px rgba(225,6,0,0.7)" : "none",
+                        }} />
+                        <span style={{
+                          fontSize: "8px", fontWeight: 700, letterSpacing: "0.05em",
+                          textTransform: "uppercase", whiteSpace: "nowrap",
+                          color: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.4)",
+                        }}>
+                          {s.short}
+                        </span>
+                      </div>
+                      {i < sessions.length - 1 && (
+                        <div style={{
+                          width: "18px", height: "1px", flexShrink: 0, marginTop: "3px",
+                          backgroundColor: sPast ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.2)",
+                        }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
-          {/* Session timeline strip — live only */}
-          {isLive && (
-            <div className="flex items-start mb-3">
-              {sessions.map((s, i) => {
-                const sPast = new Date(s.utc).getTime() <= now;
-                const sNext = s === nextSession;
-                return (
-                  <div key={s.label} className="flex items-start">
-                    <div className="flex flex-col items-center gap-1">
-                      <div style={{
-                        width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0,
-                        backgroundColor: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)",
-                        boxShadow: sNext ? "0 0 8px 2px rgba(225,6,0,0.7)" : "none",
-                      }} />
-                      <span style={{
-                        fontSize: "8px", fontWeight: 700, letterSpacing: "0.05em",
-                        textTransform: "uppercase", whiteSpace: "nowrap",
-                        color: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.4)",
-                      }}>
-                        {s.short}
+            {/* Countdown */}
+            {raceStarted ? (
+              <p className="text-sm font-bold mb-3" style={{ color: "var(--f1-red)" }}>Lights out! 🏁</p>
+            ) : nextSession ? (
+              <div className="mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  {isLive ? `${nextSession.label} starts in` : `Until ${nextSession.label}`}
+                </p>
+                <div className="flex gap-4">
+                  {[
+                    { v: days,    u: "Days" },
+                    { v: hours,   u: "Hrs"  },
+                    { v: minutes, u: "Mins" },
+                    { v: seconds, u: "Secs" },
+                  ].map(({ v, u }) => (
+                    <div key={u} className="flex flex-col">
+                      <span
+                        className={under1h ? "animate-pulse" : ""}
+                        style={{
+                          fontSize: "1.5rem", fontWeight: 900,
+                          fontVariantNumeric: "tabular-nums", lineHeight: 1,
+                          color: countdownColor,
+                          textShadow: under24h ? `0 0 16px ${countdownColor}55` : "none",
+                        }}
+                      >
+                        {u === "Days" ? v : pad(v)}
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                        {u}
                       </span>
                     </div>
-                    {i < sessions.length - 1 && (
-                      <div style={{
-                        width: "18px", height: "1px", flexShrink: 0, marginTop: "3px",
-                        backgroundColor: sPast ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.2)",
-                      }} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Countdown */}
-          {raceStarted ? (
-            <p className="text-sm font-bold mb-3" style={{ color: "var(--f1-red)" }}>Lights out! 🏁</p>
-          ) : nextSession ? (
-            <div className="mb-3">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
-                {isLive ? `${nextSession.label} starts in` : `Until ${nextSession.label}`}
-              </p>
-              <div className="flex gap-4">
-                {[
-                  { v: days,    u: "Days" },
-                  { v: hours,   u: "Hrs"  },
-                  { v: minutes, u: "Mins" },
-                  { v: seconds, u: "Secs" },
-                ].map(({ v, u }) => (
-                  <div key={u} className="flex flex-col">
-                    <span
-                      className={under1h ? "animate-pulse" : ""}
-                      style={{
-                        fontSize: "1.5rem", fontWeight: 900,
-                        fontVariantNumeric: "tabular-nums", lineHeight: 1,
-                        color: countdownColor,
-                        textShadow: under24h ? `0 0 16px ${countdownColor}55` : "none",
-                      }}
-                    >
-                      {u === "Days" ? v : pad(v)}
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
-                      {u}
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          <Link
-            href={`/predictions/race/${race.r}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
-            style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
-          >
-            Make your picks →
-          </Link>
+            {/* Pick preview */}
+            {hasPicks ? (
+              <div className="mb-3 flex flex-col gap-0.5">
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)" }}>
+                  Your picks
+                </p>
+                {poleName && (
+                  <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>
+                    Pole · {poleName}
+                  </p>
+                )}
+                {winnerName && (
+                  <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>
+                    Race · {winnerName}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mb-3" style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>
+                No picks yet
+              </p>
+            )}
+
+            <Link
+              href={`/predictions/race/${race.r}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
+              style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
+            >
+              {hasPicks ? "Edit picks →" : "Make your picks →"}
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -266,6 +308,22 @@ export default function HomePage() {
 
   const nextRaceIdx = getNextRaceIndex();
   const [page, setPage] = useState(Math.floor(nextRaceIdx / PAGE_SIZE));
+
+  // Fetch user's pole + winner picks for the next race
+  const [heroPicks, setHeroPicks] = useState<{ pole: string | null; winner: string | null }>({ pole: null, winner: null });
+  useEffect(() => {
+    if (!user) return;
+    const supabase = createClient();
+    supabase
+      .from("race_picks")
+      .select("qual_pole,race_winner")
+      .eq("user_id", user.id)
+      .eq("round", RACES[nextRaceIdx].r)
+      .maybeSingle()
+      .then(({ data }) => {
+        setHeroPicks({ pole: data?.qual_pole ?? null, winner: data?.race_winner ?? null });
+      });
+  }, [user, nextRaceIdx]);
 
   // ── Rotating favourite team greeting ──
   const activeTeams = favTeams.filter((t): t is string => t !== null);
@@ -360,7 +418,7 @@ export default function HomePage() {
       >
         {/* ── Next Race Hero ── */}
         <div className="md:flex-1 md:-mt-12 md:flex md:flex-col">
-          <NextRaceHero race={RACES[nextRaceIdx]} />
+          <NextRaceHero race={RACES[nextRaceIdx]} picks={heroPicks} />
         </div>
 
         {/* ── Race Schedule Panel ── */}
