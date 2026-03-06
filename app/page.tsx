@@ -386,7 +386,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Header ── */}
-      <header className="relative z-10 w-full px-6 md:pl-40 md:pr-10 pt-8 pb-4">
+      <header className="relative z-10 w-full px-6 md:pl-40 md:pr-10 pt-8 pb-4 md:pb-8">
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)", opacity: authReady ? 1 : 0, transition: "opacity 0.15s ease", fontFamily: "var(--font-orbitron)" }}>
           Hi, {displayName ?? "driver"}
         </h1>
