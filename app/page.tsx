@@ -53,10 +53,10 @@ function NextRaceHero({
   const countdownColor = under1h ? "#e10600" : under24h ? "#f59e0b" : "#ffffff";
 
   const dayLabel = !nextSession ? null
-    : nextSession.label === "Race"             ? "RACE DAY"
+    : nextSession.label === "Race"             ? "It's Race Day!"
     : nextSession.label === "Qualifying"       ? "It's Qualifying Day!"
-    : nextSession.label === "Sprint Race"      ? "SPRINT DAY"
-    : "SPRINT QUALIFYING";
+    : nextSession.label === "Sprint Race"      ? "It's Sprint Day!"
+    : "It's Sprint Qualifying!";
 
   const poleName   = picks.pole   ? (DRIVERS.find(d => d.id === picks.pole)?.name   ?? null) : null;
   const winnerName = picks.winner ? (DRIVERS.find(d => d.id === picks.winner)?.name ?? null) : null;
