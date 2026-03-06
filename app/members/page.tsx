@@ -1221,6 +1221,7 @@ function RacesTab({
   const [raceResult, setRaceResult] = useState<RaceResult | null>(null);
   const [raceActivity, setRaceActivity] = useState<Record<number, { content: string; userId: string; createdAt: string }>>({});
   const [lastReadTimes, setLastReadTimes] = useState<Record<number, number>>({});
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const supabase = createClient();
 
   const race = RACES.find((r) => r.r === selectedRound)!;
@@ -1281,57 +1282,117 @@ function RacesTab({
 
   return (
     <div>
-      {/* Custom race selector */}
-      <div
-        className="mb-6 rounded-xl overflow-hidden"
-        style={{ border: "1px solid rgba(255,255,255,0.1)", maxHeight: "280px", overflowY: "auto" }}
-      >
-        {RACES.map((r, i) => {
-          const isPast = new Date(r.startUtc) < new Date();
-          const isSelected = selectedRound === r.r;
-          const activity = raceActivity[r.r];
-          const lastRead = lastReadTimes[r.r] ?? 0;
-          const hasUnread = isPast && !!activity && new Date(activity.createdAt).getTime() > lastRead;
-          const previewAuthor = activity ? (profileMap.get(activity.userId)?.display_name?.split(" ")[0] ?? "Someone") : null;
-          return (
-            <button
-              key={r.r}
-              onClick={() => selectRound(r.r)}
-              className="w-full text-left px-3 py-2.5 transition-colors active:bg-white/5"
-              style={{
-                backgroundColor: isSelected ? "rgba(255,255,255,0.07)" : "transparent",
-                borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none",
-                borderLeft: isSelected ? "3px solid var(--team-accent)" : "3px solid transparent",
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm shrink-0">{r.flag}</span>
+      {/* Race header + dropdown selector */}
+      <div className="relative mb-6">
+        <button
+          onClick={() => setDropdownOpen((o) => !o)}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-colors active:bg-white/5"
+          style={{
+            backgroundColor: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderLeft: "3px solid var(--team-accent)",
+          }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xl shrink-0">{race.flag}</span>
+            <div className="min-w-0 text-left">
+              <p className="text-sm font-bold truncate" style={{ color: "var(--foreground)" }}>
+                {race.name.replace(" Grand Prix", " GP")}
+              </p>
+              {(() => {
+                const activity = raceActivity[race.r];
+                const lastRead = lastReadTimes[race.r] ?? 0;
+                const hasUnread = isRevealed && !!activity && new Date(activity.createdAt).getTime() > lastRead;
+                const previewAuthor = activity ? (profileMap.get(activity.userId)?.display_name?.split(" ")[0] ?? "Someone") : null;
+                if (isRevealed && previewAuthor && activity) {
+                  return (
+                    <p className="text-xs truncate" style={{ color: hasUnread ? "rgba(255,255,255,0.5)" : "var(--muted)" }}>
+                      {previewAuthor}: {activity.content}
+                    </p>
+                  );
+                }
+                if (!isRevealed) {
+                  return <p className="text-xs" style={{ color: "var(--muted)" }}>Upcoming race</p>;
+                }
+                return null;
+              })()}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {(() => {
+              const totalUnread = RACES.filter((r) => {
+                const a = raceActivity[r.r];
+                const lr = lastReadTimes[r.r] ?? 0;
+                return !!a && new Date(a.createdAt).getTime() > lr && r.r !== selectedRound;
+              }).length;
+              return totalUnread > 0 ? (
                 <span
-                  className="text-sm font-semibold flex-1 truncate"
-                  style={{ color: isSelected ? "var(--foreground)" : isPast ? "var(--muted)" : "rgba(255,255,255,0.3)" }}
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: "#e10600", color: "#fff" }}
+                >{totalUnread}</span>
+              ) : null;
+            })()}
+            <span
+              className="text-lg transition-transform duration-200"
+              style={{ transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)", color: "var(--muted)" }}
+            >▾</span>
+          </div>
+        </button>
+
+        {/* Dropdown list */}
+        {dropdownOpen && (
+          <div
+            className="absolute left-0 right-0 top-full mt-1 rounded-xl overflow-hidden z-30"
+            style={{ border: "1px solid rgba(255,255,255,0.12)", backgroundColor: "#131313", boxShadow: "0 8px 32px rgba(0,0,0,0.7)", maxHeight: "280px", overflowY: "auto" }}
+          >
+            {RACES.map((r, i) => {
+              const rIsPast = new Date(r.startUtc) < new Date();
+              const isSelected = selectedRound === r.r;
+              const activity = raceActivity[r.r];
+              const lastRead = lastReadTimes[r.r] ?? 0;
+              const hasUnread = rIsPast && !!activity && new Date(activity.createdAt).getTime() > lastRead;
+              const previewAuthor = activity ? (profileMap.get(activity.userId)?.display_name?.split(" ")[0] ?? "Someone") : null;
+              return (
+                <button
+                  key={r.r}
+                  onClick={() => { selectRound(r.r); setDropdownOpen(false); }}
+                  className="w-full text-left px-3 py-2.5 transition-colors active:bg-white/5"
+                  style={{
+                    backgroundColor: isSelected ? "rgba(255,255,255,0.07)" : "transparent",
+                    borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                    borderLeft: isSelected ? "3px solid var(--team-accent)" : "3px solid transparent",
+                  }}
                 >
-                  {r.name.replace(" Grand Prix", " GP")}
-                </span>
-                {hasUnread && (
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#e10600" }} />
-                )}
-                {!isPast && (
-                  <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,255,255,0.2)" }}>
-                    upcoming
-                  </span>
-                )}
-              </div>
-              {isPast && previewAuthor && activity && (
-                <p
-                  className="text-xs mt-0.5 truncate"
-                  style={{ color: hasUnread ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.22)", paddingLeft: "22px" }}
-                >
-                  {previewAuthor}: {activity.content}
-                </p>
-              )}
-            </button>
-          );
-        })}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm shrink-0">{r.flag}</span>
+                    <span
+                      className="text-sm font-semibold flex-1 truncate"
+                      style={{ color: isSelected ? "var(--foreground)" : rIsPast ? "var(--muted)" : "rgba(255,255,255,0.35)" }}
+                    >
+                      {r.name.replace(" Grand Prix", " GP")}
+                    </span>
+                    {hasUnread && (
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#e10600" }} />
+                    )}
+                    {!rIsPast && (
+                      <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(255,255,255,0.2)" }}>
+                        upcoming
+                      </span>
+                    )}
+                  </div>
+                  {rIsPast && previewAuthor && activity && (
+                    <p
+                      className="text-xs mt-0.5 truncate"
+                      style={{ color: hasUnread ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.22)", paddingLeft: "22px" }}
+                    >
+                      {previewAuthor}: {activity.content}
+                    </p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Predictions */}
