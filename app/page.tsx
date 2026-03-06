@@ -54,7 +54,7 @@ function NextRaceHero({
 
   const dayLabel = !nextSession ? null
     : nextSession.label === "Race"             ? "RACE DAY"
-    : nextSession.label === "Qualifying"       ? "QUALIFYING DAY"
+    : nextSession.label === "Qualifying"       ? "It's Qualifying Day!"
     : nextSession.label === "Sprint Race"      ? "SPRINT DAY"
     : "SPRINT QUALIFYING";
 
