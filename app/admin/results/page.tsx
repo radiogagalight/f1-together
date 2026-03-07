@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { RACES, DRIVERS, CONSTRUCTORS } from "@/lib/data";
 import type { RaceResult, RaceWildcard, WildcardQuestionType } from "@/lib/types";
+import { loadWildcards as loadWildcardsFromStorage } from "@/lib/wildcardStorage";
 
 const NULL_OPTION = "__null__";
 
@@ -147,9 +148,8 @@ export default function AdminResultsPage() {
   }, []);
 
   const loadWildcards = useCallback(async (round: number) => {
-    const res = await fetch(`/api/wildcards/${round}`);
-    if (res.ok) setWildcards(await res.json());
-    else setWildcards([]);
+    const supabase = createClient();
+    setWildcards(await loadWildcardsFromStorage(round, supabase));
   }, []);
 
   useEffect(() => {
@@ -348,7 +348,7 @@ export default function AdminResultsPage() {
                   </label>
                   {wc.questionType === "boolean" ? (
                     <div className="flex gap-2">
-                      {["true", "false"].map((v) => (
+                      {["yes", "no"].map((v) => (
                         <button
                           key={v}
                           onClick={async () => {

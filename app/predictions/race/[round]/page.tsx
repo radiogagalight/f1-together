@@ -11,7 +11,7 @@ import DriverSelect from "@/components/DriverSelect";
 import type { RacePick, RaceResult, ScoreBreakdown, RaceWildcard, WildcardPick } from "@/lib/types";
 import { PICK_POINTS, scoreRound, scoreWildcards } from "@/lib/scoring";
 import { loadRaceResult } from "@/lib/resultsStorage";
-import { saveWildcardPick, deleteWildcardPick } from "@/lib/wildcardStorage";
+import { loadWildcards as loadWildcardsFromStorage, saveWildcardPick, deleteWildcardPick } from "@/lib/wildcardStorage";
 import { createClient } from "@/lib/supabase/client";
 
 function driverLastName(id: string | null): string {
@@ -298,8 +298,8 @@ export default function RaceDetailPage({
   }, [round]);
 
   const loadWildcards = useCallback(async () => {
-    const res = await fetch(`/api/wildcards/${round}`);
-    if (res.ok) setWildcards(await res.json());
+    const supabase = createClient();
+    setWildcards(await loadWildcardsFromStorage(round, supabase));
   }, [round]);
 
   useEffect(() => { loadWildcards(); }, [loadWildcards]);
