@@ -62,7 +62,7 @@ export function useRacePick(userId: string | undefined, round: number) {
         const current = prev.boostedPicks ?? [];
         const alreadyBoosted = current.includes(field);
         const totalUsed = current.length + wildcardBoostedCount;
-        if (!alreadyBoosted && totalUsed >= 3) return prev; // no slots left
+        if (!alreadyBoosted && totalUsed >= 1) return prev; // no slots left
         const updated: RacePick = {
           ...prev,
           boostedPicks: alreadyBoosted

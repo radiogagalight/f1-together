@@ -245,7 +245,7 @@ const SECTION_INFO: Record<string, {
       { label: "P6", pts: "8 pts" },
       { label: "Fastest Lap", pts: "5 pts" },
       { label: "Safety Car deployed", pts: "5 pts" },
-      { label: "Boosters: apply ⚡ to any race pick for 2× points (3 per race)", note: true },
+      { label: "Booster: apply ⚡ to any one race pick for 2× points (1 per race)", note: true },
       { label: "Exact match only — no partial credit", note: true },
     ],
   },
@@ -372,7 +372,7 @@ export default function RaceDetailPage({
   const boostedPicks = picks?.boostedPicks ?? [];
   const boostedWildcardCount = wildcardPicks.filter((p) => p.boosted).length;
   const totalBoostersUsed = boostedPicks.length + boostedWildcardCount;
-  const boostersRemaining = 3 - totalBoostersUsed;
+  const boostersRemaining = 1 - totalBoostersUsed;
 
   function handleBoostRacePick(field: string) {
     if (isRaceLocked) return;
@@ -944,7 +944,7 @@ export default function RaceDetailPage({
 
               {/* Booster counter */}
               <div className="flex items-center gap-1.5 mb-4">
-                {[0, 1, 2].map((i) => (
+                {[0].map((i) => (
                   <span
                     key={i}
                     className="text-[10px] font-bold px-2 py-0.5 rounded-full"
