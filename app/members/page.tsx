@@ -8,8 +8,6 @@ import { useAuth } from "@/components/AuthProvider";
 import { CONSTRUCTORS, DRIVERS, RACES } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
 import { sendPushToUser } from "@/lib/pushActions";
-import type { RaceResult } from "@/lib/types";
-import { loadRaceResult } from "@/lib/resultsStorage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,18 +28,6 @@ type Comment = {
   content: string;
   created_at: string;
   reply_to_id: string | null;
-};
-
-type PicksRow = {
-  user_id: string;
-  qual_pole: string | null;
-  qual_p2: string | null;
-  qual_p3: string | null;
-  race_winner: string | null;
-  race_p2: string | null;
-  race_p3: string | null;
-  fastest_lap: string | null;
-  safety_car: boolean | null;
 };
 
 type ActivityItem = {
@@ -471,136 +457,6 @@ function FeedTab({
           </>
         );
       })()}
-    </div>
-  );
-}
-
-// ─── Picks Grid ───────────────────────────────────────────────────────────────
-
-const PICK_LABELS: { key: keyof PicksRow; label: string }[] = [
-  { key: "qual_pole",   label: "Pole"     },
-  { key: "qual_p2",     label: "Q P2"     },
-  { key: "qual_p3",     label: "Q P3"     },
-  { key: "race_winner", label: "Race Win" },
-  { key: "race_p2",     label: "Race P2"  },
-  { key: "race_p3",     label: "Race P3"  },
-  { key: "fastest_lap", label: "Fastest"  },
-  { key: "safety_car",  label: "Safety"   },
-];
-
-const PICKS_TO_RESULT_KEY: Record<string, keyof RaceResult> = {
-  qual_pole: "qualPole", qual_p2: "qualP2", qual_p3: "qualP3",
-  race_winner: "raceWinner", race_p2: "raceP2", race_p3: "raceP3",
-  fastest_lap: "fastestLap", safety_car: "safetyCar",
-};
-const QUAL_PICK_KEYS = new Set(["qual_pole", "qual_p2", "qual_p3"]);
-
-function pickStatusForMember(
-  key: string,
-  pickVal: string | boolean | null,
-  result: RaceResult | null
-): "correct" | "partial" | "wrong" | undefined {
-  if (!result) return undefined;
-  const rk = PICKS_TO_RESULT_KEY[key];
-  if (!rk) return undefined;
-  const resultVal = result[rk] as string | boolean | null;
-  if (resultVal === null) return undefined;
-  if (pickVal === null || pickVal === undefined) return undefined;
-  if (pickVal === resultVal) return "correct";
-  if (QUAL_PICK_KEYS.has(key)) {
-    const qualVals = [result.qualPole, result.qualP2, result.qualP3];
-    if (typeof pickVal === "string" && qualVals.includes(pickVal)) return "partial";
-  }
-  return "wrong";
-}
-
-function PicksGrid({
-  picks,
-  profileMap,
-  loading,
-  result,
-}: {
-  picks: PicksRow[];
-  profileMap: Map<string, Profile>;
-  loading: boolean;
-  result?: RaceResult | null;
-}) {
-  if (loading) {
-    return <p className="text-sm py-4" style={{ color: "var(--muted)" }}>Loading predictions…</p>;
-  }
-  if (picks.length === 0) {
-    return (
-      <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
-        No picks have been made for this race yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      {picks.map((pick) => {
-        const profile = profileMap.get(pick.user_id);
-        const accent = profileAccent(profile);
-        const rgb = hexToRgb(accent);
-        return (
-          <div
-            key={pick.user_id}
-            className="rounded-xl p-4"
-            style={{
-              backgroundColor: `rgba(${rgb},0.06)`,
-              border: `1px solid rgba(${rgb},0.2)`,
-            }}
-          >
-            <p className="text-sm font-bold mb-3" style={{ color: accent }}>
-              {profile?.display_name ?? "Unknown"}
-            </p>
-            <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-              {PICK_LABELS.map(({ key, label }) => {
-                const val = pick[key];
-                let displayVal: string | null = null;
-                let displayColor = "var(--foreground)";
-
-                if (key === "safety_car") {
-                  if (val === true) { displayVal = "Yes"; displayColor = "#22c55e"; }
-                  else if (val === false) { displayVal = "No"; displayColor = "#ef4444"; }
-                } else {
-                  const strVal = val as string | null;
-                  displayVal = driverName(strVal) || null;
-                  displayColor = driverTeamColor(strVal) ?? "var(--foreground)";
-                }
-
-                const status = pickStatusForMember(key, val, result ?? null);
-                const dotColor = status === "correct" ? "#22c55e"
-                  : status === "partial" ? "#f59e0b"
-                  : status === "wrong" ? "#ef4444"
-                  : null;
-
-                return (
-                  <div key={key} className="flex items-start gap-1">
-                    <span
-                      className="text-xs shrink-0 mt-px"
-                      style={{ color: "var(--muted)", minWidth: "52px" }}
-                    >
-                      {label}
-                    </span>
-                    {dotColor && (
-                      <span style={{ color: dotColor, fontSize: "10px", lineHeight: "1.4", flexShrink: 0 }}>
-                        {status === "correct" ? "✓" : status === "partial" ? "~" : "✗"}
-                      </span>
-                    )}
-                    <span
-                      className="text-xs font-medium truncate"
-                      style={{ color: displayVal ? displayColor : "var(--muted)" }}
-                    >
-                      {displayVal ?? "—"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -1215,17 +1071,12 @@ function RacesTab({
   selectedRound: number;
   setSelectedRound: (r: number) => void;
 }) {
-  const now = new Date();
-  const [picks, setPicks] = useState<PicksRow[]>([]);
-  const [loadingPicks, setLoadingPicks] = useState(false);
-  const [raceResult, setRaceResult] = useState<RaceResult | null>(null);
   const [raceActivity, setRaceActivity] = useState<Record<number, { content: string; userId: string; createdAt: string }>>({});
   const [lastReadTimes, setLastReadTimes] = useState<Record<number, number>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const supabase = createClient();
 
   const race = RACES.find((r) => r.r === selectedRound)!;
-  const isRevealed = new Date(race.startUtc) < now;
 
   // Load last-read timestamps + latest comment per revealed round
   useEffect(() => {
@@ -1261,24 +1112,6 @@ function RacesTab({
     setLastReadTimes((prev) => ({ ...prev, [round]: Date.now() }));
   }
 
-  useEffect(() => {
-    if (!isRevealed) {
-      setPicks([]);
-      setRaceResult(null);
-      return;
-    }
-    setLoadingPicks(true);
-    supabase
-      .from("race_picks")
-      .select("user_id,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,fastest_lap,safety_car")
-      .eq("round", selectedRound)
-      .then(({ data }) => {
-        setPicks(data ?? []);
-        setLoadingPicks(false);
-      });
-    loadRaceResult(selectedRound, supabase).then(setRaceResult);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRound]);
 
   return (
     <div>
@@ -1302,16 +1135,17 @@ function RacesTab({
               {(() => {
                 const activity = raceActivity[race.r];
                 const lastRead = lastReadTimes[race.r] ?? 0;
-                const hasUnread = isRevealed && !!activity && new Date(activity.createdAt).getTime() > lastRead;
+                const raceStarted = new Date(race.startUtc) < new Date();
+                const hasUnread = raceStarted && !!activity && new Date(activity.createdAt).getTime() > lastRead;
                 const previewAuthor = activity ? (profileMap.get(activity.userId)?.display_name?.split(" ")[0] ?? "Someone") : null;
-                if (isRevealed && previewAuthor && activity) {
+                if (raceStarted && previewAuthor && activity) {
                   return (
                     <p className="text-xs truncate" style={{ color: hasUnread ? "rgba(255,255,255,0.5)" : "var(--muted)" }}>
                       {previewAuthor}: {activity.content}
                     </p>
                   );
                 }
-                if (!isRevealed) {
+                if (!raceStarted) {
                   return <p className="text-xs" style={{ color: "var(--muted)" }}>Upcoming race</p>;
                 }
                 return null;
@@ -1392,18 +1226,6 @@ function RacesTab({
               );
             })}
           </div>
-        )}
-      </div>
-
-      {/* Predictions */}
-      <div className="mb-6">
-        <SectionHeader label="Predictions" />
-        {isRevealed ? (
-          <PicksGrid picks={picks} profileMap={profileMap} loading={loadingPicks} result={raceResult} />
-        ) : (
-          <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
-            Predictions are revealed once the race weekend begins.
-          </p>
         )}
       </div>
 
