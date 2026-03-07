@@ -13,7 +13,315 @@ import Companion from "@/components/Companion";
 import { createClient } from "@/lib/supabase/client";
 import { loadRaceResult } from "@/lib/resultsStorage";
 import { scoreRound } from "@/lib/scoring";
-import type { RacePick } from "@/lib/types";
+import type { RacePick, RaceResult, ScoreBreakdown } from "@/lib/types";
+
+function WeekendResultsCard({
+  result,
+  pick,
+  userId,
+}: {
+  result: RaceResult;
+  pick: RacePick | null;
+  userId: string;
+}) {
+  const round = result.round;
+  const seenKey = `wrc-seen-r${round}`;
+
+  const [open, setOpen] = useState(false);
+  const [isFirstOpen, setIsFirstOpen] = useState(false);
+  const [rowsVisible, setRowsVisible] = useState(false);
+  const [displayedPoints, setDisplayedPoints] = useState(0);
+
+  const hasRace = result.raceWinner !== null;
+  const hasSprint = result.sprintWinner !== null || result.sprintQualPole !== null;
+
+  const score = pick && userId ? scoreRound(userId, pick, result) : null;
+  const totalPoints = score?.totalPoints ?? 0;
+  const breakdown = score?.breakdown ?? null;
+
+  // Perfect round: no pick that was made and had a result scored 0
+  const isPerfect =
+    totalPoints > 0 &&
+    pick !== null &&
+    breakdown !== null &&
+    !(Object.keys(breakdown) as Array<keyof ScoreBreakdown>).some((key) => {
+      const pickVal = (pick as unknown as Record<string, unknown>)[key];
+      const resultVal = (result as unknown as Record<string, unknown>)[key];
+      return (
+        pickVal !== null && pickVal !== undefined &&
+        resultVal !== null && resultVal !== undefined &&
+        breakdown[key] === 0
+      );
+    });
+
+  // Auto-expand on first view (client only)
+  useEffect(() => {
+    if (!localStorage.getItem(seenKey)) {
+      setIsFirstOpen(true);
+      setOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Animate on open
+  useEffect(() => {
+    if (!open) {
+      setRowsVisible(false);
+      setDisplayedPoints(0);
+      return;
+    }
+    if (isFirstOpen) localStorage.setItem(seenKey, "1");
+    const t = setTimeout(() => setRowsVisible(true), 80);
+    if (totalPoints > 0) {
+      const duration = 900;
+      const fps = 50;
+      const totalFrames = Math.round((duration / 1000) * fps);
+      let frame = 0;
+      const timer = setInterval(() => {
+        frame++;
+        const eased = 1 - Math.pow(1 - Math.min(frame / totalFrames, 1), 3);
+        setDisplayedPoints(Math.round(eased * totalPoints));
+        if (frame >= totalFrames) clearInterval(timer);
+      }, 1000 / fps);
+      return () => { clearInterval(timer); clearTimeout(t); };
+    }
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  function dn(id: string | null): string {
+    if (!id) return "—";
+    return DRIVERS.find((d) => d.id === id)?.name.split(" ").pop() ?? id;
+  }
+
+  const accent = isPerfect ? "rgba(255,215,0,1)" : "rgba(34,197,94,1)";
+  const accentMuted = isPerfect ? "rgba(255,215,0,0.6)" : "rgba(34,197,94,0.6)";
+
+  function driverRow(
+    pos: string,
+    id: string | null,
+    pickId: string | null,
+    bdKey: keyof ScoreBreakdown,
+    rowIndex: number
+  ) {
+    const pts = breakdown?.[bdKey] ?? 0;
+    const isCorrect = pts > 0;
+    const hasPick = pickId !== null;
+    return (
+      <div
+        key={bdKey}
+        className="flex items-center gap-3 py-1"
+        style={{
+          opacity: rowsVisible ? 1 : 0,
+          transform: rowsVisible ? "translateY(0)" : "translateY(6px)",
+          transition: `opacity 0.3s ease ${rowIndex * 55}ms, transform 0.3s ease ${rowIndex * 55}ms`,
+        }}
+      >
+        <span className="text-[10px] w-5 shrink-0 font-mono text-right" style={{ color: "var(--muted)" }}>{pos}</span>
+        <span
+          className="text-sm font-bold flex-1"
+          style={{
+            color: isCorrect ? "rgba(34,197,94,1)" : id ? "rgba(255,255,255,0.85)" : "var(--muted)",
+            textShadow: isCorrect
+              ? isFirstOpen ? "0 0 14px rgba(34,197,94,0.9)" : "0 0 8px rgba(34,197,94,0.4)"
+              : "none",
+          }}
+        >
+          {dn(id)}
+        </span>
+        {hasPick ? (
+          isCorrect ? (
+            <>
+              <span className="text-xs font-bold" style={{ color: "rgba(34,197,94,0.85)" }}>✓</span>
+              <span className="text-xs font-bold w-9 text-right tabular-nums" style={{ color: "rgba(34,197,94,0.7)" }}>+{pts}</span>
+            </>
+          ) : (
+            <>
+              <span className="text-xs" style={{ color: "rgba(255,80,80,0.7)" }}>✗ {dn(pickId)}</span>
+              <span className="text-xs w-9 text-right" style={{ color: "rgba(255,255,255,0.2)" }}>0</span>
+            </>
+          )
+        ) : (
+          <span className="text-xs w-9 text-right" style={{ color: "rgba(255,255,255,0.15)" }}>—</span>
+        )}
+      </div>
+    );
+  }
+
+  function boolRow(
+    label: string,
+    resultVal: boolean | null,
+    pickVal: boolean | null,
+    bdKey: keyof ScoreBreakdown,
+    rowIndex: number
+  ) {
+    if (resultVal === null) return null;
+    const pts = breakdown?.[bdKey] ?? 0;
+    const isCorrect = pts > 0;
+    const hasPick = pickVal !== null;
+    return (
+      <div
+        key={bdKey}
+        className="flex items-center gap-3 py-1"
+        style={{
+          opacity: rowsVisible ? 1 : 0,
+          transform: rowsVisible ? "translateY(0)" : "translateY(6px)",
+          transition: `opacity 0.3s ease ${rowIndex * 55}ms, transform 0.3s ease ${rowIndex * 55}ms`,
+        }}
+      >
+        <span className="text-[10px] w-5 shrink-0 font-mono text-right" style={{ color: "var(--muted)" }}>—</span>
+        <span className="text-sm font-bold flex-1" style={{ color: isCorrect ? "rgba(34,197,94,1)" : "rgba(255,255,255,0.7)" }}>
+          {label}: {resultVal ? "Yes" : "No"}
+        </span>
+        {hasPick ? (
+          isCorrect ? (
+            <>
+              <span className="text-xs font-bold" style={{ color: "rgba(34,197,94,0.85)" }}>✓</span>
+              <span className="text-xs font-bold w-9 text-right tabular-nums" style={{ color: "rgba(34,197,94,0.7)" }}>+{pts}</span>
+            </>
+          ) : (
+            <>
+              <span className="text-xs" style={{ color: "rgba(255,80,80,0.7)" }}>✗</span>
+              <span className="text-xs w-9 text-right" style={{ color: "rgba(255,255,255,0.2)" }}>0</span>
+            </>
+          )
+        ) : (
+          <span className="text-xs w-9 text-right" style={{ color: "rgba(255,255,255,0.15)" }}>—</span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <style>{`
+        @keyframes wrc-bounce-in {
+          0%   { transform: scale(0.97); opacity: 0.7; }
+          60%  { transform: scale(1.015); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes wrc-gold-pulse {
+          0%, 100% { box-shadow: 0 0 16px rgba(255,215,0,0.12); }
+          50%       { box-shadow: 0 0 36px rgba(255,215,0,0.32); }
+        }
+      `}</style>
+      <div
+        className="rounded-xl overflow-hidden mt-3"
+        style={{
+          border: `1px solid ${isPerfect ? "rgba(255,215,0,0.4)" : "rgba(34,197,94,0.3)"}`,
+          backgroundColor: isPerfect ? "rgba(255,215,0,0.04)" : "rgba(34,197,94,0.04)",
+          animation: isPerfect && open ? "wrc-gold-pulse 2.5s ease-in-out infinite" : "none",
+        }}
+      >
+        {/* Header */}
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-4 py-3"
+          style={{ borderBottom: open ? `1px solid ${isPerfect ? "rgba(255,215,0,0.15)" : "rgba(34,197,94,0.15)"}` : "none" }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: accent }} />
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
+              {hasRace ? "Race Results" : "Qualifying Results"}
+            </span>
+            {isPerfect && (
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: "rgba(255,215,0,0.15)", color: "#ffd700", border: "1px solid rgba(255,215,0,0.3)" }}
+              >
+                ⚡ Perfect
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {totalPoints > 0 && !open && (
+              <span className="text-xs font-bold" style={{ color: accentMuted }}>+{totalPoints} pts</span>
+            )}
+            <span style={{ color: accentMuted, fontSize: "11px", fontWeight: 700 }}>
+              {open ? "▲ Hide" : "▼ Show"}
+            </span>
+          </div>
+        </button>
+
+        {open && (
+          <div
+            className="px-4 py-3 flex flex-col gap-4"
+            style={{ animation: isFirstOpen ? "wrc-bounce-in 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards" : "none" }}
+          >
+            {/* Points summary */}
+            {pick && (
+              <div
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
+                style={{
+                  backgroundColor: isPerfect ? "rgba(255,215,0,0.07)" : "rgba(34,197,94,0.07)",
+                  border: `1px solid ${isPerfect ? "rgba(255,215,0,0.2)" : "rgba(34,197,94,0.15)"}`,
+                }}
+              >
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    Your score this weekend
+                  </p>
+                  <p
+                    className="font-black leading-none"
+                    style={{
+                      fontSize: "28px",
+                      color: totalPoints > 0 ? accent : "rgba(255,255,255,0.3)",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {displayedPoints}
+                    <span className="text-sm font-bold ml-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>pts</span>
+                  </p>
+                </div>
+                {isPerfect && <span style={{ fontSize: "28px", lineHeight: 1 }}>⚡</span>}
+              </div>
+            )}
+
+            {/* Qualifying */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: accentMuted }}>Qualifying</p>
+              {driverRow("P1", result.qualPole, pick?.qualPole ?? null, "qualPole", 0)}
+              {driverRow("P2", result.qualP2,   pick?.qualP2   ?? null, "qualP2",   1)}
+              {driverRow("P3", result.qualP3,   pick?.qualP3   ?? null, "qualP3",   2)}
+            </div>
+
+            {/* Race */}
+            {hasRace && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: accentMuted }}>Race</p>
+                {driverRow("P1", result.raceWinner, pick?.raceWinner ?? null, "raceWinner", 3)}
+                {driverRow("P2", result.raceP2,     pick?.raceP2     ?? null, "raceP2",     4)}
+                {driverRow("P3", result.raceP3,     pick?.raceP3     ?? null, "raceP3",     5)}
+                {driverRow("FL", result.fastestLap, pick?.fastestLap ?? null, "fastestLap", 6)}
+                {boolRow("Safety Car", result.safetyCar, pick?.safetyCar ?? null, "safetyCar", 7)}
+              </div>
+            )}
+
+            {/* Sprint Qualifying */}
+            {hasSprint && result.sprintQualPole !== null && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: accentMuted }}>Sprint Qualifying</p>
+                {driverRow("P1", result.sprintQualPole, pick?.sprintQualPole ?? null, "sprintQualPole", 8)}
+                {driverRow("P2", result.sprintQualP2,   pick?.sprintQualP2   ?? null, "sprintQualP2",   9)}
+                {driverRow("P3", result.sprintQualP3,   pick?.sprintQualP3   ?? null, "sprintQualP3",   10)}
+              </div>
+            )}
+
+            {/* Sprint Race */}
+            {hasSprint && result.sprintWinner !== null && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: accentMuted }}>Sprint Race</p>
+                {driverRow("P1", result.sprintWinner, pick?.sprintWinner ?? null, "sprintWinner", 11)}
+                {driverRow("P2", result.sprintP2,     pick?.sprintP2     ?? null, "sprintP2",     12)}
+                {driverRow("P3", result.sprintP3,     pick?.sprintP3     ?? null, "sprintP3",     13)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
 
 function NextRaceHero({
   race,
@@ -64,8 +372,9 @@ function NextRaceHero({
     : nextSession.label === "Sprint Race"      ? "It's Sprint Day!"
     : "It's Sprint Qualifying!";
 
-  const poleName   = picks.pole   ? (DRIVERS.find(d => d.id === picks.pole)?.name   ?? null) : null;
-  const winnerName = picks.winner ? (DRIVERS.find(d => d.id === picks.winner)?.name ?? null) : null;
+  const qualPassed = new Date(race.qualifyingUtc).getTime() <= now;
+  const poleName   = !qualPassed && picks.pole   ? (DRIVERS.find(d => d.id === picks.pole)?.name   ?? null) : null;
+  const winnerName = !raceStarted && picks.winner ? (DRIVERS.find(d => d.id === picks.winner)?.name ?? null) : null;
   const hasPicks   = !!(poleName || winnerName);
 
   return (
@@ -134,14 +443,14 @@ function NextRaceHero({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span
-              className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+              className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
               style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
             >
               Round {race.r}
             </span>
             {race.sprint && (
               <span
-                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: "rgba(255,200,0,0.12)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.35)" }}
               >
                 Sprint
@@ -160,7 +469,7 @@ function NextRaceHero({
             }}
           >
             <Users size={12} strokeWidth={2} />
-            Chat about the race
+            Go to the race chat
           </Link>
         </div>
 
@@ -182,14 +491,14 @@ function NextRaceHero({
             </p>
           )}
 
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-sm font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
             {race.circuit}
           </p>
           <h2 className="font-black leading-none mb-3" style={{ fontFamily: "var(--font-orbitron)", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>
-            <span className="block text-2xl" style={{ color: "#ffffff" }}>
+            <span className="block text-3xl" style={{ color: "#ffffff" }}>
               {race.name.replace(" Grand Prix", "")}
             </span>
-            <span className="block text-base" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <span className="block text-lg" style={{ color: "rgba(255,255,255,0.5)" }}>
               Grand Prix
             </span>
           </h2>
@@ -209,7 +518,7 @@ function NextRaceHero({
                         boxShadow: sNext ? "0 0 8px 2px rgba(225,6,0,0.7)" : "none",
                       }} />
                       <span style={{
-                        fontSize: "8px", fontWeight: 700, letterSpacing: "0.05em",
+                        fontSize: "10px", fontWeight: 700, letterSpacing: "0.05em",
                         textTransform: "uppercase", whiteSpace: "nowrap",
                         color: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.4)",
                       }}>
@@ -233,7 +542,7 @@ function NextRaceHero({
             <p className="text-sm font-bold mb-3" style={{ color: "var(--f1-red)" }}>Lights out! 🏁</p>
           ) : nextSession ? (
             <div className="mb-3">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
                 {isLive ? `${nextSession.label} starts in` : `Until ${nextSession.label}`}
               </p>
               <div className="flex gap-4">
@@ -247,7 +556,7 @@ function NextRaceHero({
                     <span
                       className={under1h ? "animate-pulse" : ""}
                       style={{
-                        fontSize: "1.5rem", fontWeight: 900,
+                        fontSize: "2rem", fontWeight: 900,
                         fontVariantNumeric: "tabular-nums", lineHeight: 1,
                         color: countdownColor,
                         textShadow: under24h ? `0 0 16px ${countdownColor}55` : "none",
@@ -255,7 +564,7 @@ function NextRaceHero({
                     >
                       {u === "Days" ? v : pad(v)}
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    <span className="text-[11px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
                       {u}
                     </span>
                   </div>
@@ -267,7 +576,7 @@ function NextRaceHero({
           {/* Last race score */}
           {lastRaceScore && (
             <div className="mb-2 flex items-center gap-1.5">
-              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
+              <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>
                 {lastRaceScore.flag} {lastRaceScore.raceName.replace(" Grand Prix", " GP")}:{" "}
                 <span style={{ color: lastRaceScore.totalPoints > 0 ? "#22c55e" : "rgba(255,255,255,0.4)", fontWeight: 700 }}>
                   {lastRaceScore.totalPoints} pts
@@ -279,29 +588,29 @@ function NextRaceHero({
           {/* Pick preview */}
           {hasPicks ? (
             <div className="mb-3 flex flex-col gap-0.5">
-              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)" }}>
                 Your picks
               </p>
               {poleName && (
-                <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>
                   Pole · {poleName}
                 </p>
               )}
               {winnerName && (
-                <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>
                   Race · {winnerName}
                 </p>
               )}
             </div>
           ) : (
-            <p className="mb-3" style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>
+            <p className="mb-3" style={{ fontSize: "12px", color: "rgba(255,255,255,0.25)" }}>
               No picks yet
             </p>
           )}
 
           <Link
             href={`/predictions/race/${race.r}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-base font-bold"
             style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
           >
             {hasPicks ? "Edit picks →" : "Make your picks →"}
@@ -374,6 +683,52 @@ export default function HomePage() {
   const lastRaceIdx = nextRaceIdx > 0 ? nextRaceIdx - 1 : -1;
   const lastRace = lastRaceIdx >= 0 ? RACES[lastRaceIdx] : null;
   const [lastRaceScore, setLastRaceScore] = useState<{ raceName: string; totalPoints: number; flag: string } | null>(null);
+
+  // Most recently qualified race (qualifying start time has passed)
+  const qualifiedRaceIdx = (() => {
+    const now = Date.now();
+    let idx = -1;
+    for (let i = 0; i < RACES.length; i++) {
+      if (new Date(RACES[i].qualifyingUtc).getTime() <= now) idx = i;
+      else break;
+    }
+    return idx;
+  })();
+  const [currentRaceResult, setCurrentRaceResult] = useState<RaceResult | null>(null);
+  const [currentRacePick, setCurrentRacePick] = useState<RacePick | null>(null);
+  useEffect(() => {
+    if (qualifiedRaceIdx < 0) return;
+    const supabase = createClient();
+    loadRaceResult(RACES[qualifiedRaceIdx].r, supabase).then(setCurrentRaceResult);
+    if (user) {
+      supabase
+        .from("race_picks")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("round", RACES[qualifiedRaceIdx].r)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!data) return;
+          setCurrentRacePick({
+            qualPole:       data.qual_pole        ?? null,
+            qualP2:         data.qual_p2          ?? null,
+            qualP3:         data.qual_p3          ?? null,
+            raceWinner:     data.race_winner      ?? null,
+            raceP2:         data.race_p2          ?? null,
+            raceP3:         data.race_p3          ?? null,
+            fastestLap:     data.fastest_lap      ?? null,
+            safetyCar:      data.safety_car       ?? null,
+            sprintQualPole: data.sprint_qual_pole ?? null,
+            sprintQualP2:   data.sprint_qual_p2   ?? null,
+            sprintQualP3:   data.sprint_qual_p3   ?? null,
+            sprintWinner:   data.sprint_winner    ?? null,
+            sprintP2:       data.sprint_p2        ?? null,
+            sprintP3:       data.sprint_p3        ?? null,
+          });
+        });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user || !lastRace) return;
@@ -498,6 +853,9 @@ export default function HomePage() {
         {/* ── Next Race Hero ── */}
         <div className="md:w-[620px] md:shrink-0">
           <NextRaceHero race={RACES[nextRaceIdx]} picks={heroPicks} lastRaceScore={lastRaceScore} />
+          {currentRaceResult?.qualPole && (
+            <WeekendResultsCard result={currentRaceResult} pick={currentRacePick} userId={user?.id ?? ""} />
+          )}
         </div>
 
         {/* ── Race Schedule Panel ── */}
