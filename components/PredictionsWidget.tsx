@@ -240,18 +240,18 @@ export default function PredictionsWidget() {
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+        className="flex items-center px-4 shrink-0"
+        style={{
+          minHeight: "64px",
+          borderBottom: "1px solid rgba(255,255,255,0.10)",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%231a1a1a'/%3E%3Crect width='2' height='2' fill='%23242424'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%23242424'/%3E%3Crect width='2' height='.8' fill='%23333'/%3E%3Crect x='2' y='2' width='2' height='.8' fill='%23333'/%3E%3Crect width='2' height='.35' y='.1' fill='%23444' opacity='.8'/%3E%3Crect x='2' y='2.1' width='2' height='.35' fill='%23444' opacity='.8'/%3E%3C%2Fsvg%3E")`,
+          backgroundRepeat: "repeat",
+        }}
       >
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
-            Picks Due
-          </span>
-        </div>
-        <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
-          {nextRace.flag} {nextRace.name.replace(" Grand Prix", " GP")}
-        </span>
+        <h2 style={{ fontFamily: "var(--font-orbitron)", fontSize: "22px", fontWeight: 600, letterSpacing: "0.02em", lineHeight: 1 }}>
+          <span style={{ color: "var(--f1-red)" }}>Picks</span>
+          <span style={{ color: "rgba(255,255,255,0.90)" }}> Due</span>
+        </h2>
       </div>
 
       {/* Race sections — each row is tappable */}
