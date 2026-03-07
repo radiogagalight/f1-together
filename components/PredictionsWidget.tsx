@@ -8,8 +8,8 @@ import { useSeasonPicks } from "@/hooks/useSeasonPicks";
 import { RACES } from "@/lib/data";
 import type { RacePick, SeasonPicks } from "@/lib/types";
 
-// Season picks lock at R1 lights out
-const SEASON_LOCK_UTC = RACES[0].startUtc;
+// Season picks lock at Chinese GP FP1 (R2 weekend start)
+const SEASON_LOCK_UTC = RACES[1].weekendStartUtc!;
 
 function getNextRace() {
   const idx = RACES.findIndex((r) => new Date(r.startUtc).getTime() > Date.now());

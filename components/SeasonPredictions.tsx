@@ -7,7 +7,7 @@ import MidseasonPredictions from "./MidseasonPredictions";
 import { CATEGORIES, RACES } from "@/lib/data";
 import type { SeasonPicks } from "@/lib/types";
 
-const SEASON_LOCK_UTC = RACES[0].startUtc; // locks at Race 1 lights out
+const SEASON_LOCK_UTC = RACES[1].weekendStartUtc!; // locks at Chinese GP FP1 (R2 weekend start)
 
 const GROUPS: { label: string; keys: (keyof SeasonPicks)[] }[] = [
   { label: "Championship", keys: ["wdcWinner", "wccWinner"] },
@@ -57,7 +57,7 @@ export default function SeasonPredictions() {
           className="mb-6 rounded-xl px-4 py-3 text-sm"
           style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--muted)" }}
         >
-          🔒 Season predictions are locked — Race 1 has started.
+          🔒 Season predictions are locked — the Chinese GP weekend has begun.
         </div>
       )}
 
