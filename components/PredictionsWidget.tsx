@@ -254,6 +254,19 @@ export default function PredictionsWidget() {
         </h2>
       </div>
 
+      {/* Race header */}
+      {raceSections.length > 0 && (
+        <div
+          className="flex items-center gap-2 px-4 pt-3 pb-2"
+          style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+        >
+          <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
+            {nextRace.flag} {nextRace.name.replace(" Grand Prix", " GP")}
+          </span>
+        </div>
+      )}
+
       {/* Race sections — each row is tappable */}
       {raceSections.map((section, i) => (
         <SectionRow key={section.key} section={section} isLast={i === raceSections.length - 1 && !seasonSection} />
