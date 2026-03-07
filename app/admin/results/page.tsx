@@ -117,6 +117,7 @@ export default function AdminResultsPage() {
   const [newWcPoints, setNewWcPoints] = useState(10);
   const [newWcBattleA, setNewWcBattleA] = useState<string | null>(null);
   const [newWcBattleB, setNewWcBattleB] = useState<string | null>(null);
+  const [newWcBattleTeam, setNewWcBattleTeam] = useState<string | null>(null);
   const [creatingWc, setCreatingWc] = useState(false);
 
   const supabase = createClient();
@@ -290,9 +291,19 @@ export default function AdminResultsPage() {
 
       {/* Wildcards & Battles */}
       <section className="mb-6">
-        <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
-          Wild Cards &amp; Battles ({wildcards.length}/5)
-        </h2>
+        <div className="flex items-center gap-3 mb-4">
+          <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "#9664ff" }} />
+          <h2 className="text-sm font-bold uppercase tracking-widest" style={{ color: "var(--foreground)" }}>
+            Wild Cards &amp; Battles
+          </h2>
+          <span
+            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: "rgba(150,100,255,0.15)", color: "#9664ff", border: "1px solid rgba(150,100,255,0.35)" }}
+          >
+            {wildcards.length}/5
+          </span>
+          <div className="flex-1 h-px" style={{ backgroundColor: "rgba(150,100,255,0.2)" }} />
+        </div>
 
         {/* Existing wildcards */}
         {wildcards.length > 0 && (
@@ -424,20 +435,17 @@ export default function AdminResultsPage() {
           >
             <p className="text-xs font-semibold mb-3" style={{ color: "var(--muted)" }}>Add new question</p>
             <div className="flex flex-col gap-2">
-              <input
-                type="text"
-                placeholder="Question text…"
-                value={newWcQuestion}
-                onChange={(e) => setNewWcQuestion(e.target.value)}
-                className="px-3 py-2 text-sm rounded-lg"
-                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
-              />
               <div className="flex gap-2">
                 <div className="flex flex-col gap-1 flex-1">
                   <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>Type</label>
                   <select
                     value={newWcType}
-                    onChange={(e) => setNewWcType(e.target.value as WildcardQuestionType)}
+                    onChange={(e) => {
+                      setNewWcType(e.target.value as WildcardQuestionType);
+                      setNewWcBattleTeam(null);
+                      setNewWcBattleA(null);
+                      setNewWcBattleB(null);
+                    }}
                     className="px-3 py-2 text-sm rounded-lg"
                     style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
                   >
@@ -459,17 +467,84 @@ export default function AdminResultsPage() {
                 </div>
               </div>
 
-              {newWcType === "battle" && (
+              {newWcType === "battle" ? (
                 <div className="flex flex-col gap-2">
-                  <DriverSelect label="Driver A" value={newWcBattleA} onChange={setNewWcBattleA} />
-                  <DriverSelect label="Driver B" value={newWcBattleB} onChange={setNewWcBattleB} />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>Team</label>
+                    <select
+                      value={newWcBattleTeam ?? ""}
+                      onChange={(e) => {
+                        const teamId = e.target.value || null;
+                        setNewWcBattleTeam(teamId);
+                        if (teamId) {
+                          const c = CONSTRUCTORS.find((c) => c.id === teamId);
+                          const teamDrivers = DRIVERS.filter((d) =>
+                            d.team.toLowerCase().replace(/\s+/g, "-") === teamId
+                          );
+                          setNewWcBattleA(teamDrivers[0]?.id ?? null);
+                          setNewWcBattleB(teamDrivers[1]?.id ?? null);
+                          setNewWcQuestion(c ? `Which ${c.name} driver finishes higher in the race?` : "");
+                        } else {
+                          setNewWcBattleA(null);
+                          setNewWcBattleB(null);
+                          setNewWcQuestion("");
+                        }
+                      }}
+                      className="px-3 py-2 text-sm rounded-lg"
+                      style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+                    >
+                      <option value="" style={{ backgroundColor: "#0c0810" }}>— pick a team —</option>
+                      {CONSTRUCTORS.map((c) => (
+                        <option key={c.id} value={c.id} style={{ backgroundColor: "#0c0810" }}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {newWcBattleTeam && (
+                    <div
+                      className="rounded-lg px-3 py-2 text-sm"
+                      style={{ backgroundColor: "rgba(150,100,255,0.08)", border: "1px solid rgba(150,100,255,0.2)", color: "rgba(150,100,255,0.9)" }}
+                    >
+                      <span className="text-[10px] font-bold uppercase tracking-wider block mb-0.5" style={{ color: "rgba(150,100,255,0.6)" }}>Question</span>
+                      {newWcQuestion}
+                    </div>
+                  )}
+                  {newWcBattleTeam && newWcBattleA && newWcBattleB && (
+                    <div className="flex gap-2">
+                      <span
+                        className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg"
+                        style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--muted)" }}
+                      >
+                        {DRIVERS.find((d) => d.id === newWcBattleA)?.name}
+                      </span>
+                      <span className="text-xs font-bold self-center" style={{ color: "var(--muted)" }}>vs</span>
+                      <span
+                        className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg"
+                        style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--muted)" }}
+                      >
+                        {DRIVERS.find((d) => d.id === newWcBattleB)?.name}
+                      </span>
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Question text…"
+                  value={newWcQuestion}
+                  onChange={(e) => setNewWcQuestion(e.target.value)}
+                  className="px-3 py-2 text-sm rounded-lg"
+                  style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+                />
               )}
 
               <button
                 onClick={async () => {
-                  if (!newWcQuestion.trim()) { setWcStatus("Enter a question."); return; }
-                  if (newWcType === "battle" && (!newWcBattleA || !newWcBattleB)) { setWcStatus("Pick both drivers for the battle."); return; }
+                  if (newWcType === "battle") {
+                    if (!newWcBattleTeam) { setWcStatus("Pick a team for the battle."); return; }
+                    if (!newWcBattleA || !newWcBattleB) { setWcStatus("Could not find two drivers for that team."); return; }
+                  } else {
+                    if (!newWcQuestion.trim()) { setWcStatus("Enter a question."); return; }
+                  }
                   setCreatingWc(true); setWcStatus(null);
                   const battleOptions = newWcType === "battle"
                     ? [
@@ -490,7 +565,8 @@ export default function AdminResultsPage() {
                   });
                   setCreatingWc(false);
                   if (res.ok) {
-                    setNewWcQuestion(""); setNewWcBattleA(null); setNewWcBattleB(null); setNewWcPoints(10);
+                    setNewWcQuestion(""); setNewWcBattleA(null); setNewWcBattleB(null);
+                    setNewWcBattleTeam(null); setNewWcPoints(10);
                     setWcStatus("Question added.");
                     loadWildcards(selectedRound);
                   } else {
