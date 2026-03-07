@@ -400,18 +400,36 @@ export default function StandingsPage() {
           const roundResult = rawResults.find((r) => r.round === selectedRace.r) ?? null;
           const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
-          const PRED_ROWS: { key: keyof RacePick; label: string; isBool?: boolean }[] = [
-            { key: "qualPole",   label: "Pole"      },
-            { key: "qualP2",     label: "Q P2"      },
-            { key: "qualP3",     label: "Q P3"      },
-            { key: "raceWinner", label: "Race Win"  },
-            { key: "raceP2",     label: "Race P2"   },
-            { key: "raceP3",     label: "Race P3"   },
-            { key: "raceP4",     label: "Race P4"   },
-            { key: "raceP5",     label: "Race P5"   },
-            { key: "raceP6",     label: "Race P6"   },
-            { key: "fastestLap", label: "Fastest"   },
-            { key: "safetyCar",  label: "Safety Car", isBool: true },
+          type PredRow = { key: keyof RacePick; label: string; isBool?: boolean };
+          type PredGroup = { label: string; rows: PredRow[] };
+          const PRED_GROUPS: PredGroup[] = [
+            ...(selectedRace.sprint ? [
+              { label: "Sprint Qualifying", rows: [
+                { key: "sprintQualPole" as keyof RacePick, label: "Pole" },
+                { key: "sprintQualP2"  as keyof RacePick, label: "P2"   },
+                { key: "sprintQualP3"  as keyof RacePick, label: "P3"   },
+              ]},
+              { label: "Sprint Race", rows: [
+                { key: "sprintWinner" as keyof RacePick, label: "Winner" },
+                { key: "sprintP2"    as keyof RacePick, label: "P2"     },
+                { key: "sprintP3"    as keyof RacePick, label: "P3"     },
+              ]},
+            ] : []),
+            { label: "Qualifying", rows: [
+              { key: "qualPole" as keyof RacePick, label: "Pole" },
+              { key: "qualP2"   as keyof RacePick, label: "P2"   },
+              { key: "qualP3"   as keyof RacePick, label: "P3"   },
+            ]},
+            { label: "Race", rows: [
+              { key: "raceWinner" as keyof RacePick, label: "Winner"     },
+              { key: "raceP2"     as keyof RacePick, label: "P2"         },
+              { key: "raceP3"     as keyof RacePick, label: "P3"         },
+              { key: "raceP4"     as keyof RacePick, label: "P4"         },
+              { key: "raceP5"     as keyof RacePick, label: "P5"         },
+              { key: "raceP6"     as keyof RacePick, label: "P6"         },
+              { key: "fastestLap" as keyof RacePick, label: "Fastest Lap"},
+              { key: "safetyCar"  as keyof RacePick, label: "Safety Car", isBool: true },
+            ]},
           ];
 
           const QUAL_FIELDS = new Set(["qualPole", "qualP2", "qualP3"]);
@@ -486,46 +504,55 @@ export default function StandingsPage() {
                         <p className="text-sm font-bold mb-3" style={{ color: accent }}>
                           {profile?.display_name ?? "Unknown"}
                         </p>
-                        <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                          {PRED_ROWS.map(({ key, label, isBool }) => {
-                            const val = pick[key];
-                            let displayVal: string | null = null;
-                            let displayColor = "var(--foreground)";
+                        <div className="flex flex-col gap-3">
+                          {PRED_GROUPS.map((group) => (
+                            <div key={group.label}>
+                              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+                                {group.label}
+                              </p>
+                              <div className="grid grid-cols-2 gap-y-1.5 gap-x-4">
+                                {group.rows.map(({ key, label, isBool }) => {
+                                  const val = pick[key];
+                                  let displayVal: string | null = null;
+                                  let displayColor = "var(--foreground)";
 
-                            if (isBool) {
-                              if (val === true) { displayVal = "Yes"; displayColor = "#22c55e"; }
-                              else if (val === false) { displayVal = "No"; displayColor = "#ef4444"; }
-                            } else if (typeof val === "string") {
-                              displayVal = driverLastName(val);
-                              displayColor = driverTeamColor(val) ?? "var(--foreground)";
-                            }
+                                  if (isBool) {
+                                    if (val === true) { displayVal = "Yes"; displayColor = "#22c55e"; }
+                                    else if (val === false) { displayVal = "No"; displayColor = "#ef4444"; }
+                                  } else if (typeof val === "string") {
+                                    displayVal = driverLastName(val);
+                                    displayColor = driverTeamColor(val) ?? "var(--foreground)";
+                                  }
 
-                            const boosted = (pick.boostedPicks ?? []).includes(key as string);
-                            const status = pickStatus(key, val as string | boolean | null);
-                            const dotColor = status === "correct" ? "#22c55e"
-                              : status === "partial" ? "#f59e0b"
-                              : status === "wrong" ? "#ef4444"
-                              : null;
+                                  const boosted = (pick.boostedPicks ?? []).includes(key as string);
+                                  const status = pickStatus(key, val as string | boolean | null);
+                                  const dotColor = status === "correct" ? "#22c55e"
+                                    : status === "partial" ? "#f59e0b"
+                                    : status === "wrong" ? "#ef4444"
+                                    : null;
 
-                            return (
-                              <div key={key} className="flex items-start gap-1">
-                                <span className="text-xs shrink-0 mt-px" style={{ color: "var(--muted)", minWidth: "56px" }}>
-                                  {label}
-                                </span>
-                                {dotColor && (
-                                  <span style={{ color: dotColor, fontSize: "10px", lineHeight: "1.4", flexShrink: 0 }}>
-                                    {status === "correct" ? "✓" : status === "partial" ? "~" : "✗"}
-                                  </span>
-                                )}
-                                {boosted && (
-                                  <span style={{ color: "#ffc800", fontSize: "10px", lineHeight: "1.4", flexShrink: 0 }}>⚡</span>
-                                )}
-                                <span className="text-xs font-medium truncate" style={{ color: displayVal ? displayColor : "var(--muted)" }}>
-                                  {displayVal ?? "—"}
-                                </span>
+                                  return (
+                                    <div key={key} className="flex items-center gap-1 min-w-0">
+                                      <span className="text-xs shrink-0" style={{ color: "var(--muted)", minWidth: "44px" }}>
+                                        {label}
+                                      </span>
+                                      {dotColor ? (
+                                        <span style={{ color: dotColor, fontSize: "10px", flexShrink: 0 }}>
+                                          {status === "correct" ? "✓" : status === "partial" ? "~" : "✗"}
+                                        </span>
+                                      ) : boosted ? (
+                                        <span style={{ color: "#ffc800", fontSize: "10px", flexShrink: 0 }}>⚡</span>
+                                      ) : null}
+                                      <span className="text-xs font-semibold truncate" style={{ color: displayVal ? displayColor : "rgba(255,255,255,0.2)" }}>
+                                        {displayVal ?? "—"}
+                                        {boosted && dotColor ? " ⚡" : ""}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     );
