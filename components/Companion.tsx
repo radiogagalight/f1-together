@@ -80,7 +80,11 @@ export default function Companion() {
       userTriggeredRef.current = true;
       wakeUp();
     } else if (phase === "active") {
-      openMenu();
+      if (showMenu) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
     }
   }
 

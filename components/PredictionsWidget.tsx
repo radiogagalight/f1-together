@@ -142,23 +142,90 @@ export default function PredictionsWidget() {
   }
 
   // ── Picks still needed ──────────────────────────────────────────
-  const allSections = [
-    // Season section first if urgent (locks before qualifying)
-    ...(seasonMissing.length > 0 ? [{
-      key: "season",
-      label: "Season Picks",
-      lockMs: seasonLockMs,
-      href: "/predictions/season",
-      pills: seasonMissing.map((k) => ({ key: k, label: SEASON_FIELD_LABELS[k] })),
-    }] : []),
-    ...pendingGroups.map((g) => ({
+  const seasonSection = seasonMissing.length > 0 ? {
+    key: "season",
+    label: "Season Picks",
+    lockMs: seasonLockMs,
+    href: "/predictions/season",
+    pills: seasonMissing.map((k) => ({ key: k, label: SEASON_FIELD_LABELS[k] })),
+  } : null;
+
+  const raceSections = pendingGroups
+    .map((g) => ({
       key: g.label,
       label: g.label,
       lockMs: g.lockMs,
       href: g.href,
       pills: g.fields.map((f) => ({ key: f, label: RACE_FIELD_LABELS[f] })),
-    })),
-  ].sort((a, b) => a.lockMs - b.lockMs); // soonest lock first
+    }))
+    .sort((a, b) => a.lockMs - b.lockMs);
+
+  function SectionRow({ section, isLast }: { section: typeof raceSections[0]; isLast: boolean }) {
+    const style = urgencyStyle(section.lockMs);
+    const { pills } = section;
+    return (
+      <Link
+        href={section.href}
+        className="block px-4 py-3 transition-colors hover:bg-white/[0.03] active:bg-white/[0.05]"
+        style={{
+          borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.06)",
+          backgroundColor: style.bgColor,
+        }}
+      >
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: style.color }}>
+            {section.label}
+          </span>
+          <span className="text-xs font-mono" style={{ color: style.color }}>
+            {formatCountdown(section.lockMs)} left
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {pills.length <= 2 ? (
+            pills.map((pill) => (
+              <span
+                key={pill.key}
+                className="text-[11px] px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                  border: `1px solid ${style.borderColor}`,
+                  color: style.color,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {pill.label}
+              </span>
+            ))
+          ) : (
+            <>
+              <span
+                className="text-[11px] px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                  border: `1px solid ${style.borderColor}`,
+                  color: style.color,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {pills[0].label}
+              </span>
+              <span
+                className="text-[11px] px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                  border: `1px solid ${style.borderColor}`,
+                  color: style.color,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                +{pills.length - 1} more
+              </span>
+            </>
+          )}
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <div
@@ -181,62 +248,31 @@ export default function PredictionsWidget() {
             Picks Due
           </span>
         </div>
-        <Link
-          href={`/predictions/race/${nextRace.r}`}
-          className="text-xs font-semibold"
-          style={{ color: "var(--f1-red)" }}
-        >
-          {nextRace.flag} {nextRace.name.replace(" Grand Prix", " GP")} →
-        </Link>
+        <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
+          {nextRace.flag} {nextRace.name.replace(" Grand Prix", " GP")}
+        </span>
       </div>
 
-      {/* Sections */}
-      {allSections.map((section, i) => {
-        const style = urgencyStyle(section.lockMs);
-        const isLast = i === allSections.length - 1;
-        return (
-          <div
-            key={section.key}
-            className="px-4 py-3"
-            style={{
-              borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.06)",
-              backgroundColor: style.bgColor,
-            }}
-          >
-            {/* Session row */}
-            <div className="flex items-center justify-between mb-2">
-              <span
-                className="text-xs font-bold uppercase tracking-wider"
-                style={{ color: style.color }}
-              >
-                {section.label}
-              </span>
-              <span className="text-xs font-mono" style={{ color: style.color }}>
-                locks in {formatCountdown(section.lockMs)}
-              </span>
-            </div>
+      {/* Race sections — each row is tappable */}
+      {raceSections.map((section, i) => (
+        <SectionRow key={section.key} section={section} isLast={i === raceSections.length - 1 && !seasonSection} />
+      ))}
 
-            {/* Unpicked field pills */}
-            <div className="flex flex-wrap gap-1.5">
-              {section.pills.map((pill) => (
-                <Link key={pill.key} href={section.href}>
-                  <span
-                    className="text-[11px] px-2 py-0.5 rounded-full"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.06)",
-                      border: `1px solid ${style.borderColor}`,
-                      color: style.color,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {pill.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
+      {/* Season picks — visually separated */}
+      {seasonSection && (
+        <>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", margin: "0 16px" }} />
+          <div
+            className="px-4 pt-2 pb-1"
+            style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
+              Season
+            </span>
           </div>
-        );
-      })}
+          <SectionRow section={seasonSection} isLast />
+        </>
+      )}
     </div>
   );
 }
