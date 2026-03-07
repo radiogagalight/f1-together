@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { buildLeaderboard } from "@/lib/scoring";
 import { RACES } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
-import type { RaceResult, RacePick, LeaderboardEntry } from "@/lib/types";
+import { PICK_POINTS } from "@/lib/scoring";
+import type { RaceResult, RacePick, LeaderboardEntry, ScoreBreakdown } from "@/lib/types";
 
 const MEDAL_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"] as const;
 
@@ -51,11 +52,77 @@ function MedalBadge({ position }: { position: number }) {
   );
 }
 
+const QUAL_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
+  { key: "qualPole", label: "Pole" },
+  { key: "qualP2",   label: "Qual P2" },
+  { key: "qualP3",   label: "Qual P3" },
+];
+const RACE_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
+  { key: "raceWinner", label: "Race Win" },
+  { key: "raceP2",     label: "Race P2" },
+  { key: "raceP3",     label: "Race P3" },
+  { key: "fastestLap", label: "Fastest Lap" },
+  { key: "safetyCar",  label: "Safety Car" },
+];
+const SPRINT_QUAL_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
+  { key: "sprintQualPole", label: "Sprint Pole" },
+  { key: "sprintQualP2",  label: "Sprint Q P2" },
+  { key: "sprintQualP3",  label: "Sprint Q P3" },
+];
+const SPRINT_RACE_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
+  { key: "sprintWinner", label: "Sprint Win" },
+  { key: "sprintP2",     label: "Sprint P2" },
+  { key: "sprintP3",     label: "Sprint P3" },
+];
+
+function RoundBreakdown({ breakdown, accent }: { breakdown: ScoreBreakdown; accent: string }) {
+  const sprintTotal = SPRINT_QUAL_ROWS.concat(SPRINT_RACE_ROWS).reduce((s, r) => s + breakdown[r.key], 0);
+  const hasSprint = sprintTotal > 0;
+
+  function Row({ rows, heading }: { rows: typeof QUAL_ROWS; heading: string }) {
+    return (
+      <>
+        <p className="text-[10px] font-bold uppercase tracking-widest col-span-2 mt-2 first:mt-0" style={{ color: "rgba(255,255,255,0.35)" }}>
+          {heading}
+        </p>
+        {rows.map(({ key, label }) => {
+          const pts = breakdown[key];
+          const max = PICK_POINTS[key];
+          const scored = pts > 0;
+          return (
+            <div key={key} className="flex items-center justify-between col-span-2 py-0.5">
+              <span className="text-xs" style={{ color: scored ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)" }}>
+                {label}
+              </span>
+              <span className="text-xs font-bold tabular-nums" style={{ color: scored ? accent : "rgba(255,255,255,0.2)" }}>
+                {scored ? `+${pts}` : `0 / ${max}`}
+              </span>
+            </div>
+          );
+        })}
+      </>
+    );
+  }
+
+  return (
+    <div className="mt-2 px-3 py-2 rounded-xl grid grid-cols-2 gap-x-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="col-span-2">
+        <Row rows={QUAL_ROWS} heading="Qualifying" />
+        <Row rows={RACE_ROWS} heading="Race" />
+        {hasSprint && <Row rows={SPRINT_QUAL_ROWS} heading="Sprint Qualifying" />}
+        {hasSprint && <Row rows={SPRINT_RACE_ROWS} heading="Sprint Race" />}
+      </div>
+    </div>
+  );
+}
+
 export default function StandingsPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [expandedRound, setExpandedRound] = useState<Record<string, number | null>>({});
   const supabase = createClient();
 
   useEffect(() => {
@@ -67,7 +134,7 @@ export default function StandingsPage() {
         { data: profiles, error: e3 },
       ] = await Promise.all([
         supabase.from("race_results").select("*"),
-        supabase.from("race_picks").select("user_id,round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,fastest_lap,safety_car,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3"),
+        supabase.from("race_picks").select("user_id,round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,race_p4,race_p5,race_p6,fastest_lap,safety_car,boosted_picks,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3"),
         supabase.from("profiles").select("id,display_name,fav_team_1"),
       ]);
 
@@ -82,6 +149,9 @@ export default function StandingsPage() {
         raceWinner:         row.race_winner         ?? null,
         raceP2:             row.race_p2             ?? null,
         raceP3:             row.race_p3             ?? null,
+        raceP4:             row.race_p4             ?? null,
+        raceP5:             row.race_p5             ?? null,
+        raceP6:             row.race_p6             ?? null,
         fastestLap:         row.fastest_lap         ?? null,
         safetyCar:          row.safety_car          ?? null,
         sprintQualPole:     row.sprint_qual_pole    ?? null,
@@ -105,8 +175,12 @@ export default function StandingsPage() {
           raceWinner:   row.race_winner     ?? null,
           raceP2:       row.race_p2         ?? null,
           raceP3:       row.race_p3         ?? null,
+          raceP4:       row.race_p4         ?? null,
+          raceP5:       row.race_p5         ?? null,
+          raceP6:       row.race_p6         ?? null,
           fastestLap:   row.fastest_lap     ?? null,
           safetyCar:    row.safety_car      ?? null,
+          boostedPicks: row.boosted_picks   ?? [],
           sprintQualPole: row.sprint_qual_pole ?? null,
           sprintQualP2:   row.sprint_qual_p2   ?? null,
           sprintQualP3:   row.sprint_qual_p3   ?? null,
@@ -236,28 +310,47 @@ export default function StandingsPage() {
                         No scored rounds yet.
                       </p>
                     ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {scoredRounds.map((race) => {
-                          const pts = entry.scoresByRound[race.r] ?? 0;
-                          return (
-                            <div
-                              key={race.r}
-                              className="flex flex-col items-center px-3 py-2 rounded-xl"
-                              style={{
-                                backgroundColor: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                minWidth: "56px",
-                              }}
-                            >
-                              <span className="text-xs font-bold" style={{ color: accent }}>
-                                {pts}
-                              </span>
-                              <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>
-                                R{race.r}
-                              </span>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          {scoredRounds.map((race) => {
+                            const pts = entry.scoresByRound[race.r] ?? 0;
+                            const isRoundOpen = expandedRound[entry.userId] === race.r;
+                            return (
+                              <button
+                                key={race.r}
+                                onClick={() => setExpandedRound((prev) => ({
+                                  ...prev,
+                                  [entry.userId]: isRoundOpen ? null : race.r,
+                                }))}
+                                className="flex flex-col items-center px-3 py-2 rounded-xl transition-all"
+                                style={{
+                                  backgroundColor: isRoundOpen ? `rgba(${rgb},0.15)` : "rgba(255,255,255,0.05)",
+                                  border: isRoundOpen ? `1px solid rgba(${rgb},0.4)` : "1px solid rgba(255,255,255,0.1)",
+                                  minWidth: "56px",
+                                }}
+                              >
+                                <span className="text-xs font-bold" style={{ color: accent }}>
+                                  {pts}
+                                </span>
+                                <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>
+                                  R{race.r}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {expandedRound[entry.userId] != null && (() => {
+                          const bd = entry.breakdownsByRound[expandedRound[entry.userId]!];
+                          const race = RACES.find((r) => r.r === expandedRound[entry.userId]);
+                          return bd ? (
+                            <div>
+                              <p className="text-[10px] font-semibold mb-1" style={{ color: "var(--muted)" }}>
+                                {race?.name ?? `Round ${expandedRound[entry.userId]}`}
+                              </p>
+                              <RoundBreakdown breakdown={bd} accent={accent} />
                             </div>
-                          );
-                        })}
+                          ) : null;
+                        })()}
                       </div>
                     )}
                   </div>

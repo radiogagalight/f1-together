@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { RACES, DRIVERS } from "@/lib/data";
-import type { RaceResult } from "@/lib/types";
+import { RACES, DRIVERS, CONSTRUCTORS } from "@/lib/data";
+import type { RaceResult, RaceWildcard, WildcardQuestionType } from "@/lib/types";
 
 const NULL_OPTION = "__null__";
 
@@ -80,6 +80,27 @@ function BoolSelect({
   );
 }
 
+const NULL_OPTION_CONSTRUCTOR = "__null_constructor__";
+
+function ConstructorSelect({ value, onChange, label }: { value: string | null; onChange: (v: string | null) => void; label: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{label}</label>
+      <select
+        value={value ?? NULL_OPTION_CONSTRUCTOR}
+        onChange={(e) => onChange(e.target.value === NULL_OPTION_CONSTRUCTOR ? null : e.target.value)}
+        className="px-3 py-2 text-sm rounded-lg"
+        style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+      >
+        <option value={NULL_OPTION_CONSTRUCTOR} style={{ backgroundColor: "#0c0810" }}>— not set —</option>
+        {CONSTRUCTORS.map((c) => (
+          <option key={c.id} value={c.id} style={{ backgroundColor: "#0c0810" }}>{c.name}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 export default function AdminResultsPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [selectedRound, setSelectedRound] = useState(1);
@@ -87,6 +108,17 @@ export default function AdminResultsPage() {
   const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  // Wildcard state
+  const [wildcards, setWildcards] = useState<RaceWildcard[]>([]);
+  const [wcStatus, setWcStatus] = useState<string | null>(null);
+  const [newWcQuestion, setNewWcQuestion] = useState("");
+  const [newWcType, setNewWcType] = useState<WildcardQuestionType>("driver");
+  const [newWcPoints, setNewWcPoints] = useState(10);
+  const [newWcBattleA, setNewWcBattleA] = useState<string | null>(null);
+  const [newWcBattleB, setNewWcBattleB] = useState<string | null>(null);
+  const [creatingWc, setCreatingWc] = useState(false);
+
   const supabase = createClient();
 
   // Admin check
@@ -113,9 +145,15 @@ export default function AdminResultsPage() {
     }
   }, []);
 
+  const loadWildcards = useCallback(async (round: number) => {
+    const res = await fetch(`/api/wildcards/${round}`);
+    if (res.ok) setWildcards(await res.json());
+    else setWildcards([]);
+  }, []);
+
   useEffect(() => {
-    if (isAdmin) loadResult(selectedRound);
-  }, [isAdmin, selectedRound, loadResult]);
+    if (isAdmin) { loadResult(selectedRound); loadWildcards(selectedRound); }
+  }, [isAdmin, selectedRound, loadResult, loadWildcards]);
 
   if (isAdmin === null) {
     return (
@@ -242,9 +280,238 @@ export default function AdminResultsPage() {
           <DriverSelect label="Winner"      value={(result.raceWinner ?? null) as string | null} onChange={(v) => update("raceWinner", v)} />
           <DriverSelect label="P2"          value={(result.raceP2     ?? null) as string | null} onChange={(v) => update("raceP2",     v)} />
           <DriverSelect label="P3"          value={(result.raceP3     ?? null) as string | null} onChange={(v) => update("raceP3",     v)} />
+          <DriverSelect label="P4"          value={(result.raceP4     ?? null) as string | null} onChange={(v) => update("raceP4",     v)} />
+          <DriverSelect label="P5"          value={(result.raceP5     ?? null) as string | null} onChange={(v) => update("raceP5",     v)} />
+          <DriverSelect label="P6"          value={(result.raceP6     ?? null) as string | null} onChange={(v) => update("raceP6",     v)} />
           <DriverSelect label="Fastest Lap" value={(result.fastestLap ?? null) as string | null} onChange={(v) => update("fastestLap", v)} />
           <BoolSelect   label="Safety Car"  value={(result.safetyCar  ?? null) as boolean | null} onChange={(v) => update("safetyCar",  v)} />
         </div>
+      </section>
+
+      {/* Wildcards & Battles */}
+      <section className="mb-6">
+        <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
+          Wild Cards &amp; Battles ({wildcards.length}/5)
+        </h2>
+
+        {/* Existing wildcards */}
+        {wildcards.length > 0 && (
+          <div className="flex flex-col gap-3 mb-4">
+            {wildcards.map((wc) => (
+              <div
+                key={wc.id}
+                className="rounded-xl p-3"
+                style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>{wc.question}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>
+                      {wc.questionType} · {wc.points} pts
+                      {wc.questionType === "battle" && wc.options && ` · ${wc.options[0]?.name} vs ${wc.options[1]?.name}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!confirm("Delete this wildcard? All user picks for it will be lost.")) return;
+                      setWcStatus(null);
+                      const res = await fetch(`/api/wildcards/${selectedRound}`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: wc.id }),
+                      });
+                      if (res.ok) { setWcStatus("Deleted."); loadWildcards(selectedRound); }
+                      else setWcStatus("Delete failed.");
+                    }}
+                    className="text-xs px-2 py-1 rounded-lg shrink-0"
+                    style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.25)" }}
+                  >
+                    Delete
+                  </button>
+                </div>
+
+                {/* Set correct answer */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+                    Correct Answer {wc.correctAnswer ? `(set: ${wc.correctAnswer})` : "(not set)"}
+                  </label>
+                  {wc.questionType === "boolean" ? (
+                    <div className="flex gap-2">
+                      {["true", "false"].map((v) => (
+                        <button
+                          key={v}
+                          onClick={async () => {
+                            await fetch(`/api/wildcards/${selectedRound}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ id: wc.id, correctAnswer: v }),
+                            });
+                            loadWildcards(selectedRound);
+                          }}
+                          className="px-3 py-1 text-xs font-semibold rounded-lg"
+                          style={{
+                            backgroundColor: wc.correctAnswer === v ? "rgba(34,197,94,0.18)" : "rgba(255,255,255,0.06)",
+                            color: wc.correctAnswer === v ? "#22c55e" : "var(--muted)",
+                            border: wc.correctAnswer === v ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                          }}
+                        >
+                          {v === "true" ? "Yes" : "No"}
+                        </button>
+                      ))}
+                    </div>
+                  ) : wc.questionType === "battle" && wc.options ? (
+                    <div className="flex gap-2">
+                      {wc.options.map((opt) => (
+                        <button
+                          key={opt.id}
+                          onClick={async () => {
+                            await fetch(`/api/wildcards/${selectedRound}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ id: wc.id, correctAnswer: opt.id }),
+                            });
+                            loadWildcards(selectedRound);
+                          }}
+                          className="px-3 py-1 text-xs font-semibold rounded-lg"
+                          style={{
+                            backgroundColor: wc.correctAnswer === opt.id ? "rgba(34,197,94,0.18)" : "rgba(255,255,255,0.06)",
+                            color: wc.correctAnswer === opt.id ? "#22c55e" : "var(--muted)",
+                            border: wc.correctAnswer === opt.id ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                          }}
+                        >
+                          {opt.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : wc.questionType === "constructor" ? (
+                    <ConstructorSelect
+                      label=""
+                      value={wc.correctAnswer}
+                      onChange={async (v) => {
+                        await fetch(`/api/wildcards/${selectedRound}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: wc.id, correctAnswer: v }),
+                        });
+                        loadWildcards(selectedRound);
+                      }}
+                    />
+                  ) : (
+                    <DriverSelect
+                      label=""
+                      value={wc.correctAnswer}
+                      onChange={async (v) => {
+                        await fetch(`/api/wildcards/${selectedRound}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: wc.id, correctAnswer: v }),
+                        });
+                        loadWildcards(selectedRound);
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Create new wildcard */}
+        {wildcards.length < 5 && (
+          <div
+            className="rounded-xl p-3"
+            style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <p className="text-xs font-semibold mb-3" style={{ color: "var(--muted)" }}>Add new question</p>
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                placeholder="Question text…"
+                value={newWcQuestion}
+                onChange={(e) => setNewWcQuestion(e.target.value)}
+                className="px-3 py-2 text-sm rounded-lg"
+                style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+              />
+              <div className="flex gap-2">
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>Type</label>
+                  <select
+                    value={newWcType}
+                    onChange={(e) => setNewWcType(e.target.value as WildcardQuestionType)}
+                    className="px-3 py-2 text-sm rounded-lg"
+                    style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+                  >
+                    <option value="driver" style={{ backgroundColor: "#0c0810" }}>Driver pick</option>
+                    <option value="constructor" style={{ backgroundColor: "#0c0810" }}>Constructor pick</option>
+                    <option value="boolean" style={{ backgroundColor: "#0c0810" }}>Yes / No</option>
+                    <option value="battle" style={{ backgroundColor: "#0c0810" }}>Teammate battle</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>Points</label>
+                  <input
+                    type="number"
+                    value={newWcPoints}
+                    onChange={(e) => setNewWcPoints(parseInt(e.target.value) || 10)}
+                    className="px-3 py-2 text-sm rounded-lg w-20"
+                    style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+                  />
+                </div>
+              </div>
+
+              {newWcType === "battle" && (
+                <div className="flex flex-col gap-2">
+                  <DriverSelect label="Driver A" value={newWcBattleA} onChange={setNewWcBattleA} />
+                  <DriverSelect label="Driver B" value={newWcBattleB} onChange={setNewWcBattleB} />
+                </div>
+              )}
+
+              <button
+                onClick={async () => {
+                  if (!newWcQuestion.trim()) { setWcStatus("Enter a question."); return; }
+                  if (newWcType === "battle" && (!newWcBattleA || !newWcBattleB)) { setWcStatus("Pick both drivers for the battle."); return; }
+                  setCreatingWc(true); setWcStatus(null);
+                  const battleOptions = newWcType === "battle"
+                    ? [
+                        { id: newWcBattleA!, name: DRIVERS.find(d => d.id === newWcBattleA)?.name ?? newWcBattleA! },
+                        { id: newWcBattleB!, name: DRIVERS.find(d => d.id === newWcBattleB)?.name ?? newWcBattleB! },
+                      ]
+                    : null;
+                  const res = await fetch(`/api/wildcards/${selectedRound}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      question: newWcQuestion.trim(),
+                      questionType: newWcType,
+                      options: battleOptions,
+                      points: newWcPoints,
+                      displayOrder: wildcards.length,
+                    }),
+                  });
+                  setCreatingWc(false);
+                  if (res.ok) {
+                    setNewWcQuestion(""); setNewWcBattleA(null); setNewWcBattleB(null); setNewWcPoints(10);
+                    setWcStatus("Question added.");
+                    loadWildcards(selectedRound);
+                  } else {
+                    setWcStatus("Failed to add question.");
+                  }
+                }}
+                disabled={creatingWc}
+                className="py-2 text-sm font-semibold rounded-xl"
+                style={{ backgroundColor: creatingWc ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.12)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.15)" }}
+              >
+                {creatingWc ? "Adding…" : "+ Add Question"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {wcStatus && (
+          <p className="text-sm mt-2" style={{ color: wcStatus.toLowerCase().includes("fail") || wcStatus.toLowerCase().includes("delete") ? "#ef4444" : "#22c55e" }}>
+            {wcStatus}
+          </p>
+        )}
       </section>
 
       {/* Sprint */}

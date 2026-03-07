@@ -31,7 +31,7 @@ const CIRCUIT_KEYWORDS: Record<number, string> = {
 const BASE = "https://api.openf1.org/v1";
 
 async function apiFetch<T>(path: string): Promise<T[]> {
-  const res = await fetch(`${BASE}${path}`, { next: { revalidate: 300 } });
+  const res = await fetch(`${BASE}${path}`, { cache: "no-store" });
   if (!res.ok) return [];
   return res.json() as Promise<T[]>;
 }
@@ -65,9 +65,10 @@ export async function getSessionKey(
 
 // ─── Data fetchers ────────────────────────────────────────────────────────────
 
-export async function fetchPositionTop3(
-  sessionKey: number
-): Promise<[number | null, number | null, number | null]> {
+export async function fetchPositionTopN(
+  sessionKey: number,
+  n: number
+): Promise<(number | null)[]> {
   const rows = await apiFetch<{ driver_number: number; position: number; date: string }>(
     `/position?session_key=${sessionKey}`
   );
@@ -81,12 +82,8 @@ export async function fetchPositionTop3(
   }
   const sorted = [...latest.entries()]
     .sort((a, b) => a[1].position - b[1].position)
-    .slice(0, 3);
-  return [
-    sorted[0]?.[0] ?? null,
-    sorted[1]?.[0] ?? null,
-    sorted[2]?.[0] ?? null,
-  ];
+    .slice(0, n);
+  return Array.from({ length: n }, (_, i) => sorted[i]?.[0] ?? null);
 }
 
 export async function fetchFastestLap(sessionKey: number): Promise<number | null> {
@@ -146,7 +143,7 @@ export async function fetchFullRaceResult(
     const qualKey = await getSessionKey(meetingKey, "Qualifying");
     if (qualKey) {
       try {
-        const [p1, p2, p3] = await fetchPositionTop3(qualKey);
+        const [p1, p2, p3] = await fetchPositionTopN(qualKey, 3);
         result.qualPole = p1 ? await fetchDriverName(qualKey, p1) ?? null : null;
         result.qualP2   = p2 ? await fetchDriverName(qualKey, p2) ?? null : null;
         result.qualP3   = p3 ? await fetchDriverName(qualKey, p3) ?? null : null;
@@ -157,10 +154,13 @@ export async function fetchFullRaceResult(
     const raceKey = await getSessionKey(meetingKey, "Race");
     if (raceKey) {
       try {
-        const [p1, p2, p3] = await fetchPositionTop3(raceKey);
+        const [p1, p2, p3, p4, p5, p6] = await fetchPositionTopN(raceKey, 6);
         result.raceWinner = p1 ? await fetchDriverName(raceKey, p1) ?? null : null;
         result.raceP2     = p2 ? await fetchDriverName(raceKey, p2) ?? null : null;
         result.raceP3     = p3 ? await fetchDriverName(raceKey, p3) ?? null : null;
+        result.raceP4     = p4 ? await fetchDriverName(raceKey, p4) ?? null : null;
+        result.raceP5     = p5 ? await fetchDriverName(raceKey, p5) ?? null : null;
+        result.raceP6     = p6 ? await fetchDriverName(raceKey, p6) ?? null : null;
       } catch { /* ignore */ }
 
       try {
@@ -178,7 +178,7 @@ export async function fetchFullRaceResult(
       const sqKey = await getSessionKey(meetingKey, "Sprint Qualifying");
       if (sqKey) {
         try {
-          const [p1, p2, p3] = await fetchPositionTop3(sqKey);
+          const [p1, p2, p3] = await fetchPositionTopN(sqKey, 3);
           result.sprintQualPole = p1 ? await fetchDriverName(sqKey, p1) ?? null : null;
           result.sprintQualP2   = p2 ? await fetchDriverName(sqKey, p2) ?? null : null;
           result.sprintQualP3   = p3 ? await fetchDriverName(sqKey, p3) ?? null : null;
@@ -188,7 +188,7 @@ export async function fetchFullRaceResult(
       const sprintKey = await getSessionKey(meetingKey, "Sprint");
       if (sprintKey) {
         try {
-          const [p1, p2, p3] = await fetchPositionTop3(sprintKey);
+          const [p1, p2, p3] = await fetchPositionTopN(sprintKey, 3);
           result.sprintWinner = p1 ? await fetchDriverName(sprintKey, p1) ?? null : null;
           result.sprintP2     = p2 ? await fetchDriverName(sprintKey, p2) ?? null : null;
           result.sprintP3     = p3 ? await fetchDriverName(sprintKey, p3) ?? null : null;

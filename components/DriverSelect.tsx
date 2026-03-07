@@ -13,9 +13,12 @@ interface Props {
   points?: number;
   resultStatus?: "correct" | "partial" | "wrong";
   pointsEarned?: number;
+  boosted?: boolean;
+  boostAvailable?: boolean;
+  onBoost?: () => void;
 }
 
-export default function DriverSelect({ label, value, isSaved, disabled, onPick, points, resultStatus, pointsEarned }: Props) {
+export default function DriverSelect({ label, value, isSaved, disabled, onPick, points, resultStatus, pointsEarned, boosted, boostAvailable, onBoost }: Props) {
   const [open, setOpen] = useState(false);
 
   const driver = value ? DRIVERS.find((d) => d.id === value) : null;
@@ -58,7 +61,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
         aria-expanded={open}
       >
         <div className="flex flex-col gap-0.5 min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span
               className="text-xs font-bold uppercase tracking-wider"
               style={{ color: "var(--muted)" }}
@@ -69,14 +72,30 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
               <span
                 className="text-[10px] font-bold px-1.5 py-px rounded-full"
                 style={{
-                  backgroundColor: "rgba(255,200,0,0.12)",
+                  backgroundColor: boosted ? "rgba(255,200,0,0.22)" : "rgba(255,200,0,0.12)",
                   color: "#ffc800",
-                  border: "1px solid rgba(255,200,0,0.3)",
+                  border: `1px solid ${boosted ? "rgba(255,200,0,0.7)" : "rgba(255,200,0,0.3)"}`,
                   lineHeight: 1.4,
                 }}
               >
-                {points} pts
+                {boosted ? `${points * 2} pts ⚡` : `${points} pts`}
               </span>
+            )}
+            {onBoost && !disabled && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onBoost(); }}
+                className="text-[10px] font-bold px-1.5 py-px rounded-full transition-colors"
+                style={{
+                  backgroundColor: boosted ? "rgba(255,200,0,0.18)" : boostAvailable ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
+                  color: boosted ? "#ffc800" : boostAvailable ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)",
+                  border: boosted ? "1px solid rgba(255,200,0,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                  cursor: boosted || boostAvailable ? "pointer" : "default",
+                  lineHeight: 1.4,
+                }}
+                title={boosted ? "Remove booster" : boostAvailable ? "Apply booster (2×)" : "No boosters left"}
+              >
+                {boosted ? "⚡ Boosted" : "⚡ Boost"}
+              </button>
             )}
           </div>
           <span

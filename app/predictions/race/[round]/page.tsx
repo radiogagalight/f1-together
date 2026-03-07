@@ -1,17 +1,23 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
-import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
+import { RACES, DRIVERS, CONSTRUCTORS, formatRaceDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
 import type { RaceFact, RaceSession } from "@/lib/raceFacts";
 import { useRacePick } from "@/hooks/useRacePick";
 import DriverSelect from "@/components/DriverSelect";
-import type { RacePick, RaceResult, ScoreBreakdown } from "@/lib/types";
-import { PICK_POINTS, scoreRound } from "@/lib/scoring";
+import type { RacePick, RaceResult, ScoreBreakdown, RaceWildcard, WildcardPick } from "@/lib/types";
+import { PICK_POINTS, scoreRound, scoreWildcards } from "@/lib/scoring";
 import { loadRaceResult } from "@/lib/resultsStorage";
+import { saveWildcardPick, deleteWildcardPick } from "@/lib/wildcardStorage";
 import { createClient } from "@/lib/supabase/client";
+
+function driverLastName(id: string | null): string {
+  if (!id) return "—";
+  return DRIVERS.find((d) => d.id === id)?.name.split(" ").pop() ?? id;
+}
 
 function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label: string; target: string }) {
   const [timeLeft, setTimeLeft] = useState(() =>
@@ -234,8 +240,12 @@ const SECTION_INFO: Record<string, {
       { label: "Race Winner", pts: "25 pts" },
       { label: "P2", pts: "18 pts" },
       { label: "P3", pts: "15 pts" },
+      { label: "P4", pts: "12 pts" },
+      { label: "P5", pts: "10 pts" },
+      { label: "P6", pts: "8 pts" },
       { label: "Fastest Lap", pts: "5 pts" },
       { label: "Safety Car deployed", pts: "5 pts" },
+      { label: "Boosters: apply ⚡ to any race pick for 2× points (3 per race)", note: true },
       { label: "Exact match only — no partial credit", note: true },
     ],
   },
@@ -268,11 +278,14 @@ export default function RaceDetailPage({
   const round = parseInt(roundStr);
   const race = RACES.find((r) => r.r === round);
   const { user, timezoneOffset } = useAuth();
-  const { picks, setPick, savedField, loading } = useRacePick(user?.id, round);
+  const { picks, setPick, toggleBoost, savedField, loading } = useRacePick(user?.id, round);
 
   const [now, setNow] = useState(Date.now());
   const [openInfo, setOpenInfo] = useState<string | null>(null);
   const [result, setResult] = useState<RaceResult | null>(null);
+  const [wildcards, setWildcards] = useState<RaceWildcard[]>([]);
+  const [wildcardPicks, setWildcardPicks] = useState<WildcardPick[]>([]);
+  const [wcSavedId, setWcSavedId] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 5_000);
@@ -283,6 +296,30 @@ export default function RaceDetailPage({
     const supabase = createClient();
     loadRaceResult(round, supabase).then(setResult);
   }, [round]);
+
+  const loadWildcards = useCallback(async () => {
+    const res = await fetch(`/api/wildcards/${round}`);
+    if (res.ok) setWildcards(await res.json());
+  }, [round]);
+
+  useEffect(() => { loadWildcards(); }, [loadWildcards]);
+
+  useEffect(() => {
+    if (!user) return;
+    const supabase = createClient();
+    supabase
+      .from("wildcard_picks")
+      .select("wildcard_id, pick_value, boosted, race_wildcards!inner(round)")
+      .eq("user_id", user.id)
+      .eq("race_wildcards.round", round)
+      .then(({ data }) => {
+        setWildcardPicks((data ?? []).map((r) => ({
+          wildcardId: r.wildcard_id as string,
+          pickValue:  r.pick_value as string,
+          boosted:    r.boosted as boolean,
+        })));
+      });
+  }, [user, round]);
 
   const breakdown: ScoreBreakdown | null =
     picks && result && user ? scoreRound(user.id, picks, result).breakdown : null;
@@ -322,6 +359,7 @@ export default function RaceDetailPage({
   const QUAL_FIELDS:         (keyof RacePick)[] = ["qualPole", "qualP2", "qualP3"];
   const SPRINT_QUAL_FIELDS:  (keyof RacePick)[] = ["sprintQualPole", "sprintQualP2", "sprintQualP3"];
   const SPRINT_FIELDS:       (keyof RacePick)[] = ["sprintWinner", "sprintP2", "sprintP3"];
+  const BOOSTABLE_RACE_FIELDS = ["raceWinner", "raceP2", "raceP3", "raceP4", "raceP5", "raceP6", "fastestLap", "safetyCar"];
 
   function pick(field: keyof RacePick, value: string | boolean | null) {
     const locked = QUAL_FIELDS.includes(field)        ? isQualLocked
@@ -329,6 +367,56 @@ export default function RaceDetailPage({
                  : SPRINT_FIELDS.includes(field)        ? isSprintLocked
                  : isRaceLocked;
     if (!locked) setPick(field, value);
+  }
+
+  const boostedPicks = picks?.boostedPicks ?? [];
+  const boostedWildcardCount = wildcardPicks.filter((p) => p.boosted).length;
+  const totalBoostersUsed = boostedPicks.length + boostedWildcardCount;
+  const boostersRemaining = 3 - totalBoostersUsed;
+
+  function handleBoostRacePick(field: string) {
+    if (isRaceLocked) return;
+    toggleBoost(field, boostedWildcardCount);
+  }
+
+  async function handleWildcardPick(wildcardId: string, pickValue: string | null) {
+    if (!user || isRaceLocked) return;
+    const supabase = createClient();
+    if (pickValue === null) {
+      await deleteWildcardPick(user.id, wildcardId, supabase);
+      setWildcardPicks((prev) => prev.filter((p) => p.wildcardId !== wildcardId));
+    } else {
+      const existing = wildcardPicks.find((p) => p.wildcardId === wildcardId);
+      const boosted = existing?.boosted ?? false;
+      await saveWildcardPick(user.id, wildcardId, pickValue, boosted, supabase);
+      setWildcardPicks((prev) => {
+        const filtered = prev.filter((p) => p.wildcardId !== wildcardId);
+        return [...filtered, { wildcardId, pickValue, boosted }];
+      });
+      setWcSavedId(wildcardId);
+      setTimeout(() => setWcSavedId(null), 1500);
+    }
+  }
+
+  async function handleWildcardBoost(wildcardId: string) {
+    if (!user || isRaceLocked) return;
+    const existing = wildcardPicks.find((p) => p.wildcardId === wildcardId);
+    if (!existing) return; // must pick before boosting
+    const alreadyBoosted = existing.boosted;
+    if (!alreadyBoosted && boostersRemaining <= 0) return;
+    const supabase = createClient();
+    const newBoosted = !alreadyBoosted;
+    await saveWildcardPick(user.id, wildcardId, existing.pickValue, newBoosted, supabase);
+    setWildcardPicks((prev) =>
+      prev.map((p) => p.wildcardId === wildcardId ? { ...p, boosted: newBoosted } : p)
+    );
+  }
+
+  function wcDisplayName(wc: RaceWildcard, val: string): string {
+    if (wc.questionType === "boolean") return val === "yes" ? "Yes" : "No";
+    if (wc.questionType === "driver") return DRIVERS.find((d) => d.id === val)?.name ?? val;
+    if (wc.questionType === "constructor") return CONSTRUCTORS.find((c) => c.id === val)?.name ?? val;
+    return wc.options?.find((o) => o.id === val)?.name ?? val;
   }
 
   return (
@@ -531,6 +619,89 @@ export default function RaceDetailPage({
           <p className="text-sm" style={{ color: "var(--muted)" }}>Loading…</p>
         ) : (
           <div className="flex flex-col gap-6">
+
+            {/* ── Actual Results ── */}
+            {isQualLocked && result && (result.qualPole !== null || result.sprintQualPole !== null) && (
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(34,197,94,0.3)", backgroundColor: "rgba(34,197,94,0.04)" }}>
+                <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(34,197,94,0.15)" }}>
+                  <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "rgba(34,197,94,0.8)" }} />
+                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>Actual Results</span>
+                </div>
+                <div className="px-4 py-3 flex flex-col gap-4">
+                  {race.sprint && result.sprintQualPole && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(34,197,94,0.7)" }}>Sprint Qualifying</p>
+                      <div className="flex gap-5">
+                        {[{ pos: "P1", id: result.sprintQualPole }, { pos: "P2", id: result.sprintQualP2 }, { pos: "P3", id: result.sprintQualP3 }].map(({ pos, id }) => (
+                          <div key={pos} className="flex flex-col gap-0.5">
+                            <span className="text-[10px]" style={{ color: "var(--muted)" }}>{pos}</span>
+                            <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{driverLastName(id)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {race.sprint && result.sprintWinner && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(34,197,94,0.7)" }}>Sprint Race</p>
+                      <div className="flex gap-5">
+                        {[{ pos: "P1", id: result.sprintWinner }, { pos: "P2", id: result.sprintP2 }, { pos: "P3", id: result.sprintP3 }].map(({ pos, id }) => (
+                          <div key={pos} className="flex flex-col gap-0.5">
+                            <span className="text-[10px]" style={{ color: "var(--muted)" }}>{pos}</span>
+                            <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{driverLastName(id)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {result.qualPole && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(34,197,94,0.7)" }}>Qualifying</p>
+                      <div className="flex gap-5">
+                        {[{ pos: "P1", id: result.qualPole }, { pos: "P2", id: result.qualP2 }, { pos: "P3", id: result.qualP3 }].map(({ pos, id }) => (
+                          <div key={pos} className="flex flex-col gap-0.5">
+                            <span className="text-[10px]" style={{ color: "var(--muted)" }}>{pos}</span>
+                            <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{driverLastName(id)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {result.raceWinner && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(34,197,94,0.7)" }}>Race</p>
+                      <div className="flex gap-5 flex-wrap">
+                        {[
+                          { pos: "P1", id: result.raceWinner },
+                          { pos: "P2", id: result.raceP2 },
+                          { pos: "P3", id: result.raceP3 },
+                          { pos: "P4", id: result.raceP4 },
+                          { pos: "P5", id: result.raceP5 },
+                          { pos: "P6", id: result.raceP6 },
+                        ].filter(({ id }) => id !== null).map(({ pos, id }) => (
+                          <div key={pos} className="flex flex-col gap-0.5">
+                            <span className="text-[10px]" style={{ color: "var(--muted)" }}>{pos}</span>
+                            <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{driverLastName(id)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-5 mt-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px]" style={{ color: "var(--muted)" }}>Fastest Lap</span>
+                          <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{driverLastName(result.fastestLap)}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px]" style={{ color: "var(--muted)" }}>Safety Car</span>
+                          <span className="text-sm font-semibold" style={{ color: result.safetyCar === true ? "#22c55e" : result.safetyCar === false ? "#ef4444" : "var(--muted)" }}>
+                            {result.safetyCar === null ? "—" : result.safetyCar ? "Yes" : "No"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* ── Sprint Qualifying (sprint weekends only) ── */}
             {race.sprint && (
@@ -751,12 +922,12 @@ export default function RaceDetailPage({
 
             {/* ── Race ── */}
             <div className="rounded-xl p-4" style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-2">
                 <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "var(--team-accent)" }} />
                 <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
                   Race
                 </h2>
-                <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>25 / 18 / 15 pts</span>
+                <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>25/18/15/12/10/8 pts</span>
                 <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
                 <button
                   onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "race" ? null : "race"); }}
@@ -770,6 +941,27 @@ export default function RaceDetailPage({
                   aria-label="Race scoring info"
                 >?</button>
               </div>
+
+              {/* Booster counter */}
+              <div className="flex items-center gap-1.5 mb-4">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{
+                      backgroundColor: i < totalBoostersUsed ? "rgba(255,200,0,0.18)" : "rgba(255,255,255,0.06)",
+                      color: i < totalBoostersUsed ? "#ffc800" : "rgba(255,255,255,0.25)",
+                      border: i < totalBoostersUsed ? "1px solid rgba(255,200,0,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    ⚡
+                  </span>
+                ))}
+                <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  {boostersRemaining} booster{boostersRemaining !== 1 ? "s" : ""} left
+                </span>
+              </div>
+
               <div className="flex flex-col gap-2">
                 <DriverSelect
                   label="Race Winner"
@@ -780,6 +972,9 @@ export default function RaceDetailPage({
                   points={PICK_POINTS.raceWinner}
                   resultStatus={pickResult("raceWinner")?.status}
                   pointsEarned={pickResult("raceWinner")?.pts}
+                  boosted={boostedPicks.includes("raceWinner")}
+                  boostAvailable={boostersRemaining > 0}
+                  onBoost={() => handleBoostRacePick("raceWinner")}
                 />
                 <DriverSelect
                   label="P2"
@@ -790,6 +985,9 @@ export default function RaceDetailPage({
                   points={PICK_POINTS.raceP2}
                   resultStatus={pickResult("raceP2")?.status}
                   pointsEarned={pickResult("raceP2")?.pts}
+                  boosted={boostedPicks.includes("raceP2")}
+                  boostAvailable={boostersRemaining > 0}
+                  onBoost={() => handleBoostRacePick("raceP2")}
                 />
                 <DriverSelect
                   label="P3"
@@ -800,6 +998,48 @@ export default function RaceDetailPage({
                   points={PICK_POINTS.raceP3}
                   resultStatus={pickResult("raceP3")?.status}
                   pointsEarned={pickResult("raceP3")?.pts}
+                  boosted={boostedPicks.includes("raceP3")}
+                  boostAvailable={boostersRemaining > 0}
+                  onBoost={() => handleBoostRacePick("raceP3")}
+                />
+                <DriverSelect
+                  label="P4"
+                  value={picks?.raceP4 ?? null}
+                  isSaved={savedField === "raceP4"}
+                  disabled={isRaceLocked}
+                  onPick={(v) => pick("raceP4", v)}
+                  points={PICK_POINTS.raceP4}
+                  resultStatus={pickResult("raceP4")?.status}
+                  pointsEarned={pickResult("raceP4")?.pts}
+                  boosted={boostedPicks.includes("raceP4")}
+                  boostAvailable={boostersRemaining > 0}
+                  onBoost={() => handleBoostRacePick("raceP4")}
+                />
+                <DriverSelect
+                  label="P5"
+                  value={picks?.raceP5 ?? null}
+                  isSaved={savedField === "raceP5"}
+                  disabled={isRaceLocked}
+                  onPick={(v) => pick("raceP5", v)}
+                  points={PICK_POINTS.raceP5}
+                  resultStatus={pickResult("raceP5")?.status}
+                  pointsEarned={pickResult("raceP5")?.pts}
+                  boosted={boostedPicks.includes("raceP5")}
+                  boostAvailable={boostersRemaining > 0}
+                  onBoost={() => handleBoostRacePick("raceP5")}
+                />
+                <DriverSelect
+                  label="P6"
+                  value={picks?.raceP6 ?? null}
+                  isSaved={savedField === "raceP6"}
+                  disabled={isRaceLocked}
+                  onPick={(v) => pick("raceP6", v)}
+                  points={PICK_POINTS.raceP6}
+                  resultStatus={pickResult("raceP6")?.status}
+                  pointsEarned={pickResult("raceP6")?.pts}
+                  boosted={boostedPicks.includes("raceP6")}
+                  boostAvailable={boostersRemaining > 0}
+                  onBoost={() => handleBoostRacePick("raceP6")}
                 />
                 <DriverSelect
                   label="Fastest Lap"
@@ -810,11 +1050,15 @@ export default function RaceDetailPage({
                   points={PICK_POINTS.fastestLap}
                   resultStatus={pickResult("fastestLap")?.status}
                   pointsEarned={pickResult("fastestLap")?.pts}
+                  boosted={boostedPicks.includes("fastestLap")}
+                  boostAvailable={boostersRemaining > 0}
+                  onBoost={() => handleBoostRacePick("fastestLap")}
                 />
 
                 {/* Safety Car — inline row matching DriverSelect style */}
                 {(() => {
                   const scResult = pickResult("safetyCar");
+                  const scBoosted = boostedPicks.includes("safetyCar");
                   const scBorderLeft = scResult?.status === "correct"
                     ? "3px solid rgba(34,197,94,0.8)"
                     : scResult?.status === "wrong"
@@ -832,21 +1076,36 @@ export default function RaceDetailPage({
                 >
                   <div className="flex items-center justify-between gap-3 px-4 py-4" style={{ minHeight: "56px" }}>
                     <div className="flex flex-col gap-0.5 min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
                           Safety Car
                         </span>
                         <span
                           className="text-[10px] font-bold px-1.5 py-px rounded-full"
                           style={{
-                            backgroundColor: "rgba(255,200,0,0.12)",
+                            backgroundColor: scBoosted ? "rgba(255,200,0,0.22)" : "rgba(255,200,0,0.12)",
                             color: "#ffc800",
-                            border: "1px solid rgba(255,200,0,0.3)",
+                            border: `1px solid ${scBoosted ? "rgba(255,200,0,0.7)" : "rgba(255,200,0,0.3)"}`,
                             lineHeight: 1.4,
                           }}
                         >
-                          {PICK_POINTS.safetyCar} pts
+                          {scBoosted ? `${PICK_POINTS.safetyCar * 2} pts ⚡` : `${PICK_POINTS.safetyCar} pts`}
                         </span>
+                        {!isRaceLocked && (
+                          <button
+                            onClick={() => handleBoostRacePick("safetyCar")}
+                            className="text-[10px] font-bold px-1.5 py-px rounded-full transition-colors"
+                            style={{
+                              backgroundColor: scBoosted ? "rgba(255,200,0,0.18)" : boostersRemaining > 0 ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
+                              color: scBoosted ? "#ffc800" : boostersRemaining > 0 ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)",
+                              border: scBoosted ? "1px solid rgba(255,200,0,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                              cursor: scBoosted || boostersRemaining > 0 ? "pointer" : "default",
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {scBoosted ? "⚡ Boosted" : "⚡ Boost"}
+                          </button>
+                        )}
                       </div>
                       <span className="text-sm leading-tight" style={{
                         color: savedField === "safetyCar"
@@ -908,6 +1167,211 @@ export default function RaceDetailPage({
                 })()}
               </div>
             </div>
+
+            {/* ── Wild Cards ── */}
+            {wildcards.length > 0 && (
+              <div
+                className="rounded-xl p-4"
+                style={{ border: "1px solid rgba(150,100,255,0.25)", backgroundColor: "rgba(150,100,255,0.04)" }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="inline-block w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: "#9664ff" }} />
+                  <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
+                    Wild Cards
+                  </h2>
+                  <span className="text-[10px] font-semibold shrink-0" style={{ color: "rgba(150,100,255,0.65)" }}>
+                    pts vary · ⚡ boostable
+                  </span>
+                  <div className="flex-1 h-px" style={{ backgroundColor: "rgba(150,100,255,0.2)" }} />
+                  {isRaceLocked && (
+                    <span
+                      className="text-[9px] px-1.5 py-px rounded font-bold uppercase tracking-wider"
+                      style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--muted)", border: "1px solid var(--border)" }}
+                    >
+                      🔒 Locked
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {wildcards.map((wc) => {
+                    const myPick = wildcardPicks.find((p) => p.wildcardId === wc.id);
+                    const isSaved = wcSavedId === wc.id;
+                    const isBattle = wc.questionType === "battle";
+                    const hasResult = wc.correctAnswer !== null && myPick !== undefined;
+                    const isCorrect = hasResult && myPick!.pickValue === wc.correctAnswer;
+                    const isWrong = hasResult && myPick!.pickValue !== wc.correctAnswer;
+                    const ptsEarned = isCorrect ? wc.points * (myPick!.boosted ? 2 : 1) : 0;
+                    const resultBorderLeft = isCorrect
+                      ? "3px solid rgba(34,197,94,0.8)"
+                      : isWrong
+                      ? "3px solid rgba(239,68,68,0.6)"
+                      : null;
+
+                    if (wc.questionType === "driver") {
+                      return (
+                        <div key={wc.id}>
+                          <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "rgba(150,100,255,0.7)" }}>
+                            {wc.question}
+                          </p>
+                          <DriverSelect
+                            label={`Wild Card · ${wc.points} pts`}
+                            value={myPick?.pickValue ?? null}
+                            isSaved={isSaved}
+                            disabled={isRaceLocked}
+                            onPick={(val) => handleWildcardPick(wc.id, val)}
+                            points={wc.points}
+                            resultStatus={isCorrect ? "correct" : isWrong ? "wrong" : undefined}
+                            pointsEarned={ptsEarned}
+                            boosted={myPick?.boosted}
+                            boostAvailable={boostersRemaining > 0}
+                            onBoost={() => handleWildcardBoost(wc.id)}
+                          />
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={wc.id}
+                        className="rounded-xl overflow-hidden"
+                        style={{
+                          backgroundColor: "rgb(12, 8, 10)",
+                          border: "1px solid rgba(150,100,255,0.2)",
+                          borderLeft: resultBorderLeft ?? (myPick ? "3px solid rgba(150,100,255,0.5)" : "2px solid rgba(150,100,255,0.2)"),
+                        }}
+                      >
+                        <div className="px-4 py-4">
+                          {/* pts badge + boost + result */}
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+                              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+                                Wild Card
+                              </span>
+                              <span
+                                className="text-[10px] font-bold px-1.5 py-px rounded-full"
+                                style={{
+                                  backgroundColor: myPick?.boosted ? "rgba(255,200,0,0.22)" : "rgba(255,200,0,0.12)",
+                                  color: "#ffc800",
+                                  border: `1px solid ${myPick?.boosted ? "rgba(255,200,0,0.7)" : "rgba(255,200,0,0.3)"}`,
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                {myPick?.boosted ? `${wc.points * 2} pts ⚡` : `${wc.points} pts`}
+                              </span>
+                              {!isBattle && !isRaceLocked && myPick && (
+                                <button
+                                  onClick={() => handleWildcardBoost(wc.id)}
+                                  className="text-[10px] font-bold px-1.5 py-px rounded-full transition-colors"
+                                  style={{
+                                    backgroundColor: myPick.boosted ? "rgba(255,200,0,0.18)" : boostersRemaining > 0 ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
+                                    color: myPick.boosted ? "#ffc800" : boostersRemaining > 0 ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)",
+                                    border: myPick.boosted ? "1px solid rgba(255,200,0,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                                    cursor: myPick.boosted || boostersRemaining > 0 ? "pointer" : "default",
+                                    lineHeight: 1.4,
+                                  }}
+                                  title={myPick.boosted ? "Remove booster" : boostersRemaining > 0 ? "Apply booster (2×)" : "No boosters left"}
+                                >
+                                  {myPick.boosted ? "⚡ Boosted" : "⚡ Boost"}
+                                </button>
+                              )}
+                            </div>
+                            {isRaceLocked && (isCorrect || isWrong) ? (
+                              <span
+                                className="shrink-0 text-xs font-black"
+                                style={{ color: isCorrect ? "#22c55e" : "#ef4444" }}
+                              >
+                                {isCorrect ? `✓ +${ptsEarned}` : "✗"}
+                              </span>
+                            ) : isRaceLocked ? (
+                              <span className="shrink-0 text-sm" style={{ color: "var(--muted)" }}>🔒</span>
+                            ) : null}
+                          </div>
+
+                          {/* Question */}
+                          <p className="text-sm font-medium leading-snug mb-1.5" style={{ color: "var(--foreground)" }}>
+                            {wc.question}
+                          </p>
+
+                          {/* Current pick display */}
+                          <span
+                            className="text-sm leading-tight"
+                            style={{
+                              color: isSaved
+                                ? "var(--f1-red)"
+                                : myPick
+                                ? "rgba(150,100,255,0.9)"
+                                : "var(--muted)",
+                            }}
+                          >
+                            {isSaved ? "Saved ✓" : myPick ? wcDisplayName(wc, myPick.pickValue) : "Make your pick"}
+                          </span>
+
+                          {/* Pick input — only when unlocked */}
+                          {!isRaceLocked && (
+                            <div className="mt-3">
+                              {wc.questionType === "boolean" && (
+                                <div className="flex gap-2">
+                                  {(["yes", "no"] as const).map((val) => {
+                                    const isSelected = myPick?.pickValue === val;
+                                    return (
+                                      <button
+                                        key={val}
+                                        onClick={() => handleWildcardPick(wc.id, isSelected ? null : val)}
+                                        className="rounded-lg text-xs font-bold transition-colors"
+                                        style={{
+                                          backgroundColor: isSelected
+                                            ? val === "yes" ? "rgba(34,197,94,0.2)" : "rgba(225,6,0,0.2)"
+                                            : "rgba(255,255,255,0.06)",
+                                          border: isSelected
+                                            ? `1px solid ${val === "yes" ? "rgba(34,197,94,0.6)" : "var(--f1-red)"}`
+                                            : "1px solid rgba(255,255,255,0.12)",
+                                          color: isSelected
+                                            ? val === "yes" ? "#22c55e" : "var(--f1-red)"
+                                            : "var(--muted)",
+                                          minWidth: "60px",
+                                          minHeight: "36px",
+                                          padding: "0 16px",
+                                        }}
+                                      >
+                                        {val === "yes" ? "Yes" : "No"}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {(wc.questionType === "battle" || wc.questionType === "constructor") && wc.options && (
+                                <div className="flex gap-2 flex-wrap">
+                                  {wc.options.map((opt) => {
+                                    const isSelected = myPick?.pickValue === opt.id;
+                                    return (
+                                      <button
+                                        key={opt.id}
+                                        onClick={() => handleWildcardPick(wc.id, isSelected ? null : opt.id)}
+                                        className="rounded-lg text-sm font-semibold transition-colors"
+                                        style={{
+                                          backgroundColor: isSelected ? "rgba(150,100,255,0.2)" : "rgba(255,255,255,0.06)",
+                                          border: isSelected ? "1px solid rgba(150,100,255,0.6)" : "1px solid rgba(255,255,255,0.12)",
+                                          color: isSelected ? "#9664ff" : "var(--muted)",
+                                          minHeight: "40px",
+                                          padding: "0 16px",
+                                        }}
+                                      >
+                                        {opt.name}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
           </div>
         )}

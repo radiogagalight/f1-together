@@ -36,7 +36,9 @@ export function useRacePick(userId: string | undefined, round: number) {
           : {
               qualPole: null, qualP2: null, qualP3: null,
               raceWinner: null, raceP2: null, raceP3: null,
+              raceP4: null, raceP5: null, raceP6: null,
               fastestLap: null, safetyCar: null,
+              boostedPicks: [],
               sprintQualPole: null, sprintQualP2: null, sprintQualP3: null,
               sprintWinner: null, sprintP2: null, sprintP3: null,
               [field]: value,
@@ -52,5 +54,28 @@ export function useRacePick(userId: string | undefined, round: number) {
     [userId, round]
   );
 
-  return { picks, setPick, savedField, loading };
+  const toggleBoost = useCallback(
+    (field: string, wildcardBoostedCount: number) => {
+      if (!userId) return;
+      setPicks((prev) => {
+        if (!prev) return prev;
+        const current = prev.boostedPicks ?? [];
+        const alreadyBoosted = current.includes(field);
+        const totalUsed = current.length + wildcardBoostedCount;
+        if (!alreadyBoosted && totalUsed >= 3) return prev; // no slots left
+        const updated: RacePick = {
+          ...prev,
+          boostedPicks: alreadyBoosted
+            ? current.filter((f) => f !== field)
+            : [...current, field],
+        };
+        saveRacePick(userId, round, updated, supabase);
+        return updated;
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, round]
+  );
+
+  return { picks, setPick, toggleBoost, savedField, loading };
 }

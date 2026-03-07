@@ -8,8 +8,12 @@ const DEFAULT_RACE_PICK: RacePick = {
   raceWinner: null,
   raceP2: null,
   raceP3: null,
+  raceP4: null,
+  raceP5: null,
+  raceP6: null,
   fastestLap: null,
   safetyCar: null,
+  boostedPicks: [],
   sprintQualPole: null,
   sprintQualP2: null,
   sprintQualP3: null,
@@ -26,8 +30,12 @@ function dbRowToRacePick(row: Record<string, unknown>): RacePick {
     raceWinner:   (row.race_winner   as string | null) ?? null,
     raceP2:       (row.race_p2       as string | null) ?? null,
     raceP3:       (row.race_p3       as string | null) ?? null,
+    raceP4:       (row.race_p4       as string | null) ?? null,
+    raceP5:       (row.race_p5       as string | null) ?? null,
+    raceP6:       (row.race_p6       as string | null) ?? null,
     fastestLap:   (row.fastest_lap   as string | null) ?? null,
     safetyCar:    (row.safety_car    as boolean | null) ?? null,
+    boostedPicks: (row.boosted_picks as string[] | null) ?? [],
     sprintQualPole: (row.sprint_qual_pole as string | null) ?? null,
     sprintQualP2:   (row.sprint_qual_p2   as string | null) ?? null,
     sprintQualP3:   (row.sprint_qual_p3   as string | null) ?? null,
@@ -69,8 +77,12 @@ export async function saveRacePick(
       race_winner:  picks.raceWinner,
       race_p2:      picks.raceP2,
       race_p3:      picks.raceP3,
+      race_p4:      picks.raceP4,
+      race_p5:      picks.raceP5,
+      race_p6:      picks.raceP6,
       fastest_lap:  picks.fastestLap,
       safety_car:   picks.safetyCar,
+      boosted_picks: picks.boostedPicks,
       sprint_qual_pole: picks.sprintQualPole,
       sprint_qual_p2:   picks.sprintQualP2,
       sprint_qual_p3:   picks.sprintQualP3,
@@ -83,14 +95,14 @@ export async function saveRacePick(
   );
 }
 
-/** Returns a map of round → number of filled picks (0–8) for all races the user has a row for. */
+/** Returns a map of round → number of filled picks for all races the user has a row for. */
 export async function loadRacePickStatuses(
   userId: string,
   supabase: SupabaseClient
 ): Promise<Map<number, number>> {
   const { data } = await supabase
     .from("race_picks")
-    .select("round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,fastest_lap,safety_car,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3")
+    .select("round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,race_p4,race_p5,race_p6,fastest_lap,safety_car,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3")
     .eq("user_id", userId);
 
   const map = new Map<number, number>();
@@ -98,6 +110,7 @@ export async function loadRacePickStatuses(
     const count = [
       row.qual_pole, row.qual_p2, row.qual_p3,
       row.race_winner, row.race_p2, row.race_p3,
+      row.race_p4, row.race_p5, row.race_p6,
       row.fastest_lap, row.safety_car,
       row.sprint_qual_pole, row.sprint_qual_p2, row.sprint_qual_p3,
       row.sprint_winner, row.sprint_p2, row.sprint_p3,

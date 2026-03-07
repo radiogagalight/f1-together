@@ -35,7 +35,9 @@ function urgencyStyle(ms: number): { color: string; borderColor: string; bgColor
 const RACE_FIELD_LABELS: Record<keyof RacePick, string> = {
   qualPole: "Pole Position", qualP2: "Qual P2",      qualP3: "Qual P3",
   raceWinner: "Race Winner", raceP2: "Race P2",      raceP3: "Race P3",
+  raceP4: "Race P4",         raceP5: "Race P5",      raceP6: "Race P6",
   fastestLap: "Fastest Lap", safetyCar: "Safety Car",
+  boostedPicks: "Boosters",
   sprintQualPole: "SQ Pole", sprintQualP2: "SQ P2",  sprintQualP3: "SQ P3",
   sprintWinner: "Sprint Win",sprintP2: "Sprint P2",  sprintP3: "Sprint P3",
 };
@@ -118,7 +120,7 @@ export default function PredictionsWidget() {
     label: "Race",
     lockMs: raceMs,
     href: `/predictions/race/${nextRace.r}`,
-    fields: unpickedRaceFields(racePicks, ["raceWinner", "raceP2", "raceP3", "fastestLap", "safetyCar"]),
+    fields: unpickedRaceFields(racePicks, ["raceWinner", "raceP2", "raceP3", "raceP4", "raceP5", "raceP6", "fastestLap", "safetyCar"]),
   });
 
   const pendingGroups = groups.filter((g) => g.fields.length > 0);

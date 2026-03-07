@@ -59,6 +59,7 @@ export async function POST(
   await saveRaceResult(round, fetched, false, admin);
 
   const saved = await loadRaceResult(round, admin);
+  if (!saved) return NextResponse.json({ error: "Save failed — race_results table may not exist" }, { status: 500 });
   return NextResponse.json(saved);
 }
 
@@ -83,5 +84,6 @@ export async function PATCH(
   await saveRaceResult(round, merged, true, admin);
 
   const saved = await loadRaceResult(round, admin);
+  if (!saved) return NextResponse.json({ error: "Save failed — race_results table may not exist" }, { status: 500 });
   return NextResponse.json(saved);
 }
