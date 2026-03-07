@@ -160,7 +160,8 @@ export default function PredictionsWidget() {
     }))
     .sort((a, b) => a.lockMs - b.lockMs);
 
-  function SectionRow({ section, isLast }: { section: typeof raceSections[0]; isLast: boolean }) {
+  type AnySection = { key: string; label: string; lockMs: number; href: string; pills: { key: string; label: string }[] };
+  function SectionRow({ section, isLast }: { section: AnySection; isLast: boolean }) {
     const style = urgencyStyle(section.lockMs);
     const { pills } = section;
     return (
