@@ -124,6 +124,8 @@ export async function fetchDriverName(
 }
 
 // ─── Master orchestrator ──────────────────────────────────────────────────────
+// Parallelised: sessions in 1 call, driver maps + position/lap/safety all
+// fetched concurrently. Stays well within Vercel Hobby's 10 s function limit.
 
 export async function fetchFullRaceResult(
   round: number,
@@ -136,75 +138,100 @@ export async function fetchFullRaceResult(
   };
 
   try {
+    // Round 1: meeting key
     const meetingKey = await getMeetingKey(round);
     console.log(`[openf1] round=${round} meetingKey=${meetingKey}`);
     if (!meetingKey) return result;
 
-    // ── Qualifying ──────────────────────────────────────────────────────────
-    const qualKey = await getSessionKey(meetingKey, "Qualifying");
-    console.log(`[openf1] qualKey=${qualKey}`);
+    // Round 2: all sessions in one call
+    const sessions = await apiFetch<{ session_key: number; session_name: string }>(
+      `/sessions?meeting_key=${meetingKey}`
+    );
+    const getKey = (name: string) =>
+      sessions.find((s) => s.session_name.toLowerCase() === name.toLowerCase())?.session_key ?? null;
+
+    const qualKey    = getKey("Qualifying");
+    const raceKey    = getKey("Race");
+    const sqKey      = isSprint ? getKey("Sprint Qualifying") : null;
+    const sprintKey  = isSprint ? getKey("Sprint") : null;
+    console.log(`[openf1] qualKey=${qualKey} raceKey=${raceKey}`);
+
+    // Round 3 (parallel): fetch driver roster for every relevant session,
+    // and fetch positions + race telemetry simultaneously.
+    const sessionKeys = [qualKey, raceKey, sqKey, sprintKey].filter((k): k is number => k != null);
+    const null3 = (): Promise<(number | null)[]> => Promise.resolve([null, null, null]);
+    const null6 = (): Promise<(number | null)[]> => Promise.resolve([null, null, null, null, null, null]);
+
+    const [driverMaps, qualPos, racePos, flNum, sc, sqPos, sprintPos] = await Promise.all([
+      // Build a driver-number → driver-id map per session (all sessions in parallel)
+      Promise.all(
+        sessionKeys.map(async (sk) => {
+          const drivers = await apiFetch<{ driver_number: number; full_name: string }>(
+            `/drivers?session_key=${sk}`
+          );
+          const map = new Map<number, string | null>();
+          for (const d of drivers) {
+            if (!map.has(d.driver_number) && d.full_name) {
+              map.set(d.driver_number, slugToDriverId(fullNameToSlug(d.full_name)));
+            }
+          }
+          return { sk, map };
+        })
+      ),
+      qualKey   ? fetchPositionTopN(qualKey, 3)   : null3(),
+      raceKey   ? fetchPositionTopN(raceKey, 6)   : null6(),
+      raceKey   ? fetchFastestLap(raceKey)        : Promise.resolve(null),
+      raceKey   ? detectSafetyCar(raceKey)        : Promise.resolve(false),
+      sqKey     ? fetchPositionTopN(sqKey, 3)     : null3(),
+      sprintKey ? fetchPositionTopN(sprintKey, 3) : null3(),
+    ]);
+
+    const driverMap = (sk: number) =>
+      driverMaps.find((m) => m.sk === sk)?.map ?? new Map<number, string | null>();
+    const resolve = (map: Map<number, string | null>, num: number | null) =>
+      num != null ? (map.get(num) ?? null) : null;
+
+    // Map positions to driver IDs
     if (qualKey) {
-      try {
-        const [p1, p2, p3] = await fetchPositionTopN(qualKey, 3);
-        console.log(`[openf1] qual positions: p1=${p1} p2=${p2} p3=${p3}`);
-        result.qualPole = p1 ? await fetchDriverName(qualKey, p1) ?? null : null;
-        result.qualP2   = p2 ? await fetchDriverName(qualKey, p2) ?? null : null;
-        result.qualP3   = p3 ? await fetchDriverName(qualKey, p3) ?? null : null;
-        console.log(`[openf1] qual mapped: pole=${result.qualPole} p2=${result.qualP2} p3=${result.qualP3}`);
-      } catch (e) { console.error("[openf1] qual error", e); }
+      const m = driverMap(qualKey);
+      const [p1, p2, p3] = qualPos;
+      result.qualPole = resolve(m, p1);
+      result.qualP2   = resolve(m, p2);
+      result.qualP3   = resolve(m, p3);
+      console.log(`[openf1] qual: pole=${result.qualPole} p2=${result.qualP2} p3=${result.qualP3}`);
     }
 
-    // ── Race ────────────────────────────────────────────────────────────────
-    const raceKey = await getSessionKey(meetingKey, "Race");
-    console.log(`[openf1] raceKey=${raceKey}`);
     if (raceKey) {
-      try {
-        const [p1, p2, p3, p4, p5, p6] = await fetchPositionTopN(raceKey, 6);
-        console.log(`[openf1] race positions: p1=${p1} p2=${p2} p3=${p3} p4=${p4} p5=${p5} p6=${p6}`);
-        result.raceWinner = p1 ? await fetchDriverName(raceKey, p1) ?? null : null;
-        result.raceP2     = p2 ? await fetchDriverName(raceKey, p2) ?? null : null;
-        result.raceP3     = p3 ? await fetchDriverName(raceKey, p3) ?? null : null;
-        result.raceP4     = p4 ? await fetchDriverName(raceKey, p4) ?? null : null;
-        result.raceP5     = p5 ? await fetchDriverName(raceKey, p5) ?? null : null;
-        result.raceP6     = p6 ? await fetchDriverName(raceKey, p6) ?? null : null;
-        console.log(`[openf1] race mapped: winner=${result.raceWinner} p2=${result.raceP2} p3=${result.raceP3} p4=${result.raceP4} p5=${result.raceP5} p6=${result.raceP6}`);
-      } catch (e) { console.error("[openf1] race error", e); }
-
-      try {
-        const flNum = await fetchFastestLap(raceKey);
-        result.fastestLap = flNum ? await fetchDriverName(raceKey, flNum) ?? null : null;
-        console.log(`[openf1] fastestLap=${result.fastestLap}`);
-      } catch (e) { console.error("[openf1] fastestLap error", e); }
-
-      try {
-        result.safetyCar = await detectSafetyCar(raceKey);
-        console.log(`[openf1] safetyCar=${result.safetyCar}`);
-      } catch (e) { console.error("[openf1] safetyCar error", e); }
+      const m = driverMap(raceKey);
+      const [p1, p2, p3, p4, p5, p6] = racePos;
+      result.raceWinner = resolve(m, p1);
+      result.raceP2     = resolve(m, p2);
+      result.raceP3     = resolve(m, p3);
+      result.raceP4     = resolve(m, p4);
+      result.raceP5     = resolve(m, p5);
+      result.raceP6     = resolve(m, p6);
+      result.fastestLap = resolve(m, flNum);
+      result.safetyCar  = sc;
+      console.log(`[openf1] race: winner=${result.raceWinner} p2=${result.raceP2} p3=${result.raceP3} fl=${result.fastestLap} sc=${result.safetyCar}`);
     }
 
-    // ── Sprint (if applicable) ───────────────────────────────────────────────
     if (isSprint) {
-      const sqKey = await getSessionKey(meetingKey, "Sprint Qualifying");
       if (sqKey) {
-        try {
-          const [p1, p2, p3] = await fetchPositionTopN(sqKey, 3);
-          result.sprintQualPole = p1 ? await fetchDriverName(sqKey, p1) ?? null : null;
-          result.sprintQualP2   = p2 ? await fetchDriverName(sqKey, p2) ?? null : null;
-          result.sprintQualP3   = p3 ? await fetchDriverName(sqKey, p3) ?? null : null;
-        } catch { /* ignore */ }
+        const m = driverMap(sqKey);
+        const [p1, p2, p3] = sqPos;
+        result.sprintQualPole = resolve(m, p1);
+        result.sprintQualP2   = resolve(m, p2);
+        result.sprintQualP3   = resolve(m, p3);
       }
-
-      const sprintKey = await getSessionKey(meetingKey, "Sprint");
       if (sprintKey) {
-        try {
-          const [p1, p2, p3] = await fetchPositionTopN(sprintKey, 3);
-          result.sprintWinner = p1 ? await fetchDriverName(sprintKey, p1) ?? null : null;
-          result.sprintP2     = p2 ? await fetchDriverName(sprintKey, p2) ?? null : null;
-          result.sprintP3     = p3 ? await fetchDriverName(sprintKey, p3) ?? null : null;
-        } catch { /* ignore */ }
+        const m = driverMap(sprintKey);
+        const [p1, p2, p3] = sprintPos;
+        result.sprintWinner = resolve(m, p1);
+        result.sprintP2     = resolve(m, p2);
+        result.sprintP3     = resolve(m, p3);
       }
     }
-  } catch { /* top-level safety net */ }
+  } catch (e) { console.error("[openf1] top-level error", e); }
 
   return result;
 }
