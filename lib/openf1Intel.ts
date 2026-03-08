@@ -9,7 +9,7 @@ const CIRCUIT_KEYWORDS: Record<number, string> = {
   1: "australia", 2: "shanghai",    3: "suzuka",    4: "bahrain",
   5: "jeddah",   6: "miami",       7: "montreal",  8: "monaco",
   9: "catalu",   10: "spielberg",  11: "silverstone",12: "spa",
-  13: "hungaroring",14: "zandvoort",15: "monza",   16: "madrid",
+  13: "hungaroring",14: "zandvoort",15: "monza",   16: "madring",
   17: "baku",    18: "singapore",  19: "austin",   20: "mexico",
   21: "interlagos",22: "las vegas",23: "lusail",   24: "yas",
 };

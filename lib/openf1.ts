@@ -20,11 +20,11 @@ function slugToDriverId(slug: string): string | null {
 // ─── Circuit keyword map ──────────────────────────────────────────────────────
 
 const CIRCUIT_KEYWORDS: Record<number, string> = {
-  1: "albert",   2: "shanghai",    3: "suzuka",    4: "bahrain",
-  5: "jeddah",   6: "miami",       7: "villeneuve", 8: "monaco",
-  9: "barcelona",10: "spielberg",  11: "silverstone",12: "spa",
-  13: "hungaroring",14: "zandvoort",15: "monza",   16: "madrid",
-  17: "baku",    18: "marina",     19: "americas", 20: "hermanos",
+  1: "melbourne", 2: "shanghai",   3: "suzuka",    4: "sakhir",
+  5: "jeddah",    6: "miami",      7: "montreal",  8: "monte",
+  9: "catalunya", 10: "spielberg", 11: "silverstone",12: "spa",
+  13: "hungaroring",14: "zandvoort",15: "monza",   16: "madring",
+  17: "baku",    18: "singapore",  19: "austin",   20: "mexico",
   21: "interlagos",22: "las vegas",23: "lusail",   24: "yas",
 };
 
