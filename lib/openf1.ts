@@ -137,40 +137,49 @@ export async function fetchFullRaceResult(
 
   try {
     const meetingKey = await getMeetingKey(round);
+    console.log(`[openf1] round=${round} meetingKey=${meetingKey}`);
     if (!meetingKey) return result;
 
     // ── Qualifying ──────────────────────────────────────────────────────────
     const qualKey = await getSessionKey(meetingKey, "Qualifying");
+    console.log(`[openf1] qualKey=${qualKey}`);
     if (qualKey) {
       try {
         const [p1, p2, p3] = await fetchPositionTopN(qualKey, 3);
+        console.log(`[openf1] qual positions: p1=${p1} p2=${p2} p3=${p3}`);
         result.qualPole = p1 ? await fetchDriverName(qualKey, p1) ?? null : null;
         result.qualP2   = p2 ? await fetchDriverName(qualKey, p2) ?? null : null;
         result.qualP3   = p3 ? await fetchDriverName(qualKey, p3) ?? null : null;
-      } catch { /* ignore */ }
+        console.log(`[openf1] qual mapped: pole=${result.qualPole} p2=${result.qualP2} p3=${result.qualP3}`);
+      } catch (e) { console.error("[openf1] qual error", e); }
     }
 
     // ── Race ────────────────────────────────────────────────────────────────
     const raceKey = await getSessionKey(meetingKey, "Race");
+    console.log(`[openf1] raceKey=${raceKey}`);
     if (raceKey) {
       try {
         const [p1, p2, p3, p4, p5, p6] = await fetchPositionTopN(raceKey, 6);
+        console.log(`[openf1] race positions: p1=${p1} p2=${p2} p3=${p3} p4=${p4} p5=${p5} p6=${p6}`);
         result.raceWinner = p1 ? await fetchDriverName(raceKey, p1) ?? null : null;
         result.raceP2     = p2 ? await fetchDriverName(raceKey, p2) ?? null : null;
         result.raceP3     = p3 ? await fetchDriverName(raceKey, p3) ?? null : null;
         result.raceP4     = p4 ? await fetchDriverName(raceKey, p4) ?? null : null;
         result.raceP5     = p5 ? await fetchDriverName(raceKey, p5) ?? null : null;
         result.raceP6     = p6 ? await fetchDriverName(raceKey, p6) ?? null : null;
-      } catch { /* ignore */ }
+        console.log(`[openf1] race mapped: winner=${result.raceWinner} p2=${result.raceP2} p3=${result.raceP3} p4=${result.raceP4} p5=${result.raceP5} p6=${result.raceP6}`);
+      } catch (e) { console.error("[openf1] race error", e); }
 
       try {
         const flNum = await fetchFastestLap(raceKey);
         result.fastestLap = flNum ? await fetchDriverName(raceKey, flNum) ?? null : null;
-      } catch { /* ignore */ }
+        console.log(`[openf1] fastestLap=${result.fastestLap}`);
+      } catch (e) { console.error("[openf1] fastestLap error", e); }
 
       try {
         result.safetyCar = await detectSafetyCar(raceKey);
-      } catch { /* ignore */ }
+        console.log(`[openf1] safetyCar=${result.safetyCar}`);
+      } catch (e) { console.error("[openf1] safetyCar error", e); }
     }
 
     // ── Sprint (if applicable) ───────────────────────────────────────────────
