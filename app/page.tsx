@@ -340,6 +340,20 @@ function NextRaceHero({
     return () => clearInterval(id);
   }, []);
 
+  // Market favorite from Polymarket (undefined = loading, null = unavailable)
+  const [marketFav, setMarketFav] = useState<{
+    name: string; probability: number;
+    runnerUp?: { name: string; probability: number };
+    marketUrl: string;
+  } | null | undefined>(undefined);
+  useEffect(() => {
+    const raceName = race.name.replace(" Grand Prix", "");
+    fetch(`/api/market-favorite?race=${encodeURIComponent(raceName)}`)
+      .then((r) => r.json())
+      .then((d) => setMarketFav(d ?? null))
+      .catch(() => setMarketFav(null));
+  }, [race.r, race.name]);
+
   const weekendStarted = race.weekendStartUtc
     ? new Date(race.weekendStartUtc).getTime() <= now
     : false;
@@ -583,6 +597,33 @@ function NextRaceHero({
                 </span>
               </span>
             </div>
+          )}
+
+          {/* Market favorite */}
+          {marketFav && (
+            <a
+              href={marketFav.marketUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-3 flex flex-col gap-0.5 group"
+              style={{ textDecoration: "none" }}
+            >
+              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)" }}>
+                Market Fav
+              </p>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>
+                {marketFav.name}{" "}
+                <span style={{ color: "#22c55e", fontWeight: 700 }}>{marketFav.probability}%</span>
+                {marketFav.runnerUp && (
+                  <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>
+                    {" "}· {marketFav.runnerUp.name} {marketFav.runnerUp.probability}%
+                  </span>
+                )}
+              </p>
+              <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.2)", letterSpacing: "0.05em" }}>
+                via Polymarket ↗
+              </p>
+            </a>
           )}
 
           {/* Pick preview */}
