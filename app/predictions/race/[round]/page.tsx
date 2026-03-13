@@ -247,7 +247,8 @@ const SECTION_INFO: Record<string, {
       { label: "Fastest Lap", pts: "5 pts" },
       { label: "Safety Car deployed", pts: "5 pts" },
       { label: "Booster: apply ⚡ to any one race pick for 2× points (1 per race)", note: true },
-      { label: "Exact match only — no partial credit", note: true },
+      { label: "P1/P2/P3: right driver, wrong podium position", pts: "5 pts" },
+      { label: "P4–P6, Fastest Lap, Safety Car: exact match only", note: true },
     ],
   },
   sprintQual: {
@@ -265,7 +266,7 @@ const SECTION_INFO: Record<string, {
       { label: "Sprint Winner", pts: "8 pts" },
       { label: "P2", pts: "7 pts" },
       { label: "P3", pts: "6 pts" },
-      { label: "Exact match only — no partial credit", note: true },
+      { label: "Right driver, wrong sprint podium position", pts: "2 pts" },
     ],
   },
 };
