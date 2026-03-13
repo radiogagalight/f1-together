@@ -164,7 +164,7 @@ function SessionCard({ sessions, timezoneName }: { sessions: RaceSession[]; time
 }
 
 function FactCard({ facts }: { facts: RaceFact[] }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   return (
     <div
