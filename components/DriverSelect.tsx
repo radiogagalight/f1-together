@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { DRIVERS } from "@/lib/data";
 import { TEAM_COLORS } from "@/lib/teamColors";
+import { DRIVER_IMAGES } from "@/lib/driverImages";
 
 interface Props {
   label: string;
@@ -111,29 +113,42 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
             {isSaved ? "Saved ✓" : displayName}
           </span>
         </div>
-        {disabled ? (
-          resultStatus ? (
-            <span
-              className="shrink-0 text-xs font-black"
-              style={{
-                color: resultStatus === "correct" ? "#22c55e"
-                     : resultStatus === "partial" ? "#f59e0b"
-                     : "#ef4444",
-              }}
-            >
-              {resultStatus === "correct" ? `✓ +${pointsEarned}` : resultStatus === "partial" ? `~ +${pointsEarned}` : "✗"}
-            </span>
+        <div className="flex items-center gap-2 shrink-0">
+          {driver && DRIVER_IMAGES[driver.id] && (
+            <div className="relative w-10 h-10 shrink-0 overflow-hidden">
+              <Image
+                src={DRIVER_IMAGES[driver.id]}
+                alt={driver.name}
+                fill
+                style={{ objectFit: "contain", objectPosition: "top" }}
+                sizes="40px"
+              />
+            </div>
+          )}
+          {disabled ? (
+            resultStatus ? (
+              <span
+                className="text-xs font-black"
+                style={{
+                  color: resultStatus === "correct" ? "#22c55e"
+                       : resultStatus === "partial" ? "#f59e0b"
+                       : "#ef4444",
+                }}
+              >
+                {resultStatus === "correct" ? `✓ +${pointsEarned}` : resultStatus === "partial" ? `~ +${pointsEarned}` : "✗"}
+              </span>
+            ) : (
+              <span className="text-sm" style={{ color: "var(--muted)" }}>🔒</span>
+            )
           ) : (
-            <span className="shrink-0 text-sm" style={{ color: "var(--muted)" }}>🔒</span>
-          )
-        ) : (
-          <span
-            className="shrink-0 text-lg transition-transform duration-200"
-            style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", color: "var(--muted)" }}
-          >
-            ▾
-          </span>
-        )}
+            <span
+              className="text-lg transition-transform duration-200"
+              style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", color: "var(--muted)" }}
+            >
+              ▾
+            </span>
+          )}
+        </div>
       </button>
 
       {/* Driver list */}
@@ -159,7 +174,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
                     >
                       ✓
                     </span>
-                    <div className="flex flex-col items-start min-w-0">
+                    <div className="flex flex-col items-start min-w-0 flex-1">
                       <span
                         className="text-sm font-medium leading-tight"
                         style={{ color: isSelected ? "var(--f1-red)" : "var(--foreground)" }}
@@ -170,6 +185,17 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
                         {d.team}
                       </span>
                     </div>
+                    {DRIVER_IMAGES[d.id] && (
+                      <div className="relative w-10 h-10 shrink-0 overflow-hidden">
+                        <Image
+                          src={DRIVER_IMAGES[d.id]}
+                          alt={d.name}
+                          fill
+                          style={{ objectFit: "contain", objectPosition: "top" }}
+                          sizes="40px"
+                        />
+                      </div>
+                    )}
                   </button>
                 </li>
               );

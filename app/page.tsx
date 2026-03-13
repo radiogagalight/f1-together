@@ -8,6 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { RACES, CONSTRUCTORS, DRIVERS, formatRaceDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
 import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
+import { DRIVER_IMAGES } from "@/lib/driverImages";
 import PredictionsWidget from "@/components/PredictionsWidget";
 import Companion from "@/components/Companion";
 import { createClient } from "@/lib/supabase/client";
@@ -118,6 +119,11 @@ function WeekendResultsCard({
         }}
       >
         <span className="text-[10px] w-5 shrink-0 font-mono text-right" style={{ color: "var(--muted)" }}>{pos}</span>
+        {id && DRIVER_IMAGES[id] && (
+          <div className="relative w-7 h-7 shrink-0 overflow-hidden">
+            <Image src={DRIVER_IMAGES[id]} alt={dn(id)} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="28px" />
+          </div>
+        )}
         <span
           className="text-sm font-bold flex-1"
           style={{

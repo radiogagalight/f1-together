@@ -2,12 +2,14 @@
 
 import { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { CONSTRUCTORS, DRIVERS, RACES } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
 import { sendPushToUser } from "@/lib/pushActions";
+import { DRIVER_IMAGES } from "@/lib/driverImages";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1306,9 +1308,26 @@ function MembersTab({ profiles, loading, error }: { profiles: Profile[]; loading
             )}
 
             {favDrivers.length > 0 && (
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
-                {favDrivers.map((id) => driverName(id)).join(" · ")}
-              </p>
+              <div className="flex items-center gap-3 mt-1">
+                {favDrivers.map((id) => {
+                  const img = DRIVER_IMAGES[id];
+                  const lastName = driverName(id).split(" ").pop() ?? driverName(id);
+                  return (
+                    <div key={id} className="flex flex-col items-center gap-0.5">
+                      <div className="relative w-12 h-12 shrink-0 overflow-hidden">
+                        {img ? (
+                          <Image src={img} alt={driverName(id)} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="48px" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+                            <span className="text-sm" style={{ color: "var(--muted)" }}>{lastName[0]}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-medium" style={{ color: "var(--muted)" }}>{lastName}</span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
 
             {favTeams.length === 0 && favDrivers.length === 0 && (

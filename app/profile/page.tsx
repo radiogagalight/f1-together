@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import { CONSTRUCTORS, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
+import { DRIVER_IMAGES } from "@/lib/driverImages";
 
 const RANK_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"];
 const RANK_LABELS = ["#1", "#2", "#3"];
@@ -337,6 +339,17 @@ export default function ProfilePage() {
                 >
                   {RANK_LABELS[idx]}
                 </span>
+                {driverId && DRIVER_IMAGES[driverId] && (
+                  <div className="relative w-8 h-8 shrink-0 overflow-hidden">
+                    <Image
+                      src={DRIVER_IMAGES[driverId]}
+                      alt={driverLabel ?? ""}
+                      fill
+                      style={{ objectFit: "contain", objectPosition: "top" }}
+                      sizes="32px"
+                    />
+                  </div>
+                )}
                 {driverLabel ? (
                   <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
                     {driverLabel}
@@ -375,19 +388,31 @@ export default function ProfilePage() {
                         <div className="flex flex-wrap gap-2">
                           {teamDrivers.map((d) => {
                             const isChosenElsewhere = drivers.some((dr, i) => dr === d.id && i !== idx);
+                            const img = DRIVER_IMAGES[d.id];
                             return (
                               <button
                                 key={d.id}
                                 onClick={() => selectDriver(idx, d.id)}
-                                className="text-xs font-medium px-3 py-1.5 rounded-full transition-opacity"
+                                className="flex flex-col items-center gap-1 rounded-xl px-2 py-2 transition-opacity"
                                 style={{
                                   backgroundColor: "var(--surface-hover)",
-                                  color: "var(--foreground)",
                                   border: "1px solid var(--border)",
                                   opacity: isChosenElsewhere ? 0.35 : 1,
+                                  width: "72px",
                                 }}
                               >
-                                {d.name}
+                                {img ? (
+                                  <div className="relative w-10 h-10 shrink-0 overflow-hidden">
+                                    <Image src={img} alt={d.name} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="40px" />
+                                  </div>
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "var(--border)" }}>
+                                    <span className="text-xs" style={{ color: "var(--muted)" }}>{d.name[0]}</span>
+                                  </div>
+                                )}
+                                <span className="text-[10px] font-medium text-center leading-tight" style={{ color: "var(--foreground)" }}>
+                                  {d.name.split(" ").pop()}
+                                </span>
                               </button>
                             );
                           })}
