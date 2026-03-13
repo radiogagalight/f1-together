@@ -4,10 +4,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { useSeasonPicks } from "@/hooks/useSeasonPicks";
 import CategoryCard from "./CategoryCard";
 import MidseasonPredictions from "./MidseasonPredictions";
-import { CATEGORIES, RACES } from "@/lib/data";
+import { CATEGORIES } from "@/lib/data";
 import type { SeasonPicks } from "@/lib/types";
-
-const SEASON_LOCK_UTC = RACES[1].weekendStartUtc!; // locks at Chinese GP FP1 (R2 weekend start)
 
 const GROUPS: { label: string; keys: (keyof SeasonPicks)[] }[] = [
   { label: "Championship", keys: ["wdcWinner", "wccWinner"] },
@@ -18,7 +16,7 @@ const GROUPS: { label: string; keys: (keyof SeasonPicks)[] }[] = [
 export default function SeasonPredictions() {
   const { user } = useAuth();
   const { picks, setPick, savedKey, loading } = useSeasonPicks(user?.id);
-  const isLocked = new Date(SEASON_LOCK_UTC).getTime() < Date.now();
+  const isLocked = false;
 
   const pickedCount = picks
     ? Object.values(picks).filter((v) => v !== null).length

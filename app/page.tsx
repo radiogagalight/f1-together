@@ -498,7 +498,7 @@ function NextRaceHero({
                 fontSize: "clamp(20px, 5.5vw, 30px)",
                 color: "#e10600",
                 letterSpacing: "0.06em",
-                textShadow: "0 0 24px rgba(225,6,0,0.7), 0 2px 12px rgba(0,0,0,0.9)",
+                textShadow: "0 0 24px rgba(225,6,0,0.7), 0 2px 12px rgba(0,0,0,0.9), 0 1px 3px #000, 0 0 6px #000",
               }}
             >
               {dayLabel}
@@ -535,6 +535,7 @@ function NextRaceHero({
                         fontSize: "10px", fontWeight: 700, letterSpacing: "0.05em",
                         textTransform: "uppercase", whiteSpace: "nowrap",
                         color: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.4)",
+                        textShadow: sNext ? "0 1px 3px #000, 0 0 6px #000" : "none",
                       }}>
                         {s.short}
                       </span>
@@ -902,7 +903,7 @@ export default function HomePage() {
         {/* ── Next Race Hero ── */}
         <div className="md:w-[620px] md:shrink-0">
           <NextRaceHero race={RACES[nextRaceIdx]} picks={heroPicks} lastRaceScore={lastRaceScore} />
-          {currentRaceResult?.qualPole && (
+          {currentRaceResult?.qualPole && qualifiedRaceIdx === nextRaceIdx && (
             <WeekendResultsCard result={currentRaceResult} pick={currentRacePick} userId={user?.id ?? ""} />
           )}
         </div>

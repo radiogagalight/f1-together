@@ -19,7 +19,7 @@ function driverLastName(id: string | null): string {
   return DRIVERS.find((d) => d.id === id)?.name.split(" ").pop() ?? id;
 }
 
-function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label: string; target: string }) {
+function CountdownCard({ targetUtc, label, target, raceUtc }: { targetUtc: string; label: string; target: string; raceUtc?: string }) {
   const [timeLeft, setTimeLeft] = useState(() =>
     Math.max(0, new Date(targetUtc).getTime() - Date.now())
   );
@@ -33,6 +33,7 @@ function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label:
   }, [targetUtc]);
 
   const expired = timeLeft === 0;
+  const raceOver = raceUtc ? new Date(raceUtc).getTime() < Date.now() : false;
   const days    = Math.floor(timeLeft / 86_400_000);
   const hours   = Math.floor((timeLeft % 86_400_000) / 3_600_000);
   const minutes = Math.floor((timeLeft % 3_600_000) / 60_000);
@@ -60,7 +61,7 @@ function CountdownCard({ targetUtc, label, target }: { targetUtc: string; label:
       <div className="px-4 py-4">
         {expired ? (
           <p className="text-center font-bold text-lg" style={{ color: "var(--f1-red)" }}>
-            Race weekend is underway! 🏁
+            {raceOver ? "This race has already taken place. 🏁" : "Race weekend is underway! 🏁"}
           </p>
         ) : (
           <>
@@ -549,6 +550,7 @@ export default function RaceDetailPage({
             targetUtc={race.weekendStartUtc}
             label="Race Weekend Countdown"
             target="Practice 1"
+            raceUtc={race.startUtc}
           />
         )}
 
