@@ -689,7 +689,7 @@ const SPEED_LINES = [
 
 
 export default function HomePage() {
-  const { user, authReady, displayName, teamAccent, timezoneOffset, favTeams } = useAuth();
+  const { user, authReady, displayName, teamAccent, timezoneName, favTeams } = useAuth();
 
   const nextRaceIdx = getNextRaceIndex();
   const [page, setPage] = useState(Math.floor(nextRaceIdx / PAGE_SIZE));
@@ -1018,7 +1018,7 @@ export default function HomePage() {
                       fontWeight: isNext ? 700 : 400,
                     }}
                   >
-                    {formatRaceDate(race, timezoneOffset)}
+                    {formatRaceDate(race, timezoneName)}
                   </span>
                 </Link>
               );

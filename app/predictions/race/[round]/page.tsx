@@ -98,7 +98,7 @@ function CountdownCard({ targetUtc, label, target, raceUtc }: { targetUtc: strin
   );
 }
 
-function SessionCard({ sessions, timezoneOffset }: { sessions: RaceSession[]; timezoneOffset: number }) {
+function SessionCard({ sessions, timezoneName }: { sessions: RaceSession[]; timezoneName: string }) {
   const now = Date.now();
   const nextIdx = sessions.findIndex((s) => new Date(s.utc).getTime() > now);
 
@@ -120,12 +120,12 @@ function SessionCard({ sessions, timezoneOffset }: { sessions: RaceSession[]; ti
 
       <div>
         {sessions.map((session, i) => {
-          const local = new Date(new Date(session.utc).getTime() + timezoneOffset * 3_600_000);
           const isPast = new Date(session.utc).getTime() < now;
           const isNext = i === nextIdx;
-          const day  = local.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
-          const date = local.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-          const time = local.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" });
+          const tz = timezoneName;
+          const day  = new Date(session.utc).toLocaleDateString("en-US", { weekday: "short", timeZone: tz });
+          const date = new Date(session.utc).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: tz });
+          const time = new Date(session.utc).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: tz });
 
           return (
             <div
@@ -278,7 +278,7 @@ export default function RaceDetailPage({
   const { round: roundStr } = use(params);
   const round = parseInt(roundStr);
   const race = RACES.find((r) => r.r === round);
-  const { user, timezoneOffset } = useAuth();
+  const { user, timezoneName } = useAuth();
   const { picks, setPick, toggleBoost, savedField, loading } = useRacePick(user?.id, round);
 
   const [now, setNow] = useState(Date.now());
@@ -446,7 +446,7 @@ export default function RaceDetailPage({
           <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-                Round {race.r} · {formatRaceDate(race, timezoneOffset)}
+                Round {race.r} · {formatRaceDate(race, timezoneName)}
               </span>
               {race.sprint && (
                 <span
@@ -498,7 +498,7 @@ export default function RaceDetailPage({
         <div className="px-4 pt-6 mb-6">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-mono text-xs" style={{ color: "var(--muted)" }}>
-              Round {race.r} · {formatRaceDate(race, timezoneOffset)}
+              Round {race.r} · {formatRaceDate(race, timezoneName)}
             </span>
             {race.sprint && (
               <span
@@ -555,7 +555,7 @@ export default function RaceDetailPage({
         )}
 
         {/* Weekend schedule card */}
-        {raceData?.sessions && <SessionCard sessions={raceData.sessions} timezoneOffset={timezoneOffset} />}
+        {raceData?.sessions && <SessionCard sessions={raceData.sessions} timezoneName={timezoneName} />}
 
         {/* Circuit image */}
         {trackImage && (

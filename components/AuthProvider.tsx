@@ -21,7 +21,7 @@ interface AuthContextValue {
   favTeams: [string | null, string | null, string | null];
   favDrivers: [string | null, string | null, string | null];
   teamAccent: string;
-  timezoneOffset: number;
+  timezoneName: string;
   refreshFavorites: () => Promise<void>;
   unreadCount: number;
   refreshNotifications: () => Promise<void>;
@@ -40,7 +40,7 @@ const AuthContext = createContext<AuthContextValue>({
   favTeams: [null, null, null],
   favDrivers: [null, null, null],
   teamAccent: "#e10600",
-  timezoneOffset: 0,
+  timezoneName: "UTC",
   refreshFavorites: async () => {},
   unreadCount: 0,
   refreshNotifications: async () => {},
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [favTeams, setFavTeams] = useState<[string | null, string | null, string | null]>([null, null, null]);
   const [favDrivers, setFavDrivers] = useState<[string | null, string | null, string | null]>([null, null, null]);
   const [teamAccent, setTeamAccent] = useState("#e10600");
-  const [timezoneOffset, setTimezoneOffset] = useState(0);
+  const [timezoneName, setTimezoneName] = useState("UTC");
   const [unreadCount, setUnreadCount] = useState(0);
   const [companionNamePref, setCompanionNamePref] = useState<string | null>(null);
   const [companionDismissed, setCompanionDismissed] = useState(false);
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data } = await supabase
       .from("profiles")
       .select(
-        "display_name,fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3,timezone_offset,companion_name_pref,companion_dismissed,companion_intro_done,companion_first_dismiss_seen"
+        "display_name,fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3,timezone_name,companion_name_pref,companion_dismissed,companion_intro_done,companion_first_dismiss_seen"
       )
       .eq("id", userId)
       .maybeSingle();
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data?.fav_driver_3 ?? null,
     ]);
     setTeamAccent(TEAM_COLORS[t1 ?? ""] ?? "#e10600");
-    setTimezoneOffset(data?.timezone_offset ?? 0);
+    setTimezoneName(data?.timezone_name ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
     setCompanionNamePref(data?.companion_name_pref ?? null);
     setCompanionDismissed(data?.companion_dismissed ?? false);
     setCompanionIntroDone(data?.companion_intro_done ?? false);
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setFavTeams([null, null, null]);
         setFavDrivers([null, null, null]);
         setTeamAccent("#e10600");
-        setTimezoneOffset(0);
+        setTimezoneName("UTC");
         setUnreadCount(0);
         setCompanionNamePref(null);
         setCompanionDismissed(false);
@@ -202,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         favTeams,
         favDrivers,
         teamAccent,
-        timezoneOffset,
+        timezoneName,
         refreshFavorites,
         unreadCount,
         refreshNotifications,

@@ -103,13 +103,13 @@ export function formatDate(dateStr: string): string {
 }
 
 /**
- * Format a race date adjusted to the user's UTC offset.
- * offsetHours: integer, e.g. -5 for UTC-5, +11 for UTC+11.
+ * Format a race date in the given IANA timezone (e.g. "America/Chicago").
+ * DST is handled automatically by the browser's Intl APIs.
  */
-export function formatRaceDate(race: Race, offsetHours: number = 0): string {
-  const utc = new Date(race.startUtc);
-  const local = new Date(utc.getTime() + offsetHours * 3_600_000);
-  return local.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+export function formatRaceDate(race: Race, timezoneName: string = "UTC"): string {
+  return new Date(race.startUtc).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", timeZone: timezoneName,
+  });
 }
 
 export const CATEGORIES: Category[] = [

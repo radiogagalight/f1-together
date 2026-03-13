@@ -5,7 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { RACES, formatRaceDate, flagToCC } from "@/lib/data";
 
 export default function RacePredictionsPage() {
-  const { timezoneOffset } = useAuth();
+  const { timezoneName } = useAuth();
   const now = Date.now();
   const nextIdx = Math.max(0, RACES.findIndex((r) => new Date(r.date + "T14:00:00Z").getTime() > now));
 
@@ -46,7 +46,7 @@ export default function RacePredictionsPage() {
                   {race.name.replace(" Grand Prix", " GP")}
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-xs" style={{ color: "var(--muted)" }}>{formatRaceDate(race, timezoneOffset)}</span>
+                  <span className="text-xs" style={{ color: "var(--muted)" }}>{formatRaceDate(race, timezoneName)}</span>
                   {isNext && (
                     <span
                       className="text-[9px] px-1 py-px rounded font-bold uppercase tracking-wider"

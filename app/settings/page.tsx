@@ -26,38 +26,37 @@ async function subscribeToPush(): Promise<PushSubscription | null> {
   });
 }
 
-const UTC_OFFSETS = [
-  { value: -12, label: "UTC−12" },
-  { value: -11, label: "UTC−11" },
-  { value: -10, label: "UTC−10  (Hawaii)" },
-  { value: -9,  label: "UTC−9   (Alaska)" },
-  { value: -8,  label: "UTC−8   (Pacific US/Canada)" },
-  { value: -7,  label: "UTC−7   (Mountain US/Canada)" },
-  { value: -6,  label: "UTC−6   (Central US/Canada)" },
-  { value: -5,  label: "UTC−5   (Eastern US/Canada)" },
-  { value: -4,  label: "UTC−4   (Atlantic / EDT)" },
-  { value: -3,  label: "UTC−3   (Brazil, Argentina)" },
-  { value: -2,  label: "UTC−2" },
-  { value: -1,  label: "UTC−1" },
-  { value:  0,  label: "UTC+0   (London, Dublin)" },
-  { value:  1,  label: "UTC+1   (Paris, Amsterdam)" },
-  { value:  2,  label: "UTC+2   (Helsinki, Cairo)" },
-  { value:  3,  label: "UTC+3   (Moscow, Riyadh)" },
-  { value:  4,  label: "UTC+4   (Dubai, Baku)" },
-  { value:  5,  label: "UTC+5   (Karachi)" },
-  { value:  6,  label: "UTC+6   (Dhaka)" },
-  { value:  7,  label: "UTC+7   (Bangkok, Jakarta)" },
-  { value:  8,  label: "UTC+8   (Singapore, Shanghai)" },
-  { value:  9,  label: "UTC+9   (Tokyo, Seoul)" },
-  { value: 10,  label: "UTC+10  (Sydney — AEST)" },
-  { value: 11,  label: "UTC+11  (Melbourne — AEDT)" },
-  { value: 12,  label: "UTC+12  (Auckland)" },
-  { value: 13,  label: "UTC+13" },
-  { value: 14,  label: "UTC+14" },
+const TIMEZONES = [
+  { value: "Pacific/Honolulu",              label: "Hawaii (UTC−10)" },
+  { value: "America/Anchorage",             label: "Alaska (UTC−9/−8)" },
+  { value: "America/Los_Angeles",           label: "Pacific — LA, Seattle (UTC−8/−7)" },
+  { value: "America/Denver",                label: "Mountain — Denver (UTC−7/−6)" },
+  { value: "America/Phoenix",               label: "Arizona — no DST (UTC−7)" },
+  { value: "America/Chicago",               label: "Central — Chicago, Dallas (UTC−6/−5)" },
+  { value: "America/New_York",              label: "Eastern — New York, Miami (UTC−5/−4)" },
+  { value: "America/Halifax",               label: "Atlantic — Halifax (UTC−4/−3)" },
+  { value: "America/Sao_Paulo",             label: "Brazil — São Paulo (UTC−3)" },
+  { value: "America/Argentina/Buenos_Aires",label: "Argentina (UTC−3)" },
+  { value: "Atlantic/Azores",               label: "Azores (UTC−1/0)" },
+  { value: "Europe/London",                 label: "London, Dublin (UTC+0/+1)" },
+  { value: "Europe/Paris",                  label: "Central Europe — Paris, Amsterdam (UTC+1/+2)" },
+  { value: "Europe/Helsinki",               label: "Eastern Europe — Helsinki, Kyiv (UTC+2/+3)" },
+  { value: "Europe/Moscow",                 label: "Moscow (UTC+3)" },
+  { value: "Asia/Dubai",                    label: "Dubai, Abu Dhabi (UTC+4)" },
+  { value: "Asia/Karachi",                  label: "Pakistan (UTC+5)" },
+  { value: "Asia/Kolkata",                  label: "India (UTC+5:30)" },
+  { value: "Asia/Dhaka",                    label: "Bangladesh (UTC+6)" },
+  { value: "Asia/Bangkok",                  label: "Bangkok, Jakarta (UTC+7)" },
+  { value: "Asia/Singapore",                label: "Singapore, Kuala Lumpur (UTC+8)" },
+  { value: "Asia/Shanghai",                 label: "China (UTC+8)" },
+  { value: "Asia/Tokyo",                    label: "Japan, Korea (UTC+9)" },
+  { value: "Australia/Brisbane",            label: "Brisbane — no DST (UTC+10)" },
+  { value: "Australia/Sydney",              label: "Sydney, Melbourne (UTC+10/+11)" },
+  { value: "Pacific/Auckland",              label: "New Zealand (UTC+12/+13)" },
 ];
 
 export default function SettingsPage() {
-  const { user, signOut, authReady, timezoneOffset, refreshFavorites, displayName: ctxDisplayName, favTeams: ctxFavTeams, favDrivers: ctxFavDrivers } = useAuth();
+  const { user, signOut, authReady, timezoneName, refreshFavorites, displayName: ctxDisplayName, favTeams: ctxFavTeams, favDrivers: ctxFavDrivers } = useAuth();
   const [confirming, setConfirming] = useState(false);
 
   // ── Profile state ──
@@ -129,7 +128,7 @@ export default function SettingsPage() {
   function toggleTeamSlot(idx: number) { setOpenDriverSlot(null); setOpenTeamSlot((p) => (p === idx ? null : idx)); }
   function toggleDriverSlot(idx: number) { setOpenTeamSlot(null); setOpenDriverSlot((p) => (p === idx ? null : idx)); }
   const [isAdmin, setIsAdmin] = useState(false);
-  const [tzOffset, setTzOffset] = useState(timezoneOffset);
+  const [tzName, setTzName] = useState(timezoneName);
   const [tzSaved, setTzSaved] = useState(false);
   const [tzError, setTzError] = useState<string | null>(null);
   const [pushStatus, setPushStatus] = useState<"unsupported" | "denied" | "enabled" | "disabled">("disabled");
@@ -139,7 +138,7 @@ export default function SettingsPage() {
   const supabase = createClient();
 
   // Sync local state when context loads (after DB fetch)
-  useEffect(() => { setTzOffset(timezoneOffset); }, [timezoneOffset]);
+  useEffect(() => { setTzName(timezoneName); }, [timezoneName]);
 
   // Check admin status
   useEffect(() => {
@@ -212,12 +211,12 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleTzChange(value: number) {
-    setTzOffset(value);
+  async function handleTzChange(value: string) {
+    setTzName(value);
     setTzSaved(false);
     setTzError(null);
     if (!user) return;
-    const { error } = await supabase.from("profiles").upsert({ id: user.id, timezone_offset: value });
+    const { error } = await supabase.from("profiles").upsert({ id: user.id, timezone_name: value });
     if (error) {
       setTzError("Save failed: " + error.message);
       return;
@@ -228,7 +227,7 @@ export default function SettingsPage() {
   }
 
   function autoDetect() {
-    const detected = -Math.round(new Date().getTimezoneOffset() / 60);
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
     handleTzChange(detected);
   }
 
@@ -450,17 +449,17 @@ export default function SettingsPage() {
           </div>
 
           <select
-            value={tzOffset}
-            onChange={(e) => handleTzChange(Number(e.target.value))}
-            className="w-full rounded-lg border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--f1-red)] mb-3"
+            value={tzName}
+            onChange={(e) => handleTzChange(e.target.value)}
+            className="w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--f1-red)] mb-3"
             style={{
               borderColor: "var(--border)",
               backgroundColor: "var(--background)",
               color: "var(--foreground)",
             }}
           >
-            {UTC_OFFSETS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+            {TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>{tz.label}</option>
             ))}
           </select>
 
