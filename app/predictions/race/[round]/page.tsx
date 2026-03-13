@@ -930,7 +930,7 @@ export default function RaceDetailPage({
                 <h2 className="text-sm font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--foreground)" }}>
                   Race
                 </h2>
-                <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>25/18/15/12/10/8 pts</span>
+                <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--muted)" }}>25/18/15/12/10/8 pts · +5 partial</span>
                 <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
                 <button
                   onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "race" ? null : "race"); }}
