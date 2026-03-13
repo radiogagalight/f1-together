@@ -120,8 +120,8 @@ function WeekendResultsCard({
       >
         <span className="text-[10px] w-5 shrink-0 font-mono text-right" style={{ color: "var(--muted)" }}>{pos}</span>
         {id && DRIVER_IMAGES[id] && (
-          <div className="relative w-7 h-7 shrink-0 overflow-hidden">
-            <Image src={DRIVER_IMAGES[id]} alt={dn(id)} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="28px" />
+          <div className="relative w-12 h-12 shrink-0 overflow-hidden">
+            <Image src={DRIVER_IMAGES[id]} alt={dn(id)} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="48px" />
           </div>
         )}
         <span

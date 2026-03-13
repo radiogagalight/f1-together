@@ -115,13 +115,13 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {driver && DRIVER_IMAGES[driver.id] && (
-            <div className="relative w-10 h-10 shrink-0 overflow-hidden">
+            <div className="relative w-16 h-16 shrink-0 overflow-hidden">
               <Image
                 src={DRIVER_IMAGES[driver.id]}
                 alt={driver.name}
                 fill
                 style={{ objectFit: "contain", objectPosition: "top" }}
-                sizes="40px"
+                sizes="64px"
               />
             </div>
           )}
@@ -186,13 +186,13 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
                       </span>
                     </div>
                     {DRIVER_IMAGES[d.id] && (
-                      <div className="relative w-10 h-10 shrink-0 overflow-hidden">
+                      <div className="relative w-14 h-14 shrink-0 overflow-hidden">
                         <Image
                           src={DRIVER_IMAGES[d.id]}
                           alt={d.name}
                           fill
                           style={{ objectFit: "contain", objectPosition: "top" }}
-                          sizes="40px"
+                          sizes="56px"
                         />
                       </div>
                     )}

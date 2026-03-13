@@ -1308,22 +1308,22 @@ function MembersTab({ profiles, loading, error }: { profiles: Profile[]; loading
             )}
 
             {favDrivers.length > 0 && (
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-4 mt-2">
                 {favDrivers.map((id) => {
                   const img = DRIVER_IMAGES[id];
                   const lastName = driverName(id).split(" ").pop() ?? driverName(id);
                   return (
-                    <div key={id} className="flex flex-col items-center gap-0.5">
-                      <div className="relative w-12 h-12 shrink-0 overflow-hidden">
+                    <div key={id} className="flex flex-col items-center gap-1">
+                      <div className="relative w-20 h-20 shrink-0 overflow-hidden">
                         {img ? (
-                          <Image src={img} alt={driverName(id)} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="48px" />
+                          <Image src={img} alt={driverName(id)} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="80px" />
                         ) : (
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
-                            <span className="text-sm" style={{ color: "var(--muted)" }}>{lastName[0]}</span>
+                          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+                            <span className="text-base" style={{ color: "var(--muted)" }}>{lastName[0]}</span>
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] font-medium" style={{ color: "var(--muted)" }}>{lastName}</span>
+                      <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{lastName}</span>
                     </div>
                   );
                 })}

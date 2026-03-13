@@ -340,13 +340,13 @@ export default function ProfilePage() {
                   {RANK_LABELS[idx]}
                 </span>
                 {driverId && DRIVER_IMAGES[driverId] && (
-                  <div className="relative w-8 h-8 shrink-0 overflow-hidden">
+                  <div className="relative w-14 h-14 shrink-0 overflow-hidden">
                     <Image
                       src={DRIVER_IMAGES[driverId]}
                       alt={driverLabel ?? ""}
                       fill
                       style={{ objectFit: "contain", objectPosition: "top" }}
-                      sizes="32px"
+                      sizes="56px"
                     />
                   </div>
                 )}
@@ -398,19 +398,19 @@ export default function ProfilePage() {
                                   backgroundColor: "var(--surface-hover)",
                                   border: "1px solid var(--border)",
                                   opacity: isChosenElsewhere ? 0.35 : 1,
-                                  width: "72px",
+                                  width: "88px",
                                 }}
                               >
                                 {img ? (
-                                  <div className="relative w-10 h-10 shrink-0 overflow-hidden">
-                                    <Image src={img} alt={d.name} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="40px" />
+                                  <div className="relative w-14 h-14 shrink-0 overflow-hidden">
+                                    <Image src={img} alt={d.name} fill style={{ objectFit: "contain", objectPosition: "top" }} sizes="56px" />
                                   </div>
                                 ) : (
-                                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "var(--border)" }}>
-                                    <span className="text-xs" style={{ color: "var(--muted)" }}>{d.name[0]}</span>
+                                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: "var(--border)" }}>
+                                    <span className="text-sm" style={{ color: "var(--muted)" }}>{d.name[0]}</span>
                                   </div>
                                 )}
-                                <span className="text-[10px] font-medium text-center leading-tight" style={{ color: "var(--foreground)" }}>
+                                <span className="text-xs font-medium text-center leading-tight" style={{ color: "var(--foreground)" }}>
                                   {d.name.split(" ").pop()}
                                 </span>
                               </button>
