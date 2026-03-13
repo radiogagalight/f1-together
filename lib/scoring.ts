@@ -9,8 +9,10 @@ export const PICK_POINTS: Record<keyof ScoreBreakdown, number> = {
   sprintWinner: 8,   sprintP2: 7,    sprintP3: 6,
 };
 
-// Points awarded when a driver is picked for the wrong qualifying slot but still appears in the top 3
+// Points awarded when a driver is picked for the wrong qualifying/sprint slot but still appears in the top 3
 const QUAL_PARTIAL_POINTS = 2;
+// Points awarded when a driver is picked for the wrong podium position but still finishes on the podium
+const RACE_PODIUM_PARTIAL_POINTS = 5;
 
 export function scoreRound(
   userId: string,
@@ -26,18 +28,19 @@ export function scoreRound(
     return boosted.includes(key) ? base * 2 : base;
   }
 
-  // Qualifying and sprint race slots award full points for exact position, partial
-  // credit if the picked driver appears in one of the other two positions.
+  // Qualifying, sprint, and race podium slots award full points for exact position,
+  // partial credit if the picked driver appears in one of the other positions.
   function qualPts(
     pickVal: string | null,
     exactResult: string | null,
     otherResults: (string | null)[],
-    key: keyof ScoreBreakdown
+    key: keyof ScoreBreakdown,
+    partialPoints: number = QUAL_PARTIAL_POINTS
   ): number {
     if (exactResult === null || exactResult === undefined) return 0;
     if (pickVal === null || pickVal === undefined) return 0;
     if (pickVal === exactResult) return PICK_POINTS[key];
-    if (otherResults.some((r) => r !== null && r === pickVal)) return QUAL_PARTIAL_POINTS;
+    if (otherResults.some((r) => r !== null && r === pickVal)) return partialPoints;
     return 0;
   }
 
@@ -45,9 +48,9 @@ export function scoreRound(
     qualPole: qualPts(pick.qualPole, result.qualPole, [result.qualP2,      result.qualP3],      "qualPole"),
     qualP2:   qualPts(pick.qualP2,   result.qualP2,   [result.qualPole,    result.qualP3],      "qualP2"),
     qualP3:   qualPts(pick.qualP3,   result.qualP3,   [result.qualPole,    result.qualP2],      "qualP3"),
-    raceWinner:   pts(pick.raceWinner,   result.raceWinner,   "raceWinner"),
-    raceP2:       pts(pick.raceP2,       result.raceP2,       "raceP2"),
-    raceP3:       pts(pick.raceP3,       result.raceP3,       "raceP3"),
+    raceWinner: qualPts(pick.raceWinner, result.raceWinner, [result.raceP2,     result.raceP3], "raceWinner", RACE_PODIUM_PARTIAL_POINTS),
+    raceP2:     qualPts(pick.raceP2,     result.raceP2,     [result.raceWinner, result.raceP3], "raceP2",     RACE_PODIUM_PARTIAL_POINTS),
+    raceP3:     qualPts(pick.raceP3,     result.raceP3,     [result.raceWinner, result.raceP2], "raceP3",     RACE_PODIUM_PARTIAL_POINTS),
     raceP4:       pts(pick.raceP4,       result.raceP4,       "raceP4"),
     raceP5:       pts(pick.raceP5,       result.raceP5,       "raceP5"),
     raceP6:       pts(pick.raceP6,       result.raceP6,       "raceP6"),
