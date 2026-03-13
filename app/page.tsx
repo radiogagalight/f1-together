@@ -588,17 +588,6 @@ function NextRaceHero({
             </div>
           ) : null}
 
-          {/* Last race score */}
-          {lastRaceScore && (
-            <div className="mb-2 flex items-center gap-1.5">
-              <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>
-                {lastRaceScore.flag} {lastRaceScore.raceName.replace(" Grand Prix", " GP")}:{" "}
-                <span style={{ color: lastRaceScore.totalPoints > 0 ? "#22c55e" : "rgba(255,255,255,0.4)", fontWeight: 700 }}>
-                  {lastRaceScore.totalPoints} pts
-                </span>
-              </span>
-            </div>
-          )}
 
           {/* Market favorite */}
           {marketFav && (

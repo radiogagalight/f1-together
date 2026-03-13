@@ -26,8 +26,8 @@ export function scoreRound(
     return boosted.includes(key) ? base * 2 : base;
   }
 
-  // Qualifying slots award full points for exact position, partial credit if the
-  // picked driver appears in one of the other two qualifying positions.
+  // Qualifying and sprint race slots award full points for exact position, partial
+  // credit if the picked driver appears in one of the other two positions.
   function qualPts(
     pickVal: string | null,
     exactResult: string | null,
@@ -56,9 +56,9 @@ export function scoreRound(
     sprintQualPole: qualPts(pick.sprintQualPole, result.sprintQualPole, [result.sprintQualP2,   result.sprintQualP3], "sprintQualPole"),
     sprintQualP2:   qualPts(pick.sprintQualP2,   result.sprintQualP2,   [result.sprintQualPole, result.sprintQualP3], "sprintQualP2"),
     sprintQualP3:   qualPts(pick.sprintQualP3,   result.sprintQualP3,   [result.sprintQualPole, result.sprintQualP2], "sprintQualP3"),
-    sprintWinner:   pts(pick.sprintWinner,   result.sprintWinner,   "sprintWinner"),
-    sprintP2:       pts(pick.sprintP2,       result.sprintP2,       "sprintP2"),
-    sprintP3:       pts(pick.sprintP3,       result.sprintP3,       "sprintP3"),
+    sprintWinner:   qualPts(pick.sprintWinner, result.sprintWinner, [result.sprintP2,      result.sprintP3],      "sprintWinner"),
+    sprintP2:       qualPts(pick.sprintP2,     result.sprintP2,     [result.sprintWinner,  result.sprintP3],      "sprintP2"),
+    sprintP3:       qualPts(pick.sprintP3,     result.sprintP3,     [result.sprintWinner,  result.sprintP2],      "sprintP3"),
   };
 
   const totalPoints = Object.values(breakdown).reduce((sum, v) => sum + v, 0);
