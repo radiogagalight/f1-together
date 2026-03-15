@@ -39,8 +39,9 @@ export function scoreRound(
   ): number {
     if (exactResult === null || exactResult === undefined) return 0;
     if (pickVal === null || pickVal === undefined) return 0;
-    if (pickVal === exactResult) return PICK_POINTS[key];
-    if (otherResults.some((r) => r !== null && r === pickVal)) return partialPoints;
+    const isBoosted = boosted.includes(key);
+    if (pickVal === exactResult) return isBoosted ? PICK_POINTS[key] * 2 : PICK_POINTS[key];
+    if (otherResults.some((r) => r !== null && r === pickVal)) return isBoosted ? partialPoints * 2 : partialPoints;
     return 0;
   }
 
@@ -89,9 +90,18 @@ export function scoreWildcards(
 export function buildLeaderboard(
   allPicks: Array<{ userId: string; round: number; pick: RacePick }>,
   allResults: RaceResult[],
-  profiles: Array<{ id: string; display_name: string | null; fav_team_1: string | null }>
+  profiles: Array<{ id: string; display_name: string | null; fav_team_1: string | null }>,
+  allWildcards: RaceWildcard[] = [],
+  allWildcardPicks: Array<{ userId: string } & WildcardPick> = []
 ): LeaderboardEntry[] {
   const resultMap = new Map(allResults.map((r) => [r.round, r]));
+
+  // Group wildcard picks by userId for fast lookup
+  const wcPicksByUser = new Map<string, WildcardPick[]>();
+  for (const { userId, ...pick } of allWildcardPicks) {
+    if (!wcPicksByUser.has(userId)) wcPicksByUser.set(userId, []);
+    wcPicksByUser.get(userId)!.push(pick);
+  }
 
   // Build per-user score accumulator
   const userMap = new Map<string, { totalPoints: number; roundsScored: number; scoresByRound: Record<number, number>; breakdownsByRound: Record<number, ScoreBreakdown> }>();
@@ -109,6 +119,24 @@ export function buildLeaderboard(
     entry.roundsScored += 1;
     entry.scoresByRound[round] = score.totalPoints;
     entry.breakdownsByRound[round] = score.breakdown;
+  }
+
+  // Add wildcard points for each user, tracked per round so scoresByRound stays in sync
+  for (const profile of profiles) {
+    const userWcPicks = wcPicksByUser.get(profile.id) ?? [];
+    if (userWcPicks.length === 0) continue;
+    for (const wc of allWildcards) {
+      if (wc.correctAnswer === null) continue;
+      const pick = userWcPicks.find((p) => p.wildcardId === wc.id);
+      if (!pick || pick.pickValue !== wc.correctAnswer) continue;
+      const pts = wc.points * (pick.boosted ? 2 : 1);
+      if (!userMap.has(profile.id)) {
+        userMap.set(profile.id, { totalPoints: 0, roundsScored: 0, scoresByRound: {}, breakdownsByRound: {} });
+      }
+      const entry = userMap.get(profile.id)!;
+      entry.totalPoints += pts;
+      entry.scoresByRound[wc.round] = (entry.scoresByRound[wc.round] ?? 0) + pts;
+    }
   }
 
   const entries: LeaderboardEntry[] = profiles.map((p) => {

@@ -333,7 +333,7 @@ export default function RaceDetailPage({
     if (resultVal === null || resultVal === undefined) return undefined;
     if (pickVal === null || pickVal === undefined) return undefined;
     const pts = breakdown[field];
-    if (pts === PICK_POINTS[field]) return { status: "correct", pts };
+    if (pickVal === resultVal) return { status: "correct", pts };
     if (pts > 0) return { status: "partial", pts };
     return { status: "wrong", pts: 0 };
   }
