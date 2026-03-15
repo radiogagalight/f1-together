@@ -69,41 +69,23 @@ export const RACE_FACTS: Record<number, RacePageData> = {
   },
   4: {
     sessions: [
-      { name: "Practice 1",     utc: "2026-04-10T11:30:00Z" },
-      { name: "Practice 2",     utc: "2026-04-10T15:00:00Z" },
-      { name: "Practice 3",     utc: "2026-04-11T12:30:00Z" },
-      { name: "Qualifying",     utc: "2026-04-11T16:00:00Z" },
-      { name: "Race",           utc: "2026-04-12T15:00:00Z" },
+      { name: "Practice 1",      utc: "2026-05-01T16:30:00Z" },
+      { name: "Sprint Qualifying",utc: "2026-05-01T20:30:00Z" },
+      { name: "Sprint Race",     utc: "2026-05-02T16:00:00Z" },
+      { name: "Qualifying",      utc: "2026-05-02T20:00:00Z" },
+      { name: "Race",            utc: "2026-05-03T20:00:00Z" },
     ],
   },
   5: {
     sessions: [
-      { name: "Practice 1",     utc: "2026-04-17T13:30:00Z" },
-      { name: "Practice 2",     utc: "2026-04-17T17:00:00Z" },
-      { name: "Practice 3",     utc: "2026-04-18T13:30:00Z" },
-      { name: "Qualifying",     utc: "2026-04-18T17:00:00Z" },
-      { name: "Race",           utc: "2026-04-19T17:00:00Z" },
+      { name: "Practice 1",      utc: "2026-05-22T16:30:00Z" },
+      { name: "Sprint Qualifying",utc: "2026-05-22T20:30:00Z" },
+      { name: "Sprint Race",     utc: "2026-05-23T16:00:00Z" },
+      { name: "Qualifying",      utc: "2026-05-23T20:00:00Z" },
+      { name: "Race",            utc: "2026-05-24T20:00:00Z" },
     ],
   },
   6: {
-    sessions: [
-      { name: "Practice 1",     utc: "2026-05-01T16:30:00Z" },
-      { name: "Sprint Qualifying",utc: "2026-05-01T20:30:00Z" },
-      { name: "Sprint Race",    utc: "2026-05-02T16:00:00Z" },
-      { name: "Qualifying",     utc: "2026-05-02T20:00:00Z" },
-      { name: "Race",           utc: "2026-05-03T20:00:00Z" },
-    ],
-  },
-  7: {
-    sessions: [
-      { name: "Practice 1",     utc: "2026-05-22T16:30:00Z" },
-      { name: "Sprint Qualifying",utc: "2026-05-22T20:30:00Z" },
-      { name: "Sprint Race",    utc: "2026-05-23T16:00:00Z" },
-      { name: "Qualifying",     utc: "2026-05-23T20:00:00Z" },
-      { name: "Race",           utc: "2026-05-24T20:00:00Z" },
-    ],
-  },
-  8: {
     sessions: [
       { name: "Practice 1",     utc: "2026-06-05T11:30:00Z" },
       { name: "Practice 2",     utc: "2026-06-05T15:00:00Z" },
@@ -112,7 +94,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-06-07T13:00:00Z" },
     ],
   },
-  9: {
+  7: {
     sessions: [
       { name: "Practice 1",     utc: "2026-06-12T11:30:00Z" },
       { name: "Practice 2",     utc: "2026-06-12T15:00:00Z" },
@@ -121,7 +103,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-06-14T13:00:00Z" },
     ],
   },
-  10: {
+  8: {
     sessions: [
       { name: "Practice 1",     utc: "2026-06-26T11:30:00Z" },
       { name: "Practice 2",     utc: "2026-06-26T15:00:00Z" },
@@ -130,16 +112,16 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-06-28T13:00:00Z" },
     ],
   },
-  11: {
+  9: {
     sessions: [
-      { name: "Practice 1",     utc: "2026-07-03T11:30:00Z" },
+      { name: "Practice 1",      utc: "2026-07-03T11:30:00Z" },
       { name: "Sprint Qualifying",utc: "2026-07-03T15:30:00Z" },
-      { name: "Sprint Race",    utc: "2026-07-04T11:00:00Z" },
-      { name: "Qualifying",     utc: "2026-07-04T15:00:00Z" },
-      { name: "Race",           utc: "2026-07-05T14:00:00Z" },
+      { name: "Sprint Race",     utc: "2026-07-04T11:00:00Z" },
+      { name: "Qualifying",      utc: "2026-07-04T15:00:00Z" },
+      { name: "Race",            utc: "2026-07-05T14:00:00Z" },
     ],
   },
-  12: {
+  10: {
     sessions: [
       { name: "Practice 1",     utc: "2026-07-17T11:30:00Z" },
       { name: "Practice 2",     utc: "2026-07-17T15:00:00Z" },
@@ -148,7 +130,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-07-19T13:00:00Z" },
     ],
   },
-  13: {
+  11: {
     sessions: [
       { name: "Practice 1",     utc: "2026-07-24T11:30:00Z" },
       { name: "Practice 2",     utc: "2026-07-24T15:00:00Z" },
@@ -157,16 +139,16 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-07-26T13:00:00Z" },
     ],
   },
-  14: {
+  12: {
     sessions: [
-      { name: "Practice 1",     utc: "2026-08-21T10:30:00Z" },
+      { name: "Practice 1",      utc: "2026-08-21T10:30:00Z" },
       { name: "Sprint Qualifying",utc: "2026-08-21T14:30:00Z" },
-      { name: "Sprint Race",    utc: "2026-08-22T10:00:00Z" },
-      { name: "Qualifying",     utc: "2026-08-22T14:00:00Z" },
-      { name: "Race",           utc: "2026-08-23T13:00:00Z" },
+      { name: "Sprint Race",     utc: "2026-08-22T10:00:00Z" },
+      { name: "Qualifying",      utc: "2026-08-22T14:00:00Z" },
+      { name: "Race",            utc: "2026-08-23T13:00:00Z" },
     ],
   },
-  15: {
+  13: {
     sessions: [
       { name: "Practice 1",     utc: "2026-09-04T10:30:00Z" },
       { name: "Practice 2",     utc: "2026-09-04T14:00:00Z" },
@@ -175,7 +157,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-09-06T13:00:00Z" },
     ],
   },
-  16: {
+  14: {
     sessions: [
       { name: "Practice 1",     utc: "2026-09-11T11:30:00Z" },
       { name: "Practice 2",     utc: "2026-09-11T15:00:00Z" },
@@ -184,7 +166,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-09-13T13:00:00Z" },
     ],
   },
-  17: {
+  15: {
     sessions: [
       { name: "Practice 1",     utc: "2026-09-24T08:30:00Z" },
       { name: "Practice 2",     utc: "2026-09-24T12:00:00Z" },
@@ -193,16 +175,16 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-09-26T11:00:00Z" },
     ],
   },
-  18: {
+  16: {
     sessions: [
-      { name: "Practice 1",     utc: "2026-10-09T08:30:00Z" },
+      { name: "Practice 1",      utc: "2026-10-09T08:30:00Z" },
       { name: "Sprint Qualifying",utc: "2026-10-09T12:30:00Z" },
-      { name: "Sprint Race",    utc: "2026-10-10T09:00:00Z" },
-      { name: "Qualifying",     utc: "2026-10-10T13:00:00Z" },
-      { name: "Race",           utc: "2026-10-11T12:00:00Z" },
+      { name: "Sprint Race",     utc: "2026-10-10T09:00:00Z" },
+      { name: "Qualifying",      utc: "2026-10-10T13:00:00Z" },
+      { name: "Race",            utc: "2026-10-11T12:00:00Z" },
     ],
   },
-  19: {
+  17: {
     sessions: [
       { name: "Practice 1",     utc: "2026-10-23T17:30:00Z" },
       { name: "Practice 2",     utc: "2026-10-23T21:00:00Z" },
@@ -211,7 +193,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-10-25T20:00:00Z" },
     ],
   },
-  20: {
+  18: {
     sessions: [
       { name: "Practice 1",     utc: "2026-10-30T18:30:00Z" },
       { name: "Practice 2",     utc: "2026-10-30T22:00:00Z" },
@@ -220,7 +202,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-11-01T20:00:00Z" },
     ],
   },
-  21: {
+  19: {
     sessions: [
       { name: "Practice 1",     utc: "2026-11-06T15:30:00Z" },
       { name: "Practice 2",     utc: "2026-11-06T19:00:00Z" },
@@ -229,7 +211,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-11-08T17:00:00Z" },
     ],
   },
-  22: {
+  20: {
     sessions: [
       { name: "Practice 1",     utc: "2026-11-20T00:30:00Z" },
       { name: "Practice 2",     utc: "2026-11-20T04:00:00Z" },
@@ -238,7 +220,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-11-22T04:00:00Z" },
     ],
   },
-  23: {
+  21: {
     sessions: [
       { name: "Practice 1",     utc: "2026-11-27T13:30:00Z" },
       { name: "Practice 2",     utc: "2026-11-27T17:00:00Z" },
@@ -247,7 +229,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-11-29T16:00:00Z" },
     ],
   },
-  24: {
+  22: {
     sessions: [
       { name: "Practice 1",     utc: "2026-12-04T09:30:00Z" },
       { name: "Practice 2",     utc: "2026-12-04T13:00:00Z" },
