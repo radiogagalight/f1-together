@@ -580,7 +580,7 @@ export default function RaceDetailPage({
       )}
 
       {/* ── Content: two-column on desktop ── */}
-      <div className="px-4 md:pl-8 md:pr-10 md:flex md:gap-12 md:items-start">
+      <div className="px-4 md:px-10 md:flex md:gap-12 md:items-start md:max-w-5xl md:mx-auto">
 
         {/* ── Right rail — first in DOM (top on mobile, right sticky on desktop) ── */}
         <div className="md:w-80 md:shrink-0 md:order-last md:sticky md:top-4">
