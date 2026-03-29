@@ -251,7 +251,7 @@ export default function PredictionsWidget() {
         }}
       >
         <h2 style={{ fontFamily: "var(--font-orbitron)", fontSize: "22px", fontWeight: 600, letterSpacing: "0.02em", lineHeight: 1 }}>
-          <span style={{ color: "var(--f1-red)" }}>Picks</span>
+          <span style={{ color: "#FF0090" }}>Picks</span>
           <span style={{ color: "rgba(255,255,255,0.90)" }}> Due</span>
         </h2>
       </div>

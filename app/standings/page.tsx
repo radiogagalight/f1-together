@@ -149,10 +149,14 @@ export default function StandingsPage() {
         { data: results },
         { data: picks, error: e2 },
         { data: profiles, error: e3 },
+        { data: wildcards },
+        { data: wcPicks },
       ] = await Promise.all([
         supabase.from("race_results").select("*"),
         supabase.from("race_picks").select("user_id,round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,race_p4,race_p5,race_p6,fastest_lap,safety_car,boosted_picks,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3"),
         supabase.from("profiles").select("id,display_name,fav_team_1"),
+        supabase.from("race_wildcards").select("id,round,question,question_type,options,points,correct_answer,display_order"),
+        supabase.from("wildcard_picks").select("user_id,wildcard_id,pick_value,boosted"),
       ]);
 
       // Only treat picks/profiles failures as a real error; missing results table = empty state
@@ -207,7 +211,24 @@ export default function StandingsPage() {
         } as RacePick,
       }));
 
-      const lb = buildLeaderboard(allPicks, allResults, profiles ?? []);
+      const allWildcards = (wildcards ?? []).map((row) => ({
+        id:            row.id as string,
+        round:         row.round as number,
+        question:      row.question as string,
+        questionType:  row.question_type as import("@/lib/types").WildcardQuestionType,
+        options:       (row.options as { id: string; name: string }[] | null) ?? null,
+        points:        row.points as number,
+        correctAnswer: (row.correct_answer as string | null) ?? null,
+        displayOrder:  row.display_order as number,
+      }));
+      const allWildcardPicks = (wcPicks ?? []).map((row) => ({
+        userId:     row.user_id as string,
+        wildcardId: row.wildcard_id as string,
+        pickValue:  row.pick_value as string,
+        boosted:    row.boosted as boolean,
+      }));
+
+      const lb = buildLeaderboard(allPicks, allResults, profiles ?? [], allWildcards, allWildcardPicks);
       setLeaderboard(lb);
       setRawPicks(allPicks);
       setRawResults(allResults);

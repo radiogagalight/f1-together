@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
-export const maxDuration = 60;
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { fetchFullRaceResult } from "@/lib/openf1";
 import { loadRaceResult, saveRaceResult } from "@/lib/resultsStorage";
-import { RACES } from "@/lib/data";
 import type { RaceResult } from "@/lib/types";
 
 function adminSupabase() {
@@ -39,29 +36,6 @@ export async function GET(
   const result = await loadRaceResult(round, supabase);
   if (!result) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(result);
-}
-
-// POST — admin only; fetch from OpenF1 and save
-export async function POST(
-  _req: Request,
-  { params }: { params: Promise<{ round: string }> }
-) {
-  const { round: roundStr } = await params;
-  const round = parseInt(roundStr, 10);
-  const supabase = await createClient();
-  if (!(await isAdmin(supabase))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const race = RACES.find((r) => r.r === round);
-  const fetched = await fetchFullRaceResult(round, race?.sprint ?? false);
-
-  const admin = adminSupabase();
-  await saveRaceResult(round, fetched, false, admin);
-
-  const saved = await loadRaceResult(round, admin);
-  if (!saved) return NextResponse.json({ error: "Save failed — race_results table may not exist" }, { status: 500 });
-  return NextResponse.json(saved);
 }
 
 // PATCH — admin only; merge field overrides

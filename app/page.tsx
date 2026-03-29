@@ -647,8 +647,8 @@ function NextRaceHero({
 
           <Link
             href={`/predictions/race/${race.r}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-base font-bold"
-            style={{ backgroundColor: "rgba(225,6,0,0.9)", color: "#ffffff", boxShadow: "0 0 20px rgba(225,6,0,0.35)" }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-lg font-bold"
+            style={{ backgroundColor: "#00D4BE", color: "#0a0a12", boxShadow: "0 0 24px rgba(0,212,190,0.45)" }}
           >
             {hasPicks ? "Edit picks →" : "Make your picks →"}
           </Link>
@@ -669,28 +669,14 @@ function getNextRaceIndex() {
 
 // ── Speed lines background ──────────────────────────────────────
 const SPEED_LINES = [
-  { top:  7, width: 38, dur: 2.1, delay: 0.3,  opacity: 0.28 },
-  { top: 14, width: 52, dur: 3.4, delay: 1.8,  opacity: 0.18 },
-  { top: 21, width: 25, dur: 1.8, delay: 4.2,  opacity: 0.42 },
-  { top: 28, width: 44, dur: 4.1, delay: 0.8,  opacity: 0.31 },
-  { top: 35, width: 31, dur: 2.7, delay: 2.5,  opacity: 0.22 },
-  { top: 42, width: 58, dur: 1.6, delay: 5.1,  opacity: 0.47 },
-  { top: 48, width: 19, dur: 3.8, delay: 3.3,  opacity: 0.15 },
-  { top: 55, width: 46, dur: 2.3, delay: 0.6,  opacity: 0.38 },
-  { top: 62, width: 33, dur: 4.4, delay: 2.1,  opacity: 0.25 },
-  { top: 68, width: 57, dur: 1.9, delay: 4.7,  opacity: 0.52 },
-  { top: 74, width: 22, dur: 3.1, delay: 1.2,  opacity: 0.19 },
-  { top: 81, width: 41, dur: 2.6, delay: 3.8,  opacity: 0.34 },
-  { top: 87, width: 16, dur: 4.0, delay: 0.9,  opacity: 0.13 },
-  { top: 93, width: 49, dur: 2.9, delay: 5.5,  opacity: 0.44 },
-  { top: 11, width: 35, dur: 1.7, delay: 2.9,  opacity: 0.30 },
-  { top: 24, width: 60, dur: 3.6, delay: 1.4,  opacity: 0.21 },
-  { top: 39, width: 27, dur: 2.4, delay: 4.5,  opacity: 0.56 },
-  { top: 52, width: 43, dur: 4.2, delay: 0.2,  opacity: 0.17 },
-  { top: 66, width: 18, dur: 3.0, delay: 3.6,  opacity: 0.40 },
-  { top: 79, width: 55, dur: 2.2, delay: 5.8,  opacity: 0.26 },
-  { top: 89, width: 30, dur: 1.5, delay: 1.7,  opacity: 0.49 },
-  { top: 97, width: 47, dur: 3.9, delay: 4.0,  opacity: 0.33 },
+  { top:  8, width: 68, dur: 4.2, delay: 0.0, opacity: 0.55, color: "#00D4BE", height: 3 },
+  { top: 19, width: 48, dur: 5.2, delay: 1.4, opacity: 0.45, color: "#FF0090", height: 2 },
+  { top: 31, width: 74, dur: 3.5, delay: 3.1, opacity: 0.52, color: "#00B4D8", height: 3 },
+  { top: 44, width: 55, dur: 6.0, delay: 0.8, opacity: 0.42, color: "#FF0090", height: 2 },
+  { top: 57, width: 72, dur: 4.0, delay: 2.5, opacity: 0.56, color: "#00D4BE", height: 3 },
+  { top: 69, width: 42, dur: 4.8, delay: 1.9, opacity: 0.40, color: "#00B4D8", height: 2 },
+  { top: 81, width: 62, dur: 4.4, delay: 4.3, opacity: 0.50, color: "#FF0090", height: 2 },
+  { top: 91, width: 52, dur: 5.5, delay: 0.6, opacity: 0.44, color: "#00D4BE", height: 3 },
 ];
 
 
@@ -835,7 +821,7 @@ export default function HomePage() {
 
   return (
     <>
-    <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "#13131f" }}>
+    <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "#1c1c2c" }}>
       {/* ── Speed lines background ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         {SPEED_LINES.map((line, i) => (
@@ -845,8 +831,8 @@ export default function HomePage() {
             style={{
               top: `${line.top}%`,
               width: `${line.width}%`,
-              height: "1px",
-              background: `linear-gradient(to right, transparent, rgba(${hexToRgb(teamAccent)},0.4), transparent)`,
+              height: `${line.height}px`,
+              background: `linear-gradient(to right, transparent, ${line.color}, transparent)`,
               opacity: line.opacity,
               animation: `speed-rush ${line.dur}s linear ${line.delay}s infinite`,
             }}
@@ -861,7 +847,7 @@ export default function HomePage() {
         </h1>
         {currentTeamName && currentTeamColor ? (
           <div className="flex flex-col mt-5" style={{ gap: "1px" }}>
-            <span className="inline-block h-px w-8 rounded-full mb-2" style={{ backgroundColor: "var(--f1-red)" }} />
+            <span className="inline-block h-px w-8 rounded-full mb-2" style={{ backgroundColor: "#FF0090" }} />
             <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--muted)" }}>
               Let&apos;s go
             </span>
@@ -930,7 +916,7 @@ export default function HomePage() {
             }}
           >
             <h2 style={{ fontFamily: "var(--font-orbitron)", fontSize: "22px", fontWeight: 600, letterSpacing: "0.02em", lineHeight: 1 }}>
-              <span style={{ color: "var(--f1-red)" }}>F1</span>
+              <span style={{ color: "#FF0090" }}>F1</span>
               <span style={{ color: "rgba(255,255,255,0.90)" }}> 2026 Season</span>
             </h2>
           </div>
@@ -948,11 +934,11 @@ export default function HomePage() {
                   style={{
                     minHeight: isNext ? "96px" : "44px",
                     borderBottom: "1px solid rgba(255,255,255,0.07)",
-                    borderLeft: isNext ? "5px solid #e10600" : "3px solid transparent",
+                    borderLeft: isNext ? "5px solid #FF0090" : "3px solid transparent",
                     background: isNext
-                      ? "linear-gradient(to right, rgba(225,6,0,0.30) 0%, rgba(225,6,0,0.10) 60%, transparent 100%)"
+                      ? "linear-gradient(to right, rgba(255,0,144,0.28) 0%, rgba(255,0,144,0.09) 60%, transparent 100%)"
                       : "transparent",
-                    boxShadow: isNext ? "0 0 0 1px rgba(225,6,0,0.25), inset 0 0 60px rgba(225,6,0,0.10)" : "none",
+                    boxShadow: isNext ? "0 0 0 1px rgba(255,0,144,0.22), inset 0 0 60px rgba(255,0,144,0.09)" : "none",
                   }}
                 >
                   {/* Round */}
@@ -999,7 +985,7 @@ export default function HomePage() {
                       {isNext && (
                         <span
                           className="text-[11px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"
-                          style={{ backgroundColor: "rgba(225,6,0,0.55)", color: "#ffffff", border: "1px solid rgba(225,6,0,0.9)", boxShadow: "0 0 8px rgba(225,6,0,0.4)" }}
+                          style={{ backgroundColor: "rgba(255,0,144,0.55)", color: "#ffffff", border: "1px solid rgba(255,0,144,0.9)", boxShadow: "0 0 8px rgba(255,0,144,0.4)" }}
                         >
                           Next Race
                         </span>

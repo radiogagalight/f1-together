@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { RACES, DRIVERS, CONSTRUCTORS, formatRaceDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
@@ -19,7 +20,18 @@ function driverLastName(id: string | null): string {
   return DRIVERS.find((d) => d.id === id)?.name.split(" ").pop() ?? id;
 }
 
-function CountdownCard({ targetUtc, label, target, raceUtc }: { targetUtc: string; label: string; target: string; raceUtc?: string }) {
+const MIAMI_SPEED_LINES = [
+  { top:  8, width: 68, dur: 4.2, delay: 0.0, opacity: 0.45, color: "#00D4BE", height: 3 },
+  { top: 19, width: 48, dur: 5.2, delay: 1.4, opacity: 0.35, color: "#FF0090", height: 2 },
+  { top: 31, width: 74, dur: 3.5, delay: 3.1, opacity: 0.42, color: "#00B4D8", height: 3 },
+  { top: 44, width: 55, dur: 6.0, delay: 0.8, opacity: 0.32, color: "#FF0090", height: 2 },
+  { top: 57, width: 72, dur: 4.0, delay: 2.5, opacity: 0.46, color: "#00D4BE", height: 3 },
+  { top: 69, width: 42, dur: 4.8, delay: 1.9, opacity: 0.30, color: "#00B4D8", height: 2 },
+  { top: 81, width: 62, dur: 4.4, delay: 4.3, opacity: 0.40, color: "#FF0090", height: 2 },
+  { top: 91, width: 52, dur: 5.5, delay: 0.6, opacity: 0.34, color: "#00D4BE", height: 3 },
+];
+
+function CountdownCard({ targetUtc, label, target, raceUtc, miami }: { targetUtc: string; label: string; target: string; raceUtc?: string; miami?: boolean }) {
   const [timeLeft, setTimeLeft] = useState(() =>
     Math.max(0, new Date(targetUtc).getTime() - Date.now())
   );
@@ -44,15 +56,19 @@ function CountdownCard({ targetUtc, label, target, raceUtc }: { targetUtc: strin
   return (
     <div
       className="rounded-xl overflow-hidden mb-6"
-      style={{
+      style={miami ? {
+        border: "1px solid rgba(0,212,190,0.35)",
+        background: "linear-gradient(135deg, rgba(0,212,190,0.10) 0%, rgba(6,20,28,0.7) 100%)",
+        boxShadow: "0 0 24px rgba(0,212,190,0.12)",
+      } : {
         border: "1px solid rgba(225,6,0,0.35)",
         background: "linear-gradient(135deg, rgba(225,6,0,0.10) 0%, rgba(30,6,6,0.7) 100%)",
         boxShadow: "0 0 24px rgba(225,6,0,0.10)",
       }}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(225,6,0,0.2)" }}>
-        <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: miami ? "1px solid rgba(0,212,190,0.2)" : "1px solid rgba(225,6,0,0.2)" }}>
+        <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: miami ? "#00D4BE" : "var(--f1-red)" }} />
         <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
           {label}
         </span>
@@ -60,7 +76,7 @@ function CountdownCard({ targetUtc, label, target, raceUtc }: { targetUtc: strin
 
       <div className="px-4 py-4">
         {expired ? (
-          <p className="text-center font-bold text-lg" style={{ color: "var(--f1-red)" }}>
+          <p className="text-center font-bold text-lg" style={{ color: miami ? "#00D4BE" : "var(--f1-red)" }}>
             {raceOver ? "This race has already taken place. 🏁" : "Race weekend is underway! 🏁"}
           </p>
         ) : (
@@ -81,14 +97,14 @@ function CountdownCard({ targetUtc, label, target, raceUtc }: { targetUtc: strin
                   </span>
                   <span
                     className="text-[10px] font-bold uppercase tracking-widest mt-1"
-                    style={{ color: "var(--f1-red)" }}
+                    style={{ color: miami ? "#00D4BE" : "var(--f1-red)" }}
                   >
                     {unit}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="text-center text-xs font-semibold mt-3" style={{ color: "var(--f1-red)" }}>
+            <p className="text-center text-xs font-semibold mt-3" style={{ color: miami ? "#FF0090" : "var(--f1-red)" }}>
               Until {target}
             </p>
           </>
@@ -278,6 +294,7 @@ export default function RaceDetailPage({
 }) {
   const { round: roundStr } = use(params);
   const round = parseInt(roundStr);
+  const isMiami = round === 4;
   const race = RACES.find((r) => r.r === round);
   const { user, timezoneName } = useAuth();
   const { picks, setPick, toggleBoost, savedField, loading } = useRacePick(user?.id, round);
@@ -422,7 +439,26 @@ export default function RaceDetailPage({
   }
 
   return (
-    <div className="max-w-lg md:max-w-2xl mx-auto pb-28 md:pb-6">
+    <div style={isMiami ? { backgroundColor: "#1c1c2c", minHeight: "100vh" } : undefined}>
+    {isMiami && (
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        {MIAMI_SPEED_LINES.map((line, i) => (
+          <div
+            key={i}
+            className="absolute left-0"
+            style={{
+              top: `${line.top}%`,
+              width: `${line.width}%`,
+              height: `${line.height}px`,
+              background: `linear-gradient(to right, transparent, ${line.color}, transparent)`,
+              opacity: line.opacity,
+              animation: `speed-rush ${line.dur}s linear ${line.delay}s infinite`,
+            }}
+          />
+        ))}
+      </div>
+    )}
+    <div className="relative pb-28 md:pb-6" style={{ zIndex: 1 }}>
 
       {/* ── Hero banner (when flag image exists) ── */}
       {heroImage ? (
@@ -439,8 +475,9 @@ export default function RaceDetailPage({
             style={{
               position: "absolute",
               inset: 0,
-              background:
-                "linear-gradient(to bottom, rgba(8,8,16,0.25) 0%, rgba(8,8,16,0.0) 30%, rgba(8,8,16,0.75) 68%, rgba(8,8,16,1.0) 100%)",
+              background: isMiami
+                ? "linear-gradient(to bottom, rgba(28,28,44,0.25) 0%, rgba(28,28,44,0.0) 30%, rgba(28,28,44,0.75) 68%, rgba(28,28,44,1.0) 100%)"
+                : "linear-gradient(to bottom, rgba(8,8,16,0.25) 0%, rgba(8,8,16,0.0) 30%, rgba(8,8,16,0.75) 68%, rgba(8,8,16,1.0) 100%)",
             }}
           />
           {/* Race info pinned to bottom-left */}
@@ -542,21 +579,57 @@ export default function RaceDetailPage({
         </div>
       )}
 
-      {/* ── Content ── */}
-      <div className="px-4">
+      {/* ── Content: two-column on desktop ── */}
+      <div className="px-4 md:px-6 md:flex md:gap-8 md:items-start">
 
-        {/* Race weekend countdown */}
-        {race.weekendStartUtc && (
-          <CountdownCard
-            targetUtc={race.weekendStartUtc}
-            label="Race Weekend Countdown"
-            target="Practice 1"
-            raceUtc={race.startUtc}
-          />
-        )}
+        {/* ── Right rail — first in DOM (top on mobile, right sticky on desktop) ── */}
+        <div className="md:w-72 md:shrink-0 md:order-last md:sticky md:top-4">
 
-        {/* Weekend schedule card */}
-        {raceData?.sessions && <SessionCard sessions={raceData.sessions} timezoneName={timezoneName} />}
+          {/* Race weekend countdown */}
+          {race.weekendStartUtc && (
+            <CountdownCard
+              targetUtc={race.weekendStartUtc}
+              label="Race Weekend Countdown"
+              target="Practice 1"
+              raceUtc={race.startUtc}
+              miami={isMiami}
+            />
+          )}
+
+          {/* Race intel link card */}
+          <Link
+            href={`/intel?round=${race.r}`}
+            className="block rounded-xl overflow-hidden mb-6"
+            style={{
+              border: "1px solid rgba(255,140,0,0.35)",
+              background: "linear-gradient(135deg, rgba(255,140,0,0.10) 0%, rgba(30,18,6,0.7) 100%)",
+              boxShadow: "0 0 24px rgba(255,140,0,0.10)",
+              textDecoration: "none",
+            }}
+          >
+            <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(255,140,0,0.2)" }}>
+              <span className="inline-block h-px w-4 rounded-full" style={{ backgroundColor: "rgba(255,140,0,0.9)" }} />
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
+                Race Intel
+              </span>
+            </div>
+            <div className="px-4 py-4 flex items-center justify-between">
+              <span className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.9)" }}>
+                Help me with my predictions
+              </span>
+              <span className="text-xs font-semibold" style={{ color: "rgba(255,140,0,0.9)" }}>
+                View →
+              </span>
+            </div>
+          </Link>
+
+          {/* Weekend schedule card */}
+          {raceData?.sessions && <SessionCard sessions={raceData.sessions} timezoneName={timezoneName} />}
+
+        </div>
+
+        {/* ── Main column — picks ── */}
+        <div className="md:flex-1 min-w-0 md:order-first">
 
         {/* Circuit image */}
         {trackImage && (
@@ -732,9 +805,9 @@ export default function RaceDetailPage({
                     onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "sprintQual" ? null : "sprintQual"); }}
                     className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                     style={{
-                      backgroundColor: openInfo === "sprintQual" ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)",
-                      border: openInfo === "sprintQual" ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.14)",
-                      color: openInfo === "sprintQual" ? "var(--f1-red)" : "var(--muted)",
+                      backgroundColor: openInfo === "sprintQual" ? (isMiami ? "rgba(255,0,144,0.15)" : "rgba(225,6,0,0.15)") : "rgba(255,255,255,0.08)",
+                      border: openInfo === "sprintQual" ? (isMiami ? "1px solid rgba(255,0,144,0.4)" : "1px solid rgba(225,6,0,0.4)") : "1px solid rgba(255,255,255,0.14)",
+                      color: openInfo === "sprintQual" ? (isMiami ? "#FF0090" : "var(--f1-red)") : "var(--muted)",
                       fontSize: "10px", fontWeight: 700, cursor: "pointer",
                     }}
                     aria-label="Sprint qualifying scoring info"
@@ -881,9 +954,9 @@ export default function RaceDetailPage({
                   onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "qual" ? null : "qual"); }}
                   className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                   style={{
-                    backgroundColor: openInfo === "qual" ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)",
-                    border: openInfo === "qual" ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.14)",
-                    color: openInfo === "qual" ? "var(--f1-red)" : "var(--muted)",
+                    backgroundColor: openInfo === "qual" ? (isMiami ? "rgba(255,0,144,0.15)" : "rgba(225,6,0,0.15)") : "rgba(255,255,255,0.08)",
+                    border: openInfo === "qual" ? (isMiami ? "1px solid rgba(255,0,144,0.4)" : "1px solid rgba(225,6,0,0.4)") : "1px solid rgba(255,255,255,0.14)",
+                    color: openInfo === "qual" ? (isMiami ? "#FF0090" : "var(--f1-red)") : "var(--muted)",
                     fontSize: "10px", fontWeight: 700, cursor: "pointer",
                   }}
                   aria-label="Qualifying scoring info"
@@ -936,9 +1009,9 @@ export default function RaceDetailPage({
                   onClick={(e) => { e.stopPropagation(); setOpenInfo(openInfo === "race" ? null : "race"); }}
                   className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                   style={{
-                    backgroundColor: openInfo === "race" ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.08)",
-                    border: openInfo === "race" ? "1px solid rgba(225,6,0,0.4)" : "1px solid rgba(255,255,255,0.14)",
-                    color: openInfo === "race" ? "var(--f1-red)" : "var(--muted)",
+                    backgroundColor: openInfo === "race" ? (isMiami ? "rgba(255,0,144,0.15)" : "rgba(225,6,0,0.15)") : "rgba(255,255,255,0.08)",
+                    border: openInfo === "race" ? (isMiami ? "1px solid rgba(255,0,144,0.4)" : "1px solid rgba(225,6,0,0.4)") : "1px solid rgba(255,255,255,0.14)",
+                    color: openInfo === "race" ? (isMiami ? "#FF0090" : "var(--f1-red)") : "var(--muted)",
                     fontSize: "10px", fontWeight: 700, cursor: "pointer",
                   }}
                   aria-label="Race scoring info"
@@ -1378,7 +1451,8 @@ export default function RaceDetailPage({
 
           </div>
         )}
-      </div>
+        </div>{/* end main column */}
+      </div>{/* end two-column flex */}
 
       {/* ── Scoring info bottom sheet ── */}
       {openInfo && (
@@ -1435,6 +1509,7 @@ export default function RaceDetailPage({
           </div>
         </>
       )}
+    </div>
     </div>
   );
 }

@@ -84,8 +84,11 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
               </span>
             )}
             {onBoost && !disabled && (
-              <button
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={(e) => { e.stopPropagation(); onBoost(); }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); onBoost(); } }}
                 className="text-[10px] font-bold px-1.5 py-px rounded-full transition-colors"
                 style={{
                   backgroundColor: boosted ? "rgba(255,200,0,0.18)" : boostAvailable ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
@@ -97,7 +100,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
                 title={boosted ? "Remove booster" : boostAvailable ? "Apply booster (2×)" : "No boosters left"}
               >
                 {boosted ? "⚡ Boosted" : "⚡ Boost"}
-              </button>
+              </span>
             )}
           </div>
           <span

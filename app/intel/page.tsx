@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RACES, DRIVERS } from "@/lib/data";
 import { CIRCUIT_INTEL } from "@/lib/circuitIntel";
@@ -347,7 +348,20 @@ function TipsTab({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function IntelPage() {
-  const [selectedRound, setSelectedRound] = useState(getNextRaceRound);
+  return (
+    <Suspense>
+      <IntelPageInner />
+    </Suspense>
+  );
+}
+
+function IntelPageInner() {
+  const searchParams = useSearchParams();
+  const [selectedRound, setSelectedRound] = useState(() => {
+    const param = searchParams.get("round");
+    const parsed = param ? parseInt(param, 10) : NaN;
+    return !isNaN(parsed) && RACES.some((r) => r.r === parsed) ? parsed : getNextRaceRound();
+  });
   const [tab, setTab] = useState<"circuit" | "tips">("circuit");
   const [result2026, setResult2026] = useState<HistoricalResult | null>(null);
   const [loadingCircuit, setLoadingCircuit] = useState(false);

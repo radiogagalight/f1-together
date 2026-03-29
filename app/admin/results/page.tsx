@@ -106,7 +106,6 @@ export default function AdminResultsPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [selectedRound, setSelectedRound] = useState(1);
   const [result, setResult] = useState<Partial<RaceResult>>({});
-  const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
@@ -179,20 +178,6 @@ export default function AdminResultsPage() {
 
   function update<K extends keyof RaceResult>(key: K, value: RaceResult[K]) {
     setResult((prev) => ({ ...prev, [key]: value }));
-  }
-
-  async function handleFetch() {
-    setFetching(true);
-    setStatusMsg(null);
-    const res = await fetch(`/api/results/${selectedRound}`, { method: "POST" });
-    if (res.ok) {
-      const data = await res.json();
-      setResult(data);
-      setStatusMsg("Fetched from OpenF1 successfully.");
-    } else {
-      setStatusMsg("Failed to fetch from OpenF1. Try again.");
-    }
-    setFetching(false);
   }
 
   async function handleSave() {
@@ -615,18 +600,6 @@ export default function AdminResultsPage() {
       {/* Actions */}
       <div className="flex gap-3 mb-4">
         <button
-          onClick={handleFetch}
-          disabled={fetching}
-          className="flex-1 py-3 text-sm font-semibold rounded-xl"
-          style={{
-            backgroundColor: fetching ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.12)",
-            color: fetching ? "var(--muted)" : "var(--foreground)",
-            border: "1px solid rgba(255,255,255,0.15)",
-          }}
-        >
-          {fetching ? "Fetching…" : "Fetch from OpenF1"}
-        </button>
-        <button
           onClick={handleSave}
           disabled={saving}
           className="flex-1 py-3 text-sm font-semibold rounded-xl"
@@ -635,7 +608,7 @@ export default function AdminResultsPage() {
             color: "#fff",
           }}
         >
-          {saving ? "Saving…" : "Save Overrides"}
+          {saving ? "Saving…" : "Save Results"}
         </button>
       </div>
 
@@ -645,26 +618,11 @@ export default function AdminResultsPage() {
         </p>
       )}
 
-      {/* Metadata */}
-      <div
-        className="rounded-xl p-4 text-xs"
-        style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-      >
-        <p style={{ color: "var(--muted)" }}>
-          <span className="font-semibold">Fetched at:</span>{" "}
-          {result.fetchedAt ? new Date(result.fetchedAt).toLocaleString() : "—"}
+      {result.updatedAt && (
+        <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
+          Last updated: {new Date(result.updatedAt).toLocaleString()}
         </p>
-        <p className="mt-1" style={{ color: "var(--muted)" }}>
-          <span className="font-semibold">Manually overridden:</span>{" "}
-          {result.manuallyOverridden ? "Yes" : "No"}
-        </p>
-        {result.updatedAt && (
-          <p className="mt-1" style={{ color: "var(--muted)" }}>
-            <span className="font-semibold">Last updated:</span>{" "}
-            {new Date(result.updatedAt).toLocaleString()}
-          </p>
-        )}
-      </div>
+      )}
     </div>
   );
 }
