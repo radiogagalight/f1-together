@@ -573,10 +573,10 @@ export default function StandingsPage() {
                           <tbody>
                             {PRED_GROUPS.map((group) => (
                               <React.Fragment key={group.label}>
-                                <tr style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-                                  <td colSpan={2 + usersInTable.length} className="pl-4 pt-3 pb-1 sticky left-0"
-                                    style={{ backgroundColor: STICKY_BG }}>
-                                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>
+                                <tr style={{ borderTop: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.045)" }}>
+                                  <td colSpan={2 + usersInTable.length} className="pl-4 py-2"
+                                    style={{ borderLeft: "3px solid var(--f1-red)" }}>
+                                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
                                       {group.label}
                                     </span>
                                   </td>
@@ -592,13 +592,19 @@ export default function StandingsPage() {
                                     resultDisplay = driverLastName(resultRaw);
                                     resultColor = driverTeamColor(resultRaw) ?? "var(--foreground)";
                                   }
+                                  const resultBg = isBool
+                                    ? (resultRaw === true ? "rgba(34,197,94,0.09)" : resultRaw === false ? "rgba(239,68,68,0.09)" : "transparent")
+                                    : (typeof resultRaw === "string" && resultRaw
+                                      ? (() => { const tc = driverTeamColor(resultRaw as string); return tc ? `rgba(${hexToRgb(tc)},0.09)` : "transparent"; })()
+                                      : "transparent");
                                   return (
                                     <tr key={key} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                                       <td className="py-2 pl-4 pr-3 whitespace-nowrap sticky left-0 z-10 font-semibold text-[11px]"
                                         style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
                                         {label}
                                       </td>
-                                      <td className="py-2 px-3 text-center whitespace-nowrap font-bold text-[11px]">
+                                      <td className="py-2 px-3 text-center whitespace-nowrap font-bold text-[11px]"
+                                        style={{ backgroundColor: resultBg }}>
                                         <span style={{ color: resultDisplay ? resultColor : "rgba(255,255,255,0.2)" }}>
                                           {resultDisplay ?? "—"}
                                         </span>
