@@ -3,23 +3,21 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import { buildLeaderboard, getPickResultStatus, PICK_POINTS } from "@/lib/scoring";
 import { RACES, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
-import type { RaceResult, RacePrediction, LeaderboardEntry, ScoreBreakdown } from "@/lib/types";
+import type { RaceResult, RacePrediction, LeaderboardEntry, ScoreBreakdown, SeasonPredictions } from "@/lib/types";
 
 const MEDAL_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"] as const;
+const STICKY_BG = "#0f0f0f";
 
 function Avatar({ displayName, accent }: { displayName: string | null; accent: string }) {
   const rgb = hexToRgb(accent);
   return (
     <div
       className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-sm font-bold"
-      style={{
-        backgroundColor: `rgba(${rgb},0.2)`,
-        color: accent,
-        boxShadow: `0 0 0 1px rgba(${rgb},0.3)`,
-      }}
+      style={{ backgroundColor: `rgba(${rgb},0.2)`, color: accent, boxShadow: `0 0 0 1px rgba(${rgb},0.3)` }}
     >
       {(displayName?.trim() || "?")[0].toUpperCase()}
     </div>
@@ -29,10 +27,8 @@ function Avatar({ displayName, accent }: { displayName: string | null; accent: s
 function MedalBadge({ position }: { position: number }) {
   if (position > 3) {
     return (
-      <span
-        className="w-6 h-6 shrink-0 flex items-center justify-center text-xs font-bold rounded-full"
-        style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--muted)" }}
-      >
+      <span className="w-6 h-6 shrink-0 flex items-center justify-center text-xs font-bold rounded-full"
+        style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--muted)" }}>
         {position}
       </span>
     );
@@ -40,36 +36,35 @@ function MedalBadge({ position }: { position: number }) {
   const medals = ["🥇", "🥈", "🥉"];
   const color = MEDAL_COLORS[position - 1];
   return (
-    <span
-      className="w-6 h-6 shrink-0 flex items-center justify-center text-base rounded-full"
-      style={{ backgroundColor: `${color}22` }}
-    >
+    <span className="w-6 h-6 shrink-0 flex items-center justify-center text-base rounded-full"
+      style={{ backgroundColor: `${color}22` }}>
       {medals[position - 1]}
     </span>
   );
 }
 
 const QUAL_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
-  { key: "qualPole", label: "Pole" },
-  { key: "qualP2",   label: "Qual P2" },
-  { key: "qualP3",   label: "Qual P3" },
+  { key: "qualPole", label: "Pole" }, { key: "qualP2", label: "Qual P2" }, { key: "qualP3", label: "Qual P3" },
 ];
 const RACE_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
-  { key: "raceWinner", label: "Race Win" },
-  { key: "raceP2",     label: "Race P2" },
-  { key: "raceP3",     label: "Race P3" },
-  { key: "fastestLap", label: "Fastest Lap" },
-  { key: "safetyCar",  label: "Safety Car" },
+  { key: "raceWinner", label: "Race Win" }, { key: "raceP2", label: "Race P2" }, { key: "raceP3", label: "Race P3" },
+  { key: "fastestLap", label: "Fastest Lap" }, { key: "safetyCar", label: "Safety Car" },
 ];
 const SPRINT_QUAL_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
-  { key: "sprintQualPole", label: "Sprint Pole" },
-  { key: "sprintQualP2",  label: "Sprint Q P2" },
-  { key: "sprintQualP3",  label: "Sprint Q P3" },
+  { key: "sprintQualPole", label: "Sprint Pole" }, { key: "sprintQualP2", label: "Sprint Q P2" }, { key: "sprintQualP3", label: "Sprint Q P3" },
 ];
 const SPRINT_RACE_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
-  { key: "sprintWinner", label: "Sprint Win" },
-  { key: "sprintP2",     label: "Sprint P2" },
-  { key: "sprintP3",     label: "Sprint P3" },
+  { key: "sprintWinner", label: "Sprint Win" }, { key: "sprintP2", label: "Sprint P2" }, { key: "sprintP3", label: "Sprint P3" },
+];
+
+const SEASON_ROWS: { key: keyof SeasonPredictions; label: string; type: "driver" | "constructor" }[] = [
+  { key: "wdcWinner",            label: "WDC Winner",         type: "driver"      },
+  { key: "wccWinner",            label: "WCC Winner",         type: "constructor" },
+  { key: "mostWins",             label: "Most Race Wins",     type: "driver"      },
+  { key: "mostPoles",            label: "Most Poles",         type: "driver"      },
+  { key: "mostPodiums",          label: "Most Podiums",       type: "driver"      },
+  { key: "mostDnfsDriver",       label: "First DNF Driver",   type: "driver"      },
+  { key: "mostDnfsConstructor",  label: "First DNF Constr.",  type: "constructor" },
 ];
 
 function sumBreakdown(b: ScoreBreakdown): number {
@@ -78,29 +73,18 @@ function sumBreakdown(b: ScoreBreakdown): number {
 
 type BreakdownRowDef = { key: keyof ScoreBreakdown; label: string };
 
-function ScoreBreakdownSection({
-  breakdown, accent, rows, heading,
-}: {
-  breakdown: ScoreBreakdown | null;
-  accent: string;
-  rows: BreakdownRowDef[];
-  heading: string;
+function ScoreBreakdownSection({ breakdown, accent, rows, heading }: {
+  breakdown: ScoreBreakdown | null; accent: string; rows: BreakdownRowDef[]; heading: string;
 }) {
   if (!breakdown) return null;
   return (
     <>
-      <p className="text-[10px] font-bold uppercase tracking-widest col-span-2 mt-2 first:mt-0" style={{ color: "rgba(255,255,255,0.35)" }}>
-        {heading}
-      </p>
+      <p className="text-[10px] font-bold uppercase tracking-widest col-span-2 mt-2 first:mt-0" style={{ color: "rgba(255,255,255,0.35)" }}>{heading}</p>
       {rows.map(({ key, label }) => {
-        const pts = breakdown[key];
-        const max = PICK_POINTS[key];
-        const scored = pts > 0;
+        const pts = breakdown[key]; const max = PICK_POINTS[key]; const scored = pts > 0;
         return (
           <div key={key} className="flex items-center justify-between col-span-2 py-0.5">
-            <span className="text-xs" style={{ color: scored ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)" }}>
-              {label}
-            </span>
+            <span className="text-xs" style={{ color: scored ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)" }}>{label}</span>
             <span className="text-xs font-bold tabular-nums" style={{ color: scored ? accent : "rgba(255,255,255,0.2)" }}>
               {scored ? `+${pts}` : `0 / ${max}`}
             </span>
@@ -111,13 +95,8 @@ function ScoreBreakdownSection({
   );
 }
 
-function RoundBreakdown({
-  breakdown, accent, showSprintSections, wildcardPoints,
-}: {
-  breakdown: ScoreBreakdown | null;
-  accent: string;
-  showSprintSections: boolean;
-  wildcardPoints: number;
+function RoundBreakdown({ breakdown, accent, showSprintSections, wildcardPoints }: {
+  breakdown: ScoreBreakdown | null; accent: string; showSprintSections: boolean; wildcardPoints: number;
 }) {
   return (
     <div className="mt-2 px-3 py-2 rounded-xl grid grid-cols-2 gap-x-4"
@@ -132,9 +111,7 @@ function RoundBreakdown({
         {showSprintSections && <ScoreBreakdownSection breakdown={breakdown} accent={accent} rows={SPRINT_RACE_ROWS} heading="Sprint Race" />}
         {wildcardPoints > 0 && (
           <>
-            <p className="text-[10px] font-bold uppercase tracking-widest col-span-2 mt-2" style={{ color: "rgba(255,255,255,0.35)" }}>
-              Wildcards
-            </p>
+            <p className="text-[10px] font-bold uppercase tracking-widest col-span-2 mt-2" style={{ color: "rgba(255,255,255,0.35)" }}>Wildcards</p>
             <div className="flex items-center justify-between col-span-2 py-0.5">
               <span className="text-xs" style={{ color: "rgba(255,255,255,0.75)" }}>Bonus</span>
               <span className="text-xs font-bold tabular-nums" style={{ color: accent }}>+{wildcardPoints}</span>
@@ -148,6 +125,7 @@ function RoundBreakdown({
 
 type RawPick = { userId: string; round: number; pick: RacePrediction };
 type ProfileRow = { id: string; display_name: string | null; fav_team_1: string | null };
+type SeasonPickRow = { userId: string; picks: SeasonPredictions };
 
 function driverLastName(id: string | null | undefined): string {
   if (!id) return "—";
@@ -158,18 +136,27 @@ function driverTeamColor(id: string | null | undefined): string | null {
   const d = DRIVERS.find((d) => d.id === id);
   return d ? (TEAM_COLORS[d.team.toLowerCase().replace(/\s+/g, "-")] ?? null) : null;
 }
+function constructorName(id: string | null | undefined): string {
+  if (!id) return "—";
+  return id.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+function constructorColor(id: string | null | undefined): string | null {
+  if (!id) return null;
+  return TEAM_COLORS[id] ?? null;
+}
 function raceAbbr(name: string): string {
   return name.replace(/ Grand Prix$/i, "").trim().split(" ")[0].substring(0, 3).toUpperCase();
 }
 
-// Sticky table cell background — matches app background
-const STICKY_BG = "#0f0f0f";
-
 export default function StandingsPage() {
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
+
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [rawPredictions, setRawPredictions] = useState<RawPick[]>([]);
   const [rawResults, setRawResults] = useState<RaceResult[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+  const [seasonPicks, setSeasonPicks] = useState<SeasonPickRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
@@ -186,80 +173,51 @@ export default function StandingsPage() {
         { data: profilesData, error: e3 },
         { data: wildcards },
         { data: wcPredictions },
+        { data: seasonPicksData },
       ] = await Promise.all([
         supabase.from("race_results").select("*"),
         supabase.from("race_picks").select("user_id,round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,race_p4,race_p5,race_p6,fastest_lap,safety_car,boosted_picks,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3"),
         supabase.from("profiles").select("id,display_name,fav_team_1"),
         supabase.from("race_wildcards").select("id,round,question,question_type,options,points,correct_answer,display_order"),
         supabase.from("wildcard_picks").select("user_id,wildcard_id,pick_value,boosted"),
+        supabase.from("season_picks").select("user_id,wdc_winner,wcc_winner,most_wins,most_poles,most_podiums,most_dnfs_driver,most_dnfs_constructor"),
       ]);
 
       if (e2 || e3) { setError(true); setLoading(false); return; }
 
       const allResults: RaceResult[] = (results ?? []).map((row) => ({
-        round:              row.round,
-        qualPole:           row.qual_pole           ?? null,
-        qualP2:             row.qual_p2             ?? null,
-        qualP3:             row.qual_p3             ?? null,
-        raceWinner:         row.race_winner         ?? null,
-        raceP2:             row.race_p2             ?? null,
-        raceP3:             row.race_p3             ?? null,
-        raceP4:             row.race_p4             ?? null,
-        raceP5:             row.race_p5             ?? null,
-        raceP6:             row.race_p6             ?? null,
-        fastestLap:         row.fastest_lap         ?? null,
-        safetyCar:          row.safety_car          ?? null,
-        sprintQualPole:     row.sprint_qual_pole    ?? null,
-        sprintQualP2:       row.sprint_qual_p2      ?? null,
-        sprintQualP3:       row.sprint_qual_p3      ?? null,
-        sprintWinner:       row.sprint_winner       ?? null,
-        sprintP2:           row.sprint_p2           ?? null,
-        sprintP3:           row.sprint_p3           ?? null,
-        fetchedAt:          row.fetched_at          ?? null,
-        manuallyOverridden: row.manually_overridden ?? false,
-        updatedAt:          row.updated_at,
+        round: row.round, qualPole: row.qual_pole ?? null, qualP2: row.qual_p2 ?? null, qualP3: row.qual_p3 ?? null,
+        raceWinner: row.race_winner ?? null, raceP2: row.race_p2 ?? null, raceP3: row.race_p3 ?? null,
+        raceP4: row.race_p4 ?? null, raceP5: row.race_p5 ?? null, raceP6: row.race_p6 ?? null,
+        fastestLap: row.fastest_lap ?? null, safetyCar: row.safety_car ?? null,
+        sprintQualPole: row.sprint_qual_pole ?? null, sprintQualP2: row.sprint_qual_p2 ?? null, sprintQualP3: row.sprint_qual_p3 ?? null,
+        sprintWinner: row.sprint_winner ?? null, sprintP2: row.sprint_p2 ?? null, sprintP3: row.sprint_p3 ?? null,
+        fetchedAt: row.fetched_at ?? null, manuallyOverridden: row.manually_overridden ?? false, updatedAt: row.updated_at,
       }));
 
       const allPredictions = (predictions ?? []).map((row) => ({
-        userId: row.user_id,
-        round: row.round,
+        userId: row.user_id, round: row.round,
         pick: {
-          qualPole:           row.qual_pole        ?? null,
-          qualP2:             row.qual_p2          ?? null,
-          qualP3:             row.qual_p3          ?? null,
-          raceWinner:         row.race_winner      ?? null,
-          raceP2:             row.race_p2          ?? null,
-          raceP3:             row.race_p3          ?? null,
-          raceP4:             row.race_p4          ?? null,
-          raceP5:             row.race_p5          ?? null,
-          raceP6:             row.race_p6          ?? null,
-          fastestLap:         row.fastest_lap      ?? null,
-          safetyCar:          row.safety_car       ?? null,
-          boostedPredictions: row.boosted_picks    ?? [],
-          sprintQualPole:     row.sprint_qual_pole ?? null,
-          sprintQualP2:       row.sprint_qual_p2   ?? null,
-          sprintQualP3:       row.sprint_qual_p3   ?? null,
-          sprintWinner:       row.sprint_winner    ?? null,
-          sprintP2:           row.sprint_p2        ?? null,
-          sprintP3:           row.sprint_p3        ?? null,
+          qualPole: row.qual_pole ?? null, qualP2: row.qual_p2 ?? null, qualP3: row.qual_p3 ?? null,
+          raceWinner: row.race_winner ?? null, raceP2: row.race_p2 ?? null, raceP3: row.race_p3 ?? null,
+          raceP4: row.race_p4 ?? null, raceP5: row.race_p5 ?? null, raceP6: row.race_p6 ?? null,
+          fastestLap: row.fastest_lap ?? null, safetyCar: row.safety_car ?? null,
+          boostedPredictions: row.boosted_picks ?? [],
+          sprintQualPole: row.sprint_qual_pole ?? null, sprintQualP2: row.sprint_qual_p2 ?? null, sprintQualP3: row.sprint_qual_p3 ?? null,
+          sprintWinner: row.sprint_winner ?? null, sprintP2: row.sprint_p2 ?? null, sprintP3: row.sprint_p3 ?? null,
         } as RacePrediction,
       }));
 
       const allWildcards = (wildcards ?? []).map((row) => ({
-        id:            row.id as string,
-        round:         row.round as number,
-        question:      row.question as string,
-        questionType:  row.question_type as import("@/lib/types").WildcardQuestionType,
-        options:       (row.options as { id: string; name: string }[] | null) ?? null,
-        points:        row.points as number,
-        correctAnswer: (row.correct_answer as string | null) ?? null,
-        displayOrder:  row.display_order as number,
+        id: row.id as string, round: row.round as number, question: row.question as string,
+        questionType: row.question_type as import("@/lib/types").WildcardQuestionType,
+        options: (row.options as { id: string; name: string }[] | null) ?? null,
+        points: row.points as number, correctAnswer: (row.correct_answer as string | null) ?? null,
+        displayOrder: row.display_order as number,
       }));
       const allWildcardPredictions = (wcPredictions ?? []).map((row) => ({
-        userId:     row.user_id as string,
-        wildcardId: row.wildcard_id as string,
-        pickValue:  row.pick_value as string,
-        boosted:    row.boosted as boolean,
+        userId: row.user_id as string, wildcardId: row.wildcard_id as string,
+        pickValue: row.pick_value as string, boosted: row.boosted as boolean,
       }));
 
       const lb = buildLeaderboard(allPredictions, allResults, profilesData ?? [], allWildcards, allWildcardPredictions);
@@ -268,45 +226,53 @@ export default function StandingsPage() {
       setRawResults(allResults);
       setProfiles(profilesData ?? []);
 
+      setSeasonPicks((seasonPicksData ?? []).map((row) => ({
+        userId: row.user_id as string,
+        picks: {
+          wdcWinner:           row.wdc_winner           ?? null,
+          wccWinner:           row.wcc_winner           ?? null,
+          mostWins:            row.most_wins            ?? null,
+          mostPoles:           row.most_poles           ?? null,
+          mostPodiums:         row.most_podiums         ?? null,
+          mostDnfsDriver:      row.most_dnfs_driver     ?? null,
+          mostDnfsConstructor: row.most_dnfs_constructor ?? null,
+        },
+      })));
+
       const now = Date.now();
       const revealedRaces = RACES.filter((r) => r.weekendStartUtc && new Date(r.weekendStartUtc).getTime() < now);
-      if (revealedRaces.length > 0) {
-        setPredRound(revealedRaces[revealedRaces.length - 1].r);
-      }
+      if (revealedRaces.length > 0) setPredRound(revealedRaces[revealedRaces.length - 1].r);
       setLoading(false);
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Derived data ──────────────────────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────
   const leaderPts = leaderboard[0]?.totalPoints ?? 0;
   const now = Date.now();
   const revealedRaces = RACES.filter((r) => r.weekendStartUtc && new Date(r.weekendStartUtc).getTime() < now);
-  const latestResultRound = rawResults.length > 0
-    ? rawResults.map((r) => r.round).sort((a, b) => b - a)[0]
-    : null;
-
+  const latestResultRound = rawResults.length > 0 ? rawResults.map((r) => r.round).sort((a, b) => b - a)[0] : null;
   const selectedRace = revealedRaces.find((r) => r.r === predRound) ?? revealedRaces[revealedRaces.length - 1] ?? null;
   const roundPredictions = selectedRace ? rawPredictions.filter((p) => p.round === selectedRace.r) : [];
   const roundResult = selectedRace ? rawResults.find((r) => r.round === selectedRace.r) ?? null : null;
-  const profileMap = new Map(profiles.map((p) => [p.id, p]));
-
   const hasResults = rawResults.length > 0 || leaderboard.some((e) => e.totalPoints > 0 || e.roundsScored > 0);
 
-  // Users in predictions table, ordered by leaderboard rank, filtered to those with picks
-  const usersInTable = leaderboard
-    .map((entry) => {
-      const pred = roundPredictions.find((p) => p.userId === entry.userId);
-      const accent = entry.favTeam1 ? TEAM_COLORS[entry.favTeam1] ?? "#888888" : "#888888";
-      const rgb = hexToRgb(accent);
-      return { entry, pred, accent, rgb };
-    })
-    .filter((u) => u.pred != null);
+  // All leaderboard users as table columns (including those with no picks for this round)
+  const usersInTable = leaderboard.map((entry) => {
+    const pred = roundPredictions.find((p) => p.userId === entry.userId);
+    const accent = entry.favTeam1 ? TEAM_COLORS[entry.favTeam1] ?? "#888888" : "#888888";
+    const rgb = hexToRgb(accent);
+    const isMe = entry.userId === currentUserId;
+    return { entry, pred, accent, rgb, isMe };
+  });
+  const hasAnyPicks = usersInTable.some((u) => u.pred != null);
+
+  // Season picks mapped by userId
+  const seasonPickMap = new Map(seasonPicks.map((s) => [s.userId, s.picks]));
 
   type PredRow = { key: keyof RacePrediction; label: string; isBool?: boolean };
   type PredGroup = { label: string; rows: PredRow[] };
-
   const PRED_GROUPS: PredGroup[] = [
     ...(selectedRace?.sprint ? [
       { label: "Sprint Qualifying", rows: [
@@ -337,6 +303,23 @@ export default function StandingsPage() {
     ]},
   ];
 
+  // ── Shared table header helper ────────────────────────────────────────────
+  function UserColHeader({ entry, accent, isMe }: { entry: LeaderboardEntry; accent: string; isMe: boolean }) {
+    return (
+      <th
+        key={entry.userId}
+        className="py-3 px-3 font-bold text-[10px] uppercase tracking-widest whitespace-nowrap text-center"
+        style={{
+          color: accent,
+          backgroundColor: isMe ? `rgba(${hexToRgb(accent)},0.07)` : undefined,
+        }}
+      >
+        {entry.displayName?.split(" ")[0] ?? "?"}
+        {isMe && <span className="block text-[8px] font-bold" style={{ color: "rgba(255,255,255,0.35)" }}>YOU</span>}
+      </th>
+    );
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-5xl mx-auto px-4 pt-5 pb-28 md:pb-6">
@@ -350,14 +333,8 @@ export default function StandingsPage() {
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>Standings</h1>
       </div>
 
-      {loading && (
-        <p className="text-sm py-8 text-center" style={{ color: "var(--muted)" }}>Loading standings…</p>
-      )}
-      {error && (
-        <p className="text-sm py-8 text-center" style={{ color: "var(--muted)" }}>
-          Couldn&apos;t load standings. Check your connection and try again.
-        </p>
-      )}
+      {loading && <p className="text-sm py-8 text-center" style={{ color: "var(--muted)" }}>Loading standings…</p>}
+      {error && <p className="text-sm py-8 text-center" style={{ color: "var(--muted)" }}>Couldn&apos;t load standings. Check your connection and try again.</p>}
       {!loading && !error && !hasResults && (
         <div className="rounded-2xl p-6 text-center" style={{ border: "1px solid rgba(225,6,0,0.25)", backgroundColor: "rgba(225,6,0,0.06)" }}>
           <p className="text-sm font-semibold mb-1" style={{ color: "var(--foreground)" }}>No results yet</p>
@@ -368,7 +345,7 @@ export default function StandingsPage() {
       {!loading && !error && hasResults && (
         <div className="md:flex md:gap-8 md:items-start">
 
-          {/* ── Left column: Leaderboard ───────────────────────────────── */}
+          {/* ── Left: Leaderboard ─────────────────────────────────────── */}
           <div className="md:w-[340px] md:shrink-0">
             <div className="flex items-center gap-2 mb-4">
               <span className="inline-block h-1 w-8 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
@@ -379,6 +356,7 @@ export default function StandingsPage() {
               {leaderboard.map((entry) => {
                 const accent = entry.favTeam1 ? TEAM_COLORS[entry.favTeam1] ?? "#888888" : "#888888";
                 const rgb = hexToRgb(accent);
+                const isMe = entry.userId === currentUserId;
                 const isExpanded = expandedUser === entry.userId;
                 const roundsWithPoints = Object.keys(entry.scoresByRound).length;
                 const scoredRounds = RACES.filter((r) => entry.scoresByRound[r.r] !== undefined);
@@ -389,32 +367,32 @@ export default function StandingsPage() {
 
                 return (
                   <div key={entry.userId}>
-                    {/* Card */}
-                    <div
-                      className="rounded-2xl overflow-hidden"
-                      style={{
-                        border: `1px solid rgba(${rgb},0.25)`,
-                        background: `linear-gradient(135deg, rgba(${rgb},0.08) 0%, rgba(8,8,16,0.75) 100%)`,
-                      }}
-                    >
-                      <button
-                        onClick={() => setExpandedUser(isExpanded ? null : entry.userId)}
-                        className="w-full text-left"
-                      >
+                    <div className="rounded-2xl overflow-hidden" style={{
+                      border: isMe ? `1px solid rgba(${rgb},0.5)` : `1px solid rgba(${rgb},0.25)`,
+                      background: `linear-gradient(135deg, rgba(${rgb},0.08) 0%, rgba(8,8,16,0.75) 100%)`,
+                    }}>
+                      <button onClick={() => setExpandedUser(isExpanded ? null : entry.userId)} className="w-full text-left">
                         <div className="flex">
                           {/* Left accent bar */}
                           <div style={{ width: "4px", backgroundColor: accent, flexShrink: 0 }} />
 
                           <div className="flex-1 px-4 py-3">
-                            {/* Main row */}
                             <div className="flex items-center gap-3">
                               <MedalBadge position={entry.rank} />
                               <Avatar displayName={entry.displayName} accent={accent} />
 
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold truncate" style={{ color: "var(--foreground)" }}>
-                                  {entry.displayName ?? "Anonymous"}
-                                </p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-sm font-bold truncate" style={{ color: "var(--foreground)" }}>
+                                    {entry.displayName ?? "Anonymous"}
+                                  </p>
+                                  {isMe && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
+                                      style={{ backgroundColor: `rgba(${rgb},0.2)`, color: accent }}>
+                                      YOU
+                                    </span>
+                                  )}
+                                </div>
                                 {/* Relative progress bar */}
                                 <div className="mt-1.5 h-1 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.08)" }}>
                                   <div style={{ width: `${barWidth}%`, height: "100%", backgroundColor: accent, borderRadius: "9999px" }} />
@@ -422,32 +400,24 @@ export default function StandingsPage() {
                               </div>
 
                               <div className="text-right shrink-0 ml-1">
-                                <p className="text-2xl font-black tabular-nums" style={{ color: accent }}>
-                                  {entry.totalPoints}
-                                </p>
+                                <p className="text-2xl font-black tabular-nums" style={{ color: accent }}>{entry.totalPoints}</p>
                                 <p className="text-[10px] font-semibold" style={{ color: "var(--muted)" }}>
                                   {entry.rank === 1 ? "Leader" : `−${gap} pts`}
                                 </p>
                               </div>
 
-                              <ChevronDown
-                                size={14}
-                                style={{
-                                  color: "var(--muted)",
-                                  flexShrink: 0,
-                                  transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                                  transition: "transform 0.2s",
-                                }}
-                              />
+                              <ChevronDown size={14} style={{
+                                color: "var(--muted)", flexShrink: 0,
+                                transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                                transition: "transform 0.2s",
+                              }} />
                             </div>
 
-                            {/* Footer row: last race delta + rounds scored */}
+                            {/* Footer row */}
                             <div className="flex items-center gap-2 mt-2">
                               {lastRace && (
-                                <span
-                                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                                  style={{ backgroundColor: `rgba(${rgb},0.15)`, color: accent }}
-                                >
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                  style={{ backgroundColor: `rgba(${rgb},0.15)`, color: accent }}>
                                   {lastRace.flag} +{lastRoundPts}
                                 </span>
                               )}
@@ -462,10 +432,8 @@ export default function StandingsPage() {
 
                     {/* Expanded round breakdown */}
                     {isExpanded && (
-                      <div
-                        className="mt-1 rounded-2xl p-4"
-                        style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
-                      >
+                      <div className="mt-1 rounded-2xl p-4"
+                        style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
                         {scoredRounds.length === 0 ? (
                           <p className="text-xs text-center" style={{ color: "var(--muted)" }}>No scored rounds yet.</p>
                         ) : (
@@ -475,19 +443,14 @@ export default function StandingsPage() {
                                 const pts = entry.scoresByRound[race.r] ?? 0;
                                 const isRoundOpen = expandedRound[entry.userId] === race.r;
                                 return (
-                                  <button
-                                    key={race.r}
-                                    onClick={() => setExpandedRound((prev) => ({
-                                      ...prev,
-                                      [entry.userId]: isRoundOpen ? null : race.r,
-                                    }))}
+                                  <button key={race.r}
+                                    onClick={() => setExpandedRound((prev) => ({ ...prev, [entry.userId]: isRoundOpen ? null : race.r }))}
                                     className="flex flex-col items-center px-3 py-2 rounded-xl transition-all"
                                     style={{
                                       backgroundColor: isRoundOpen ? `rgba(${rgb},0.15)` : "rgba(255,255,255,0.05)",
                                       border: isRoundOpen ? `1px solid rgba(${rgb},0.4)` : "1px solid rgba(255,255,255,0.1)",
                                       minWidth: "52px",
-                                    }}
-                                  >
+                                    }}>
                                     <span className="text-sm">{race.flag}</span>
                                     <span className="text-xs font-bold mt-0.5" style={{ color: accent }}>{pts}</span>
                                     <span className="text-[9px] mt-0.5" style={{ color: "var(--muted)" }}>{raceAbbr(race.name)}</span>
@@ -513,12 +476,7 @@ export default function StandingsPage() {
                                       No race result scored for your picks this round (wildcard points only).
                                     </p>
                                   )}
-                                  <RoundBreakdown
-                                    breakdown={bd}
-                                    accent={accent}
-                                    showSprintSections={race?.sprint ?? false}
-                                    wildcardPoints={wildcardPts}
-                                  />
+                                  <RoundBreakdown breakdown={bd} accent={accent} showSprintSections={race?.sprint ?? false} wildcardPoints={wildcardPts} />
                                 </div>
                               );
                             })()}
@@ -532,8 +490,10 @@ export default function StandingsPage() {
             </div>
           </div>
 
-          {/* ── Right column: Predictions comparison ───────────────────── */}
+          {/* ── Right: Predictions + Season ───────────────────────────── */}
           <div className="md:flex-1 min-w-0 mt-8 md:mt-0">
+
+            {/* ── Race predictions comparison ── */}
             {revealedRaces.length > 0 && selectedRace && (
               <>
                 <div className="flex items-center gap-2 mb-4">
@@ -546,16 +506,13 @@ export default function StandingsPage() {
                   {revealedRaces.map((r) => {
                     const isActive = r.r === selectedRace.r;
                     return (
-                      <button
-                        key={r.r}
-                        onClick={() => setPredRound(r.r)}
+                      <button key={r.r} onClick={() => setPredRound(r.r)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
                         style={{
                           backgroundColor: isActive ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.06)",
                           border: isActive ? "1px solid rgba(225,6,0,0.5)" : "1px solid rgba(255,255,255,0.1)",
                           color: isActive ? "var(--f1-red)" : "var(--muted)",
-                        }}
-                      >
+                        }}>
                         <span>{r.flag}</span>
                         <span>{r.name.replace(" Grand Prix", " GP")}</span>
                       </button>
@@ -563,65 +520,39 @@ export default function StandingsPage() {
                   })}
                 </div>
 
-                {/* Transposed predictions table */}
-                {usersInTable.length === 0 ? (
-                  <p className="text-sm text-center py-6" style={{ color: "var(--muted)" }}>
-                    No predictions recorded for this race.
-                  </p>
+                {!hasAnyPicks ? (
+                  <p className="text-sm text-center py-6" style={{ color: "var(--muted)" }}>No predictions recorded for this race.</p>
                 ) : (
-                  <div
-                    className="rounded-2xl overflow-hidden"
-                    style={{ border: "1px solid rgba(255,255,255,0.08)" }}
-                  >
+                  <div className="rounded-2xl overflow-hidden mb-8" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs border-collapse">
                         <thead>
                           <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
-                            {/* Category header — sticky */}
-                            <th
-                              className="text-left py-3 pl-4 pr-3 font-semibold text-[10px] uppercase tracking-widest whitespace-nowrap sticky left-0 z-10"
-                              style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}
-                            >
+                            <th className="text-left py-3 pl-4 pr-3 font-semibold text-[10px] uppercase tracking-widest whitespace-nowrap sticky left-0 z-10"
+                              style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
                               Category
                             </th>
-                            {/* Result header */}
-                            <th
-                              className="py-3 px-3 font-semibold text-[10px] uppercase tracking-widest whitespace-nowrap text-center"
-                              style={{ color: "rgba(255,255,255,0.4)" }}
-                            >
+                            <th className="py-3 px-3 font-semibold text-[10px] uppercase tracking-widest whitespace-nowrap text-center"
+                              style={{ color: "rgba(255,255,255,0.4)" }}>
                               Result
                             </th>
-                            {/* Per-user headers */}
-                            {usersInTable.map(({ entry, accent }) => (
-                              <th
-                                key={entry.userId}
-                                className="py-3 px-3 font-bold text-[10px] uppercase tracking-widest whitespace-nowrap text-center"
-                                style={{ color: accent }}
-                              >
-                                {entry.displayName?.split(" ")[0] ?? "?"}
-                              </th>
+                            {usersInTable.map(({ entry, accent, isMe }) => (
+                              <UserColHeader key={entry.userId} entry={entry} accent={accent} isMe={isMe} />
                             ))}
                           </tr>
                         </thead>
                         <tbody>
                           {PRED_GROUPS.map((group) => (
                             <React.Fragment key={group.label}>
-                              {/* Group heading row */}
                               <tr style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                                <td
-                                  colSpan={2 + usersInTable.length}
-                                  className="pl-4 pt-3 pb-1 sticky left-0"
-                                  style={{ backgroundColor: STICKY_BG }}
-                                >
+                                <td colSpan={2 + usersInTable.length} className="pl-4 pt-3 pb-1 sticky left-0"
+                                  style={{ backgroundColor: STICKY_BG }}>
                                   <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>
                                     {group.label}
                                   </span>
                                 </td>
                               </tr>
-
-                              {/* Data rows */}
                               {group.rows.map(({ key, label, isBool }) => {
-                                // Result cell value
                                 const resultRaw = roundResult ? (roundResult as unknown as Record<string, unknown>)[key as string] : undefined;
                                 let resultDisplay: string | null = null;
                                 let resultColor = "var(--foreground)";
@@ -632,29 +563,24 @@ export default function StandingsPage() {
                                   resultDisplay = driverLastName(resultRaw);
                                   resultColor = driverTeamColor(resultRaw) ?? "var(--foreground)";
                                 }
-
                                 return (
                                   <tr key={key} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                                    {/* Category label — sticky */}
-                                    <td
-                                      className="py-2 pl-4 pr-3 whitespace-nowrap sticky left-0 z-10 font-medium"
-                                      style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}
-                                    >
+                                    <td className="py-2 pl-4 pr-3 whitespace-nowrap sticky left-0 z-10 font-medium"
+                                      style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
                                       {label}
                                     </td>
-
-                                    {/* Result */}
                                     <td className="py-2 px-3 text-center whitespace-nowrap font-semibold">
                                       <span style={{ color: resultDisplay ? resultColor : "rgba(255,255,255,0.2)" }}>
                                         {resultDisplay ?? "—"}
                                       </span>
                                     </td>
-
-                                    {/* Per-user cells */}
-                                    {usersInTable.map(({ entry, pred, accent }) => {
+                                    {usersInTable.map(({ entry, pred, accent, isMe }) => {
                                       if (!pred) {
                                         return (
-                                          <td key={entry.userId} className="py-2 px-3 text-center" style={{ color: "rgba(255,255,255,0.2)" }}>—</td>
+                                          <td key={entry.userId} className="py-2 px-3 text-center"
+                                            style={{ color: "rgba(255,255,255,0.2)", backgroundColor: isMe ? `rgba(${hexToRgb(accent)},0.04)` : undefined }}>
+                                            —
+                                          </td>
                                         );
                                       }
                                       const val = pred.pick[key];
@@ -662,7 +588,6 @@ export default function StandingsPage() {
                                         ? undefined
                                         : getPickResultStatus(key as keyof RacePrediction, val as string | boolean | null, roundResult);
                                       const boosted = (pred.pick.boostedPredictions ?? []).includes(key as string);
-
                                       let displayVal: string | null = null;
                                       let displayColor = "var(--foreground)";
                                       if (isBool) {
@@ -672,33 +597,17 @@ export default function StandingsPage() {
                                         displayVal = driverLastName(val);
                                         displayColor = driverTeamColor(val) ?? "var(--foreground)";
                                       }
-
-                                      const indicatorColor =
-                                        status === "correct"  ? "#22c55e" :
-                                        status === "partial"  ? "#f59e0b" :
-                                        status === "wrong"    ? "#ef4444" : null;
-
-                                      const cellBg =
-                                        status === "correct" ? "rgba(34,197,94,0.07)"  :
-                                        status === "partial" ? "rgba(245,158,11,0.07)" :
-                                        status === "wrong"   ? "rgba(239,68,68,0.06)"  : "transparent";
-
+                                      const indicatorColor = status === "correct" ? "#22c55e" : status === "partial" ? "#f59e0b" : status === "wrong" ? "#ef4444" : null;
+                                      const cellBg = status === "correct" ? "rgba(34,197,94,0.07)" : status === "partial" ? "rgba(245,158,11,0.07)" : status === "wrong" ? "rgba(239,68,68,0.06)" : isMe ? `rgba(${hexToRgb(accent)},0.04)` : "transparent";
                                       return (
-                                        <td
-                                          key={entry.userId}
-                                          className="py-2 px-3 text-center whitespace-nowrap"
-                                          style={{ backgroundColor: cellBg }}
-                                        >
+                                        <td key={entry.userId} className="py-2 px-3 text-center whitespace-nowrap" style={{ backgroundColor: cellBg }}>
                                           <div className="flex flex-col items-center gap-0.5">
                                             {indicatorColor && (
                                               <span style={{ color: indicatorColor, fontSize: "9px", lineHeight: 1, fontWeight: 700 }}>
                                                 {status === "correct" ? "✓" : status === "partial" ? "~" : "✗"}
                                               </span>
                                             )}
-                                            <span style={{
-                                              color: displayVal ? (indicatorColor ?? displayColor) : "rgba(255,255,255,0.2)",
-                                              fontWeight: displayVal ? 600 : 400,
-                                            }}>
+                                            <span style={{ color: displayVal ? (indicatorColor ?? displayColor) : "rgba(255,255,255,0.2)", fontWeight: displayVal ? 600 : 400 }}>
                                               {displayVal ?? "—"}{boosted ? " ⚡" : ""}
                                             </span>
                                           </div>
@@ -711,14 +620,99 @@ export default function StandingsPage() {
                             </React.Fragment>
                           ))}
                         </tbody>
+                        {/* Round total row */}
+                        <tfoot>
+                          <tr style={{ borderTop: "2px solid rgba(255,255,255,0.1)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+                            <td className="py-2.5 pl-4 pr-3 font-bold text-[10px] uppercase tracking-widest whitespace-nowrap sticky left-0"
+                              style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
+                              Round Total
+                            </td>
+                            <td /> {/* Result column — empty */}
+                            {usersInTable.map(({ entry, accent, isMe }) => {
+                              const roundTotal = selectedRace ? (entry.scoresByRound[selectedRace.r] ?? 0) : 0;
+                              return (
+                                <td key={entry.userId} className="py-2.5 px-3 text-center font-black tabular-nums"
+                                  style={{
+                                    color: roundTotal > 0 ? accent : "rgba(255,255,255,0.2)",
+                                    backgroundColor: isMe ? `rgba(${hexToRgb(accent)},0.06)` : undefined,
+                                  }}>
+                                  {roundTotal > 0 ? `+${roundTotal}` : "—"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        </tfoot>
                       </table>
                     </div>
                   </div>
                 )}
               </>
             )}
-          </div>
 
+            {/* ── Season predictions comparison ── */}
+            {seasonPicks.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="inline-block h-1 w-8 rounded-full" style={{ backgroundColor: "var(--f1-red)" }} />
+                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>Season Predictions</span>
+                </div>
+
+                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
+                          <th className="text-left py-3 pl-4 pr-3 font-semibold text-[10px] uppercase tracking-widest whitespace-nowrap sticky left-0 z-10"
+                            style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
+                            Category
+                          </th>
+                          {leaderboard.map((entry) => {
+                            const accent = entry.favTeam1 ? TEAM_COLORS[entry.favTeam1] ?? "#888888" : "#888888";
+                            const isMe = entry.userId === currentUserId;
+                            return <UserColHeader key={entry.userId} entry={entry} accent={accent} isMe={isMe} />;
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {SEASON_ROWS.map(({ key, label, type }) => (
+                          <tr key={key} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                            <td className="py-2 pl-4 pr-3 whitespace-nowrap sticky left-0 z-10 font-medium"
+                              style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
+                              {label}
+                            </td>
+                            {leaderboard.map((entry) => {
+                              const accent = entry.favTeam1 ? TEAM_COLORS[entry.favTeam1] ?? "#888888" : "#888888";
+                              const isMe = entry.userId === currentUserId;
+                              const picks = seasonPickMap.get(entry.userId);
+                              const val = picks?.[key] ?? null;
+                              let displayVal: string | null = null;
+                              let displayColor = "var(--foreground)";
+                              if (type === "driver") {
+                                displayVal = val ? driverLastName(val) : null;
+                                displayColor = driverTeamColor(val) ?? "var(--foreground)";
+                              } else {
+                                displayVal = val ? constructorName(val) : null;
+                                displayColor = constructorColor(val) ?? "var(--foreground)";
+                              }
+                              return (
+                                <td key={entry.userId} className="py-2 px-3 text-center whitespace-nowrap"
+                                  style={{ backgroundColor: isMe ? `rgba(${hexToRgb(accent)},0.04)` : undefined }}>
+                                  <span style={{ color: displayVal ? displayColor : "rgba(255,255,255,0.2)", fontWeight: displayVal ? 600 : 400 }}>
+                                    {displayVal ?? "—"}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+          </div>
         </div>
       )}
     </div>
