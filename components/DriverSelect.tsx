@@ -35,7 +35,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPredic
     setOpen(false);
   }
 
-  const carbonBg = "repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 10px)";
+  const carbonBg = "repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 10px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 10px)";
 
   const resultBorderLeft = resultStatus === "correct"
     ? "3px solid rgba(34,197,94,0.8)"
