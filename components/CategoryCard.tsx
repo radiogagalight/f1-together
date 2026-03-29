@@ -14,8 +14,8 @@ interface Props {
 }
 
 const CARBON_BG =
-  "repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 10px), " +
-  "repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 10px)";
+  "repeating-linear-gradient(45deg, rgba(255,255,255,0.055) 0px, rgba(255,255,255,0.055) 1px, transparent 1px, transparent 10px), " +
+  "repeating-linear-gradient(-45deg, rgba(255,255,255,0.055) 0px, rgba(255,255,255,0.055) 1px, transparent 1px, transparent 10px)";
 
 function teamColorForDriver(driver: Driver): string | null {
   return TEAM_COLORS[driver.team.toLowerCase().replace(/\s+/g, "-")] ?? null;
