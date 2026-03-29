@@ -118,18 +118,6 @@ export default function PredictionsNav({ mobile = false }: Props) {
           Season Predictions
         </Link>
 
-        {/* Intel */}
-        <Link
-          href="/intel"
-          className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-          style={{
-            backgroundColor: pathname === "/intel" ? "rgba(225,6,0,0.12)" : "transparent",
-            color: pathname === "/intel" ? "var(--f1-red)" : "var(--muted)",
-          }}
-        >
-          Race Intel
-        </Link>
-
         {/* Race Predictions + nested list */}
         <Link
           href="/predictions/race"
@@ -188,6 +176,23 @@ export default function PredictionsNav({ mobile = false }: Props) {
           </div>
         )}
       </nav>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Bottom: Race Intel */}
+      <div className="flex flex-col gap-0.5 border-t pt-3" style={{ borderColor: "var(--border)" }}>
+        <Link
+          href="/intel"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          style={{
+            backgroundColor: pathname === "/intel" ? "rgba(225,6,0,0.12)" : "transparent",
+            color: pathname === "/intel" ? "var(--f1-red)" : "var(--muted)",
+          }}
+        >
+          Race Intel
+        </Link>
+      </div>
     </div>
   );
 }

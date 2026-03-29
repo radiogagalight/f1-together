@@ -580,10 +580,10 @@ export default function RaceDetailPage({
       )}
 
       {/* ── Content: two-column on desktop ── */}
-      <div className="px-4 md:px-6 md:flex md:gap-8 md:items-start">
+      <div className="px-4 md:px-10 md:flex md:gap-14 md:items-start max-w-4xl md:mx-auto">
 
         {/* ── Right rail — first in DOM (top on mobile, right sticky on desktop) ── */}
-        <div className="md:w-72 md:shrink-0 md:order-last md:sticky md:top-4">
+        <div className="md:w-60 md:shrink-0 md:order-last md:sticky md:top-4">
 
           {/* Race weekend countdown */}
           {race.weekendStartUtc && (
@@ -629,7 +629,7 @@ export default function RaceDetailPage({
         </div>
 
         {/* ── Main column — predictions ── */}
-        <div className="md:flex-1 min-w-0 md:order-first">
+        <div className="md:flex-1 min-w-0 md:order-first md:max-w-[520px]">
 
         {/* Circuit image */}
         {trackImage && (

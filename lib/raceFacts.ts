@@ -68,7 +68,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
     ],
   },
   4: {
-    heroImage: "/images/miami/fi-miami.jpg",
+    heroImage: "/images/miami/f1-miami-2.png",
     sessions: [
       { name: "Practice 1",      utc: "2026-05-01T16:30:00Z" },
       { name: "Sprint Qualifying",utc: "2026-05-01T20:30:00Z" },
