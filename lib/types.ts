@@ -100,6 +100,11 @@ export interface RaceScore {
 
 export interface LeaderboardEntry {
   userId: string; displayName: string | null; favTeam1: string | null;
-  totalPoints: number; roundsScored: number; scoresByRound: Record<number, number>;
+  totalPoints: number;
+  /** Race rounds with a result that had a deduped pick row. Wildcards do not increment this. */
+  roundsScored: number;
+  /** Competition rank (1-based); tied totals share the same rank (e.g. 1, 1, 3). */
+  rank: number;
+  scoresByRound: Record<number, number>;
   breakdownsByRound: Record<number, ScoreBreakdown>;
 }

@@ -1,5 +1,63 @@
 import type { RacePrediction, RaceResult, RaceScore, ScoreBreakdown, LeaderboardEntry, RaceWildcard, WildcardPrediction } from "./types";
 
+export type PickResultStatus = "correct" | "partial" | "wrong";
+
+/**
+ * Compare a single pick to results for UI (correct / partial / wrong).
+ * Matches `scoreRound` partial rules for qual/race/sprint podium slots.
+ */
+export function getPickResultStatus(
+  key: keyof RacePrediction,
+  predictionVal: string | boolean | null | undefined,
+  result: RaceResult | null | undefined
+): PickResultStatus | undefined {
+  if (!result) return undefined;
+  if (predictionVal === null || predictionVal === undefined) return undefined;
+
+  const resultVal = result[key as keyof RaceResult] as string | boolean | null | undefined;
+  if (resultVal === null || resultVal === undefined) return undefined;
+
+  if (typeof predictionVal === "boolean") {
+    return predictionVal === resultVal ? "correct" : "wrong";
+  }
+
+  if (typeof predictionVal !== "string") return undefined;
+
+  if (predictionVal === resultVal) return "correct";
+
+  if (key === "qualPole" || key === "qualP2" || key === "qualP3") {
+    const trio = [result.qualPole, result.qualP2, result.qualP3];
+    return trio.some((d) => d !== null && d !== undefined && d === predictionVal) ? "partial" : "wrong";
+  }
+
+  if (key === "raceWinner" || key === "raceP2" || key === "raceP3") {
+    const trio = [result.raceWinner, result.raceP2, result.raceP3];
+    return trio.some((d) => d !== null && d !== undefined && d === predictionVal) ? "partial" : "wrong";
+  }
+
+  if (key === "sprintQualPole" || key === "sprintQualP2" || key === "sprintQualP3") {
+    const trio = [result.sprintQualPole, result.sprintQualP2, result.sprintQualP3];
+    return trio.some((d) => d !== null && d !== undefined && d === predictionVal) ? "partial" : "wrong";
+  }
+
+  if (key === "sprintWinner" || key === "sprintP2" || key === "sprintP3") {
+    const trio = [result.sprintWinner, result.sprintP2, result.sprintP3];
+    return trio.some((d) => d !== null && d !== undefined && d === predictionVal) ? "partial" : "wrong";
+  }
+
+  return "wrong";
+}
+
+function dedupePredictionsByUserRound(
+  allPredictions: Array<{ userId: string; round: number; pick: RacePrediction }>
+): Array<{ userId: string; round: number; pick: RacePrediction }> {
+  const map = new Map<string, { userId: string; round: number; pick: RacePrediction }>();
+  for (const p of allPredictions) {
+    map.set(`${p.userId}:${p.round}`, p);
+  }
+  return Array.from(map.values());
+}
+
 export const PICK_POINTS: Record<keyof ScoreBreakdown, number> = {
   qualPole: 8,   qualP2: 5,    qualP3: 3,
   raceWinner: 25, raceP2: 18,  raceP3: 15,
@@ -95,6 +153,7 @@ export function buildLeaderboard(
   allWildcardPredictions: Array<{ userId: string } & WildcardPrediction> = []
 ): LeaderboardEntry[] {
   const resultMap = new Map(allResults.map((r) => [r.round, r]));
+  const predictions = dedupePredictionsByUserRound(allPredictions);
 
   // Group wildcard predictions by userId for fast lookup
   const wcPredictionsByUser = new Map<string, WildcardPrediction[]>();
@@ -106,7 +165,7 @@ export function buildLeaderboard(
   // Build per-user score accumulator
   const userMap = new Map<string, { totalPoints: number; roundsScored: number; scoresByRound: Record<number, number>; breakdownsByRound: Record<number, ScoreBreakdown> }>();
 
-  for (const { userId, round, pick } of allPredictions) {
+  for (const { userId, round, pick } of predictions) {
     const result = resultMap.get(round);
     if (!result) continue;
 
@@ -147,10 +206,21 @@ export function buildLeaderboard(
       favTeam1: p.fav_team_1,
       totalPoints: scores.totalPoints,
       roundsScored: scores.roundsScored,
+      rank: 0,
       scoresByRound: scores.scoresByRound,
       breakdownsByRound: scores.breakdownsByRound,
     };
   });
 
-  return entries.sort((a, b) => b.totalPoints - a.totalPoints);
+  entries.sort((a, b) => b.totalPoints - a.totalPoints);
+
+  let rank = 1;
+  for (let i = 0; i < entries.length; i++) {
+    if (i > 0 && entries[i].totalPoints !== entries[i - 1].totalPoints) {
+      rank = i + 1;
+    }
+    entries[i].rank = rank;
+  }
+
+  return entries;
 }

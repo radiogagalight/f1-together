@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { buildLeaderboard } from "@/lib/scoring";
+import { buildLeaderboard, getPickResultStatus, PICK_POINTS } from "@/lib/scoring";
 import { RACES, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
-import { PICK_POINTS } from "@/lib/scoring";
 import type { RaceResult, RacePrediction, LeaderboardEntry, ScoreBreakdown } from "@/lib/types";
 
 const MEDAL_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"] as const;
@@ -75,43 +74,89 @@ const SPRINT_RACE_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
   { key: "sprintP3",     label: "Sprint P3" },
 ];
 
-function RoundBreakdown({ breakdown, accent }: { breakdown: ScoreBreakdown; accent: string }) {
-  const sprintTotal = SPRINT_QUAL_ROWS.concat(SPRINT_RACE_ROWS).reduce((s, r) => s + breakdown[r.key], 0);
-  const hasSprint = sprintTotal > 0;
+function sumBreakdown(b: ScoreBreakdown): number {
+  return Object.values(b).reduce((s, v) => s + v, 0);
+}
 
-  function Row({ rows, heading }: { rows: typeof QUAL_ROWS; heading: string }) {
-    return (
-      <>
-        <p className="text-[10px] font-bold uppercase tracking-widest col-span-2 mt-2 first:mt-0" style={{ color: "rgba(255,255,255,0.35)" }}>
-          {heading}
-        </p>
-        {rows.map(({ key, label }) => {
-          const pts = breakdown[key];
-          const max = PICK_POINTS[key];
-          const scored = pts > 0;
-          return (
-            <div key={key} className="flex items-center justify-between col-span-2 py-0.5">
-              <span className="text-xs" style={{ color: scored ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)" }}>
-                {label}
-              </span>
-              <span className="text-xs font-bold tabular-nums" style={{ color: scored ? accent : "rgba(255,255,255,0.2)" }}>
-                {scored ? `+${pts}` : `0 / ${max}`}
-              </span>
-            </div>
-          );
-        })}
-      </>
-    );
-  }
+type BreakdownRowDef = { key: keyof ScoreBreakdown; label: string };
 
+function ScoreBreakdownSection({
+  breakdown,
+  accent,
+  rows,
+  heading,
+}: {
+  breakdown: ScoreBreakdown | null;
+  accent: string;
+  rows: BreakdownRowDef[];
+  heading: string;
+}) {
+  if (!breakdown) return null;
+  return (
+    <>
+      <p className="text-[10px] font-bold uppercase tracking-widest col-span-2 mt-2 first:mt-0" style={{ color: "rgba(255,255,255,0.35)" }}>
+        {heading}
+      </p>
+      {rows.map(({ key, label }) => {
+        const pts = breakdown[key];
+        const max = PICK_POINTS[key];
+        const scored = pts > 0;
+        return (
+          <div key={key} className="flex items-center justify-between col-span-2 py-0.5">
+            <span className="text-xs" style={{ color: scored ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)" }}>
+              {label}
+            </span>
+            <span className="text-xs font-bold tabular-nums" style={{ color: scored ? accent : "rgba(255,255,255,0.2)" }}>
+              {scored ? `+${pts}` : `0 / ${max}`}
+            </span>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+function RoundBreakdown({
+  breakdown,
+  accent,
+  showSprintSections,
+  wildcardPoints,
+}: {
+  breakdown: ScoreBreakdown | null;
+  accent: string;
+  showSprintSections: boolean;
+  wildcardPoints: number;
+}) {
   return (
     <div className="mt-2 px-3 py-2 rounded-xl grid grid-cols-2 gap-x-4"
       style={{ backgroundColor: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.07)" }}>
       <div className="col-span-2">
-        <Row rows={QUAL_ROWS} heading="Qualifying" />
-        <Row rows={RACE_ROWS} heading="Race" />
-        {hasSprint && <Row rows={SPRINT_QUAL_ROWS} heading="Sprint Qualifying" />}
-        {hasSprint && <Row rows={SPRINT_RACE_ROWS} heading="Sprint Race" />}
+        {!breakdown && wildcardPoints <= 0 ? (
+          <p className="text-xs py-1" style={{ color: "var(--muted)" }}>
+            Nothing scored for this round.
+          </p>
+        ) : null}
+        <ScoreBreakdownSection breakdown={breakdown} accent={accent} rows={QUAL_ROWS} heading="Qualifying" />
+        <ScoreBreakdownSection breakdown={breakdown} accent={accent} rows={RACE_ROWS} heading="Race" />
+        {showSprintSections ? (
+          <ScoreBreakdownSection breakdown={breakdown} accent={accent} rows={SPRINT_QUAL_ROWS} heading="Sprint Qualifying" />
+        ) : null}
+        {showSprintSections ? (
+          <ScoreBreakdownSection breakdown={breakdown} accent={accent} rows={SPRINT_RACE_ROWS} heading="Sprint Race" />
+        ) : null}
+        {wildcardPoints > 0 && (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-widest col-span-2 mt-2" style={{ color: "rgba(255,255,255,0.35)" }}>
+              Wildcards
+            </p>
+            <div className="flex items-center justify-between col-span-2 py-0.5">
+              <span className="text-xs" style={{ color: "rgba(255,255,255,0.75)" }}>Bonus</span>
+              <span className="text-xs font-bold tabular-nums" style={{ color: accent }}>
+                +{wildcardPoints}
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -247,7 +292,9 @@ export default function StandingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const hasResults = leaderboard.some((e) => e.roundsScored > 0);
+  const hasResults =
+    rawResults.length > 0 ||
+    leaderboard.some((e) => e.totalPoints > 0 || e.roundsScored > 0);
 
   return (
     <div className="max-w-lg md:max-w-2xl mx-auto px-4 pt-5 pb-28 md:pb-6">
@@ -302,13 +349,13 @@ export default function StandingsPage() {
       {!loading && !error && hasResults && (
         <>
         <div className="flex flex-col gap-3">
-          {leaderboard.map((entry, i) => {
+          {leaderboard.map((entry) => {
             const accent = entry.favTeam1
               ? TEAM_COLORS[entry.favTeam1] ?? "#888888"
               : "#888888";
             const rgb = hexToRgb(accent);
-            const position = i + 1;
             const isExpanded = expandedUser === entry.userId;
+            const roundsWithPoints = Object.keys(entry.scoresByRound).length;
 
             // Rounds that have results
             const scoredRounds = RACES.filter((r) => entry.scoresByRound[r.r] !== undefined);
@@ -324,14 +371,18 @@ export default function StandingsPage() {
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <MedalBadge position={position} />
+                    <MedalBadge position={entry.rank} />
                     <Avatar displayName={entry.displayName} accent={accent} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold truncate" style={{ color: "var(--foreground)" }}>
                         {entry.displayName ?? "Anonymous"}
                       </p>
                       <p className="text-xs" style={{ color: "var(--muted)" }}>
-                        {entry.roundsScored} race{entry.roundsScored !== 1 ? "s" : ""} scored
+                        {roundsWithPoints} round{roundsWithPoints !== 1 ? "s" : ""} with points
+                        {entry.roundsScored > 0 && entry.roundsScored < roundsWithPoints
+                          ? ` · ${entry.roundsScored} with race picks`
+                          : null}
+                        {entry.roundsScored === 0 && entry.totalPoints > 0 ? " · wildcards only" : null}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -390,16 +441,30 @@ export default function StandingsPage() {
                           })}
                         </div>
                         {expandedRound[entry.userId] != null && (() => {
-                          const bd = entry.breakdownsByRound[expandedRound[entry.userId]!];
-                          const race = RACES.find((r) => r.r === expandedRound[entry.userId]);
-                          return bd ? (
+                          const roundNum = expandedRound[entry.userId]!;
+                          const bd = entry.breakdownsByRound[roundNum] ?? null;
+                          const race = RACES.find((r) => r.r === roundNum);
+                          const roundTotal = entry.scoresByRound[roundNum] ?? 0;
+                          const fromRace = bd ? sumBreakdown(bd) : 0;
+                          const wildcardPts = Math.max(0, roundTotal - fromRace);
+                          return (
                             <div>
                               <p className="text-[10px] font-semibold mb-1" style={{ color: "var(--muted)" }}>
-                                {race?.name ?? `Round ${expandedRound[entry.userId]}`}
+                                {race?.name ?? `Round ${roundNum}`}
                               </p>
-                              <RoundBreakdown breakdown={bd} accent={accent} />
+                              {!bd && wildcardPts > 0 ? (
+                                <p className="text-[11px] mb-1" style={{ color: "var(--muted)" }}>
+                                  No race result scored for your picks this round (wildcard points only).
+                                </p>
+                              ) : null}
+                              <RoundBreakdown
+                                breakdown={bd}
+                                accent={accent}
+                                showSprintSections={race?.sprint ?? false}
+                                wildcardPoints={wildcardPts}
+                              />
                             </div>
-                          ) : null;
+                          );
                         })()}
                       </div>
                     )}
@@ -452,20 +517,6 @@ export default function StandingsPage() {
               { key: "safetyCar"  as keyof RacePrediction, label: "Safety Car", isBool: true },
             ]},
           ];
-
-          const QUAL_FIELDS = new Set(["qualPole", "qualP2", "qualP3"]);
-
-          function predictionStatus(key: keyof RacePrediction, predictionVal: string | boolean | null | string[]) {
-            if (Array.isArray(predictionVal)) return undefined;
-            const resultVal = roundResult?.[key as keyof RaceResult] as string | boolean | null | undefined;
-            if (resultVal == null || predictionVal == null) return undefined;
-            if (predictionVal === resultVal) return "correct";
-            if (QUAL_FIELDS.has(key)) {
-              const qualVals = [roundResult?.qualPole, roundResult?.qualP2, roundResult?.qualP3];
-              if (typeof predictionVal === "string" && qualVals.includes(predictionVal)) return "partial";
-            }
-            return "wrong";
-          }
 
           return (
             <div className="mt-8">
@@ -546,7 +597,14 @@ export default function StandingsPage() {
                                   }
 
                                   const boosted = (pick.boostedPredictions ?? []).includes(key as string);
-                                  const status = predictionStatus(key, val as string | boolean | null);
+                                  const status =
+                                    Array.isArray(val) || key === "boostedPredictions"
+                                      ? undefined
+                                      : getPickResultStatus(
+                                          key as keyof RacePrediction,
+                                          val as string | boolean | null,
+                                          roundResult
+                                        );
                                   const dotColor = status === "correct" ? "#22c55e"
                                     : status === "partial" ? "#f59e0b"
                                     : status === "wrong" ? "#ef4444"
