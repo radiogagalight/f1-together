@@ -91,7 +91,7 @@ function CountdownCard({ targetUtc, label, target, raceUtc, miami }: { targetUtc
                 <div key={unit} className="flex flex-col items-center">
                   <span
                     className="font-black tabular-nums leading-none"
-                    style={{ fontSize: "clamp(28px, 7vw, 42px)", color: "var(--foreground)" }}
+                    style={{ fontSize: "clamp(24px, 3.5vw, 36px)", color: "var(--foreground)" }}
                   >
                     {unit === "DAYS" ? value : pad(value)}
                   </span>
@@ -580,10 +580,10 @@ export default function RaceDetailPage({
       )}
 
       {/* ── Content: two-column on desktop ── */}
-      <div className="px-4 md:px-10 md:flex md:gap-14 md:items-start max-w-4xl md:mx-auto">
+      <div className="px-4 md:pl-8 md:pr-10 md:flex md:gap-12 md:items-start">
 
         {/* ── Right rail — first in DOM (top on mobile, right sticky on desktop) ── */}
-        <div className="md:w-60 md:shrink-0 md:order-last md:sticky md:top-4">
+        <div className="md:w-80 md:shrink-0 md:order-last md:sticky md:top-4">
 
           {/* Race weekend countdown */}
           {race.weekendStartUtc && (
