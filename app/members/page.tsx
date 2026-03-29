@@ -198,7 +198,7 @@ function FeedTab({
   useEffect(() => {
     async function load() {
       setError(false);
-      const [{ data: racePicks, error: e1 }, { data: seasonPicks, error: e2 }, { data: raceComments, error: e3 }] = await Promise.all([
+      const [{ data: racePredictions, error: e1 }, { data: seasonPredictions, error: e2 }, { data: raceComments, error: e3 }] = await Promise.all([
         supabase
           .from("race_picks")
           .select("user_id,round,updated_at")
@@ -218,15 +218,15 @@ function FeedTab({
 
       if (e1 || e2 || e3) { setError(true); setLoading(false); return; }
       const feed: ActivityItem[] = [];
-      for (const row of racePicks ?? []) {
+      for (const row of racePredictions ?? []) {
         const race = RACES.find((r) => r.r === row.round);
         feed.push({
           userId: row.user_id,
-          label: `updated their ${race?.name ?? `Round ${row.round}`} picks`,
+          label: `updated their ${race?.name ?? `Round ${row.round}`} predictions`,
           updatedAt: row.updated_at,
         });
       }
-      for (const row of seasonPicks ?? []) {
+      for (const row of seasonPredictions ?? []) {
         feed.push({
           userId: row.user_id,
           label: "updated their season predictions",
@@ -399,7 +399,7 @@ function FeedTab({
           <>
             {activeItems.length === 0 && archivedItems.length === 0 ? (
               <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>
-                No activity yet. Make some picks to see them here!
+                No activity yet. Make some predictions to see them here!
               </p>
             ) : (
               <>

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { RacePick } from "@/lib/types";
+import type { RacePrediction } from "@/lib/types";
 import { loadRacePick, saveRacePick } from "@/lib/raceStorage";
 import { createClient } from "@/lib/supabase/client";
 
-export function useRacePick(userId: string | undefined, round: number) {
-  const [picks, setPicks] = useState<RacePick | null>(null);
-  const [savedField, setSavedField] = useState<keyof RacePick | null>(null);
+export function useRacePrediction(userId: string | undefined, round: number) {
+  const [predictions, setPredictions] = useState<RacePrediction | null>(null);
+  const [savedField, setSavedField] = useState<keyof RacePrediction | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -18,27 +18,27 @@ export function useRacePick(userId: string | undefined, round: number) {
     }
     setLoading(true);
     loadRacePick(userId, round, supabase).then((data) => {
-      setPicks(data);
+      setPredictions(data);
       setLoading(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, round]);
 
-  const setPick = useCallback(
-    (field: keyof RacePick, value: string | boolean | null) => {
+  const setPrediction = useCallback(
+    (field: keyof RacePrediction, value: string | boolean | null) => {
       if (!userId) return;
 
-      // Optimistic update — save latest picks inside setState callback
+      // Optimistic update — save latest predictions inside setState callback
       // so we always have the current state, not a stale closure.
-      setPicks((prev) => {
-        const updated: RacePick = prev
+      setPredictions((prev) => {
+        const updated: RacePrediction = prev
           ? { ...prev, [field]: value }
           : {
               qualPole: null, qualP2: null, qualP3: null,
               raceWinner: null, raceP2: null, raceP3: null,
               raceP4: null, raceP5: null, raceP6: null,
               fastestLap: null, safetyCar: null,
-              boostedPicks: [],
+              boostedPredictions: [],
               sprintQualPole: null, sprintQualP2: null, sprintQualP3: null,
               sprintWinner: null, sprintP2: null, sprintP3: null,
               [field]: value,
@@ -57,15 +57,15 @@ export function useRacePick(userId: string | undefined, round: number) {
   const toggleBoost = useCallback(
     (field: string, wildcardBoostedCount: number) => {
       if (!userId) return;
-      setPicks((prev) => {
+      setPredictions((prev) => {
         if (!prev) return prev;
-        const current = prev.boostedPicks ?? [];
+        const current = prev.boostedPredictions ?? [];
         const alreadyBoosted = current.includes(field);
         const totalUsed = current.length + wildcardBoostedCount;
         if (!alreadyBoosted && totalUsed >= 1) return prev; // no slots left
-        const updated: RacePick = {
+        const updated: RacePrediction = {
           ...prev,
-          boostedPicks: alreadyBoosted
+          boostedPredictions: alreadyBoosted
             ? current.filter((f) => f !== field)
             : [...current, field],
         };
@@ -77,5 +77,5 @@ export function useRacePick(userId: string | undefined, round: number) {
     [userId, round]
   );
 
-  return { picks, setPick, toggleBoost, savedField, loading };
+  return { predictions, setPrediction, toggleBoost, savedField, loading };
 }

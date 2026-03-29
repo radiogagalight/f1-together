@@ -10,13 +10,13 @@ export interface Constructor {
 }
 
 export interface Category {
-  key: keyof SeasonPicks;
+  key: keyof SeasonPredictions;
   label: string;
   description: string;
   type: "driver" | "constructor";
 }
 
-export interface SeasonPicks {
+export interface SeasonPredictions {
   wdcWinner: string | null;
   wccWinner: string | null;
   mostWins: string | null;
@@ -26,12 +26,12 @@ export interface SeasonPicks {
   mostDnfsConstructor: string | null;
 }
 
-export interface MidseasonPicks {
+export interface MidseasonPredictions {
   wdcWinner: string | null;
   wccWinner: string | null;
 }
 
-export interface RacePick {
+export interface RacePrediction {
   qualPole: string | null;
   qualP2: string | null;
   qualP3: string | null;
@@ -43,7 +43,7 @@ export interface RacePick {
   raceP6: string | null;
   fastestLap: string | null;
   safetyCar: boolean | null;
-  boostedPicks: string[];
+  boostedPredictions: string[];
   sprintQualPole: string | null;
   sprintQualP2: string | null;
   sprintQualP3: string | null;
@@ -88,7 +88,7 @@ export interface RaceWildcard {
   displayOrder: number;
 }
 
-export interface WildcardPick {
+export interface WildcardPrediction {
   wildcardId: string;
   pickValue: string;
   boosted: boolean;

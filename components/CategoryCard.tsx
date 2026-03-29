@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Category, SeasonPicks, Driver, Constructor } from "@/lib/types";
+import type { Category, SeasonPredictions, Driver, Constructor } from "@/lib/types";
 import { DRIVERS, CONSTRUCTORS } from "@/lib/data";
 import { TEAM_COLORS } from "@/lib/teamColors";
 
@@ -10,7 +10,7 @@ interface Props {
   value: string | null;
   isSaved: boolean;
   disabled?: boolean;
-  onPick: (key: keyof SeasonPicks, value: string | null) => void;
+  onPrediction: (key: keyof SeasonPredictions, value: string | null) => void;
 }
 
 const CARBON_BG =
@@ -40,7 +40,7 @@ function getLabel(category: Category, value: string | null): string {
   return c ? c.name : value;
 }
 
-export default function CategoryCard({ category, value, isSaved, disabled, onPick }: Props) {
+export default function CategoryCard({ category, value, isSaved, disabled, onPrediction }: Props) {
   const [open, setOpen] = useState(false);
 
   const items: (Driver | Constructor)[] =
@@ -48,7 +48,7 @@ export default function CategoryCard({ category, value, isSaved, disabled, onPic
 
   function handlePick(id: string) {
     if (disabled) return;
-    onPick(category.key, value === id ? null : id);
+    onPrediction(category.key, value === id ? null : id);
     setOpen(false);
   }
 

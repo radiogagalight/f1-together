@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
-import { clearPicks } from "@/lib/storage";
+import { clearPredictions } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/client";
 import { CONSTRUCTORS, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
@@ -233,7 +233,7 @@ export default function SettingsPage() {
 
   async function handleConfirmDelete() {
     if (!user) return;
-    await clearPicks(user.id, supabase);
+    await clearPredictions(user.id, supabase);
     setConfirming(false);
     router.push("/");
   }
@@ -623,7 +623,7 @@ export default function SettingsPage() {
           ) : (
             <div className="flex flex-col gap-3">
               <p className="text-sm font-medium text-center" style={{ color: "var(--foreground)" }}>
-                Are you sure? This will erase all your picks.
+                Are you sure? This will erase all your predictions.
               </p>
               <button
                 onClick={handleConfirmDelete}

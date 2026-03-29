@@ -14,7 +14,7 @@ import Companion from "@/components/Companion";
 import { createClient } from "@/lib/supabase/client";
 import { loadRaceResult } from "@/lib/resultsStorage";
 import { scoreRound } from "@/lib/scoring";
-import type { RacePick, RaceResult, ScoreBreakdown } from "@/lib/types";
+import type { RacePrediction, RaceResult, ScoreBreakdown } from "@/lib/types";
 
 function WeekendResultsCard({
   result,
@@ -22,7 +22,7 @@ function WeekendResultsCard({
   userId,
 }: {
   result: RaceResult;
-  pick: RacePick | null;
+  pick: RacePrediction | null;
   userId: string;
 }) {
   const round = result.round;
@@ -46,10 +46,10 @@ function WeekendResultsCard({
     pick !== null &&
     breakdown !== null &&
     !(Object.keys(breakdown) as Array<keyof ScoreBreakdown>).some((key) => {
-      const pickVal = (pick as unknown as Record<string, unknown>)[key];
+      const predictionVal = (pick as unknown as Record<string, unknown>)[key];
       const resultVal = (result as unknown as Record<string, unknown>)[key];
       return (
-        pickVal !== null && pickVal !== undefined &&
+        predictionVal !== null && predictionVal !== undefined &&
         resultVal !== null && resultVal !== undefined &&
         breakdown[key] === 0
       );
@@ -157,14 +157,14 @@ function WeekendResultsCard({
   function boolRow(
     label: string,
     resultVal: boolean | null,
-    pickVal: boolean | null,
+    predictionVal: boolean | null,
     bdKey: keyof ScoreBreakdown,
     rowIndex: number
   ) {
     if (resultVal === null) return null;
     const pts = breakdown?.[bdKey] ?? 0;
     const isCorrect = pts > 0;
-    const hasPick = pickVal !== null;
+    const hasPick = predictionVal !== null;
     return (
       <div
         key={bdKey}
@@ -331,11 +331,11 @@ function WeekendResultsCard({
 
 function NextRaceHero({
   race,
-  picks,
+  predictions,
   lastRaceScore,
 }: {
   race: (typeof RACES)[number];
-  picks: { pole: string | null; winner: string | null };
+  predictions: { pole: string | null; winner: string | null };
   lastRaceScore?: { raceName: string; totalPoints: number; flag: string } | null;
 }) {
   const heroImage = RACE_FACTS[race.r]?.heroImage;
@@ -393,9 +393,9 @@ function NextRaceHero({
     : "It's Sprint Qualifying!";
 
   const qualPassed = new Date(race.qualifyingUtc).getTime() <= now;
-  const poleName   = !qualPassed && picks.pole   ? (DRIVERS.find(d => d.id === picks.pole)?.name   ?? null) : null;
-  const winnerName = !raceStarted && picks.winner ? (DRIVERS.find(d => d.id === picks.winner)?.name ?? null) : null;
-  const hasPicks   = !!(poleName || winnerName);
+  const poleName   = !qualPassed && predictions.pole   ? (DRIVERS.find(d => d.id === predictions.pole)?.name   ?? null) : null;
+  const winnerName = !raceStarted && predictions.winner ? (DRIVERS.find(d => d.id === predictions.winner)?.name ?? null) : null;
+  const hasPredictions   = !!(poleName || winnerName);
 
   return (
     <div
@@ -623,10 +623,10 @@ function NextRaceHero({
           )}
 
           {/* Pick preview */}
-          {hasPicks ? (
+          {hasPredictions ? (
             <div className="mb-3 flex flex-col gap-0.5">
               <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)" }}>
-                Your picks
+                Your predictions
               </p>
               {poleName && (
                 <p style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>
@@ -641,7 +641,7 @@ function NextRaceHero({
             </div>
           ) : (
             <p className="mb-3" style={{ fontSize: "12px", color: "rgba(255,255,255,0.25)" }}>
-              No picks yet
+              No predictions yet
             </p>
           )}
 
@@ -650,7 +650,7 @@ function NextRaceHero({
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-lg font-bold"
             style={{ backgroundColor: "#00D4BE", color: "#0a0a12", boxShadow: "0 0 24px rgba(0,212,190,0.45)" }}
           >
-            {hasPicks ? "Edit picks →" : "Make your picks →"}
+            {hasPredictions ? "Edit predictions →" : "Make your predictions →"}
           </Link>
         </div>
         </div>
@@ -686,8 +686,8 @@ export default function HomePage() {
   const nextRaceIdx = getNextRaceIndex();
   const [page, setPage] = useState(Math.floor(nextRaceIdx / PAGE_SIZE));
 
-  // Fetch user's pole + winner picks for the next race
-  const [heroPicks, setHeroPicks] = useState<{ pole: string | null; winner: string | null }>({ pole: null, winner: null });
+  // Fetch user's pole + winner predictions for the next race
+  const [heroPredictions, setHeroPredictions] = useState<{ pole: string | null; winner: string | null }>({ pole: null, winner: null });
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
@@ -698,7 +698,7 @@ export default function HomePage() {
       .eq("round", RACES[nextRaceIdx].r)
       .maybeSingle()
       .then(({ data }) => {
-        setHeroPicks({ pole: data?.qual_pole ?? null, winner: data?.race_winner ?? null });
+        setHeroPredictions({ pole: data?.qual_pole ?? null, winner: data?.race_winner ?? null });
       });
   }, [user, nextRaceIdx]);
 
@@ -718,7 +718,7 @@ export default function HomePage() {
     return idx;
   })();
   const [currentRaceResult, setCurrentRaceResult] = useState<RaceResult | null>(null);
-  const [currentRacePick, setCurrentRacePick] = useState<RacePick | null>(null);
+  const [currentRacePick, setCurrentRacePick] = useState<RacePrediction | null>(null);
   useEffect(() => {
     if (qualifiedRaceIdx < 0) return;
     const supabase = createClient();
@@ -744,7 +744,7 @@ export default function HomePage() {
             raceP6:         data.race_p6          ?? null,
             fastestLap:     data.fastest_lap      ?? null,
             safetyCar:      data.safety_car       ?? null,
-            boostedPicks:   data.boosted_picks    ?? [],
+            boostedPredictions:   data.boosted_picks    ?? [],
             sprintQualPole: data.sprint_qual_pole ?? null,
             sprintQualP2:   data.sprint_qual_p2   ?? null,
             sprintQualP3:   data.sprint_qual_p3   ?? null,
@@ -765,7 +765,7 @@ export default function HomePage() {
       loadRaceResult(lastRace.r, supabase),
     ]).then(([{ data: pickRow }, result]) => {
       if (!pickRow || !result) return;
-      const pick: RacePick = {
+      const pick: RacePrediction = {
         qualPole: pickRow.qual_pole ?? null,
         qualP2: pickRow.qual_p2 ?? null,
         qualP3: pickRow.qual_p3 ?? null,
@@ -777,7 +777,7 @@ export default function HomePage() {
         raceP6: pickRow.race_p6 ?? null,
         fastestLap: pickRow.fastest_lap ?? null,
         safetyCar: pickRow.safety_car ?? null,
-        boostedPicks: pickRow.boosted_picks ?? [],
+        boostedPredictions: pickRow.boosted_picks ?? [],
         sprintQualPole: pickRow.sprint_qual_pole ?? null,
         sprintQualP2: pickRow.sprint_qual_p2 ?? null,
         sprintQualP3: pickRow.sprint_qual_p3 ?? null,
@@ -883,7 +883,7 @@ export default function HomePage() {
       >
         {/* ── Next Race Hero ── */}
         <div className="md:w-[620px] md:shrink-0">
-          <NextRaceHero race={RACES[nextRaceIdx]} picks={heroPicks} lastRaceScore={lastRaceScore} />
+          <NextRaceHero race={RACES[nextRaceIdx]} predictions={heroPredictions} lastRaceScore={lastRaceScore} />
           {currentRaceResult?.qualPole && qualifiedRaceIdx === nextRaceIdx && (
             <WeekendResultsCard result={currentRaceResult} pick={currentRacePick} userId={user?.id ?? ""} />
           )}

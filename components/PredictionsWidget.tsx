@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { useRacePick } from "@/hooks/useRacePick";
-import { useSeasonPicks } from "@/hooks/useSeasonPicks";
+import { useRacePrediction } from "@/hooks/useRacePrediction";
+import { useSeasonPredictions } from "@/hooks/useSeasonPredictions";
 import { RACES } from "@/lib/data";
-import type { RacePick, SeasonPicks } from "@/lib/types";
+import type { RacePrediction, SeasonPredictions } from "@/lib/types";
 
-// Season picks lock at Chinese GP FP1 (R2 weekend start)
+// Season predictions lock at Chinese GP FP1 (R2 weekend start)
 const SEASON_LOCK_UTC = RACES[1].weekendStartUtc!;
 
 function getNextRace() {
@@ -32,17 +32,17 @@ function urgencyStyle(ms: number): { color: string; borderColor: string; bgColor
   return                           { color: "var(--muted)", borderColor: "rgba(255,255,255,0.08)", bgColor: "transparent" };
 }
 
-const RACE_FIELD_LABELS: Record<keyof RacePick, string> = {
+const RACE_FIELD_LABELS: Record<keyof RacePrediction, string> = {
   qualPole: "Pole Position", qualP2: "Qual P2",      qualP3: "Qual P3",
   raceWinner: "Race Winner", raceP2: "Race P2",      raceP3: "Race P3",
   raceP4: "Race P4",         raceP5: "Race P5",      raceP6: "Race P6",
   fastestLap: "Fastest Lap", safetyCar: "Safety Car",
-  boostedPicks: "Boosters",
+  boostedPredictions: "Boosters",
   sprintQualPole: "SQ Pole", sprintQualP2: "SQ P2",  sprintQualP3: "SQ P3",
   sprintWinner: "Sprint Win",sprintP2: "Sprint P2",  sprintP3: "Sprint P3",
 };
 
-const SEASON_FIELD_LABELS: Record<keyof SeasonPicks, string> = {
+const SEASON_FIELD_LABELS: Record<keyof SeasonPredictions, string> = {
   wdcWinner:          "WDC Winner",
   wccWinner:          "WCC Winner",
   mostWins:           "Most Race Wins",
@@ -52,9 +52,9 @@ const SEASON_FIELD_LABELS: Record<keyof SeasonPicks, string> = {
   mostDnfsConstructor:"Most DNFs — Constructor",
 };
 
-function unpickedRaceFields(picks: RacePick | null, fields: (keyof RacePick)[]): (keyof RacePick)[] {
+function unpickedRaceFields(predictions: RacePrediction | null, fields: (keyof RacePrediction)[]): (keyof RacePrediction)[] {
   return fields.filter((f) => {
-    const v = picks?.[f];
+    const v = predictions?.[f];
     return v === null || v === undefined;
   });
 }
@@ -69,8 +69,8 @@ export default function PredictionsWidget() {
   }, []);
 
   const nextRace = getNextRace();
-  const { picks: racePicks, loading: raceLoading } = useRacePick(user?.id, nextRace?.r ?? 0);
-  const { picks: seasonPicks, loading: seasonLoading } = useSeasonPicks(user?.id);
+  const { predictions: racePredictions, loading: raceLoading } = useRacePrediction(user?.id, nextRace?.r ?? 0);
+  const { predictions: seasonPredictions, loading: seasonLoading } = useSeasonPredictions(user?.id);
 
   if (!user || !nextRace) return null;
   // Don't flash a skeleton — just wait silently
@@ -79,12 +79,12 @@ export default function PredictionsWidget() {
   // ── Season section ──────────────────────────────────────────────
   const seasonLockMs  = new Date(SEASON_LOCK_UTC).getTime() - now;
   const seasonLocked  = seasonLockMs <= 0;
-  const seasonMissing = (!seasonLocked && seasonPicks)
-    ? (Object.keys(seasonPicks) as (keyof SeasonPicks)[]).filter((k) => seasonPicks[k] === null)
+  const seasonMissing = (!seasonLocked && seasonPredictions)
+    ? (Object.keys(seasonPredictions) as (keyof SeasonPredictions)[]).filter((k) => seasonPredictions[k] === null)
     : [];
 
   // ── Race session groups (ordered soonest-first) ─────────────────
-  type SessionGroup = { label: string; lockMs: number; href: string; fields: (keyof RacePick)[] };
+  type SessionGroup = { label: string; lockMs: number; href: string; fields: (keyof RacePrediction)[] };
   const groups: SessionGroup[] = [];
 
   if (nextRace.sprint && nextRace.sprintQualifyingUtc) {
@@ -93,7 +93,7 @@ export default function PredictionsWidget() {
       label: "Sprint Qualifying",
       lockMs: ms,
       href: `/predictions/race/${nextRace.r}`,
-      fields: unpickedRaceFields(racePicks, ["sprintQualPole", "sprintQualP2", "sprintQualP3"]),
+      fields: unpickedRaceFields(racePredictions, ["sprintQualPole", "sprintQualP2", "sprintQualP3"]),
     });
   }
 
@@ -103,7 +103,7 @@ export default function PredictionsWidget() {
       label: "Sprint Race",
       lockMs: ms,
       href: `/predictions/race/${nextRace.r}`,
-      fields: unpickedRaceFields(racePicks, ["sprintWinner", "sprintP2", "sprintP3"]),
+      fields: unpickedRaceFields(racePredictions, ["sprintWinner", "sprintP2", "sprintP3"]),
     });
   }
 
@@ -112,7 +112,7 @@ export default function PredictionsWidget() {
     label: "Qualifying",
     lockMs: qualMs,
     href: `/predictions/race/${nextRace.r}`,
-    fields: unpickedRaceFields(racePicks, ["qualPole", "qualP2", "qualP3"]),
+    fields: unpickedRaceFields(racePredictions, ["qualPole", "qualP2", "qualP3"]),
   });
 
   const raceMs = new Date(nextRace.startUtc).getTime() - now;
@@ -120,7 +120,7 @@ export default function PredictionsWidget() {
     label: "Race",
     lockMs: raceMs,
     href: `/predictions/race/${nextRace.r}`,
-    fields: unpickedRaceFields(racePicks, ["raceWinner", "raceP2", "raceP3", "raceP4", "raceP5", "raceP6", "fastestLap", "safetyCar"]),
+    fields: unpickedRaceFields(racePredictions, ["raceWinner", "raceP2", "raceP3", "raceP4", "raceP5", "raceP6", "fastestLap", "safetyCar"]),
   });
 
   const pendingGroups = groups.filter((g) => g.fields.length > 0);
@@ -137,16 +137,16 @@ export default function PredictionsWidget() {
       >
         <span style={{ color: "#22c55e" }}>✓</span>
         <span className="text-sm font-semibold" style={{ color: "#22c55e" }}>
-          All picks locked in for {nextRace.name.replace(" Grand Prix", " GP")}!
+          All predictions locked in for {nextRace.name.replace(" Grand Prix", " GP")}!
         </span>
       </div>
     );
   }
 
-  // ── Picks still needed ──────────────────────────────────────────
+  // ── Predictions still needed ──────────────────────────────────────────
   const seasonSection = seasonMissing.length > 0 ? {
     key: "season",
-    label: "Season Picks",
+    label: "Season Predictions",
     lockMs: seasonLockMs,
     href: "/predictions/season",
     pills: seasonMissing.map((k) => ({ key: k, label: SEASON_FIELD_LABELS[k] })),
@@ -251,7 +251,7 @@ export default function PredictionsWidget() {
         }}
       >
         <h2 style={{ fontFamily: "var(--font-orbitron)", fontSize: "22px", fontWeight: 600, letterSpacing: "0.02em", lineHeight: 1 }}>
-          <span style={{ color: "#FF0090" }}>Picks</span>
+          <span style={{ color: "#FF0090" }}>Predictions</span>
           <span style={{ color: "rgba(255,255,255,0.90)" }}> Due</span>
         </h2>
       </div>
@@ -274,7 +274,7 @@ export default function PredictionsWidget() {
         <SectionRow key={section.key} section={section} isLast={i === raceSections.length - 1 && !seasonSection} />
       ))}
 
-      {/* Season picks — visually separated */}
+      {/* Season predictions — visually separated */}
       {seasonSection && (
         <>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", margin: "0 16px" }} />

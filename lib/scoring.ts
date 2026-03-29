@@ -1,4 +1,4 @@
-import type { RacePick, RaceResult, RaceScore, ScoreBreakdown, LeaderboardEntry, RaceWildcard, WildcardPick } from "./types";
+import type { RacePrediction, RaceResult, RaceScore, ScoreBreakdown, LeaderboardEntry, RaceWildcard, WildcardPrediction } from "./types";
 
 export const PICK_POINTS: Record<keyof ScoreBreakdown, number> = {
   qualPole: 8,   qualP2: 5,    qualP3: 3,
@@ -16,32 +16,32 @@ const RACE_PODIUM_PARTIAL_POINTS = 5;
 
 export function scoreRound(
   userId: string,
-  pick: RacePick,
+  pick: RacePrediction,
   result: RaceResult
 ): RaceScore {
-  const boosted = pick.boostedPicks ?? [];
+  const boosted = pick.boostedPredictions ?? [];
 
-  function pts(pickVal: string | boolean | null, resultVal: string | boolean | null, key: keyof ScoreBreakdown): number {
+  function pts(predictionVal: string | boolean | null, resultVal: string | boolean | null, key: keyof ScoreBreakdown): number {
     if (resultVal === null || resultVal === undefined) return 0;
-    if (pickVal === null || pickVal === undefined) return 0;
-    const base = pickVal === resultVal ? PICK_POINTS[key] : 0;
+    if (predictionVal === null || predictionVal === undefined) return 0;
+    const base = predictionVal === resultVal ? PICK_POINTS[key] : 0;
     return boosted.includes(key) ? base * 2 : base;
   }
 
   // Qualifying, sprint, and race podium slots award full points for exact position,
   // partial credit if the picked driver appears in one of the other positions.
   function qualPts(
-    pickVal: string | null,
+    predictionVal: string | null,
     exactResult: string | null,
     otherResults: (string | null)[],
     key: keyof ScoreBreakdown,
     partialPoints: number = QUAL_PARTIAL_POINTS
   ): number {
     if (exactResult === null || exactResult === undefined) return 0;
-    if (pickVal === null || pickVal === undefined) return 0;
+    if (predictionVal === null || predictionVal === undefined) return 0;
     const isBoosted = boosted.includes(key);
-    if (pickVal === exactResult) return isBoosted ? PICK_POINTS[key] * 2 : PICK_POINTS[key];
-    if (otherResults.some((r) => r !== null && r === pickVal)) return isBoosted ? partialPoints * 2 : partialPoints;
+    if (predictionVal === exactResult) return isBoosted ? PICK_POINTS[key] * 2 : PICK_POINTS[key];
+    if (otherResults.some((r) => r !== null && r === predictionVal)) return isBoosted ? partialPoints * 2 : partialPoints;
     return 0;
   }
 
@@ -70,15 +70,15 @@ export function scoreRound(
   return { round: result.round, userId, totalPoints, breakdown };
 }
 
-/** Score a user's wildcard picks against the admin-entered answers. */
+/** Score a user's wildcard predictions against the admin-entered answers. */
 export function scoreWildcards(
-  wildcardPicks: WildcardPick[],
+  wildcardPredictions: WildcardPrediction[],
   wildcards: RaceWildcard[]
 ): number {
   let total = 0;
   for (const wc of wildcards) {
     if (wc.correctAnswer === null) continue;
-    const pick = wildcardPicks.find((p) => p.wildcardId === wc.id);
+    const pick = wildcardPredictions.find((p) => p.wildcardId === wc.id);
     if (!pick) continue;
     if (pick.pickValue === wc.correctAnswer) {
       total += wc.points * (pick.boosted ? 2 : 1);
@@ -88,25 +88,25 @@ export function scoreWildcards(
 }
 
 export function buildLeaderboard(
-  allPicks: Array<{ userId: string; round: number; pick: RacePick }>,
+  allPredictions: Array<{ userId: string; round: number; pick: RacePrediction }>,
   allResults: RaceResult[],
   profiles: Array<{ id: string; display_name: string | null; fav_team_1: string | null }>,
   allWildcards: RaceWildcard[] = [],
-  allWildcardPicks: Array<{ userId: string } & WildcardPick> = []
+  allWildcardPredictions: Array<{ userId: string } & WildcardPrediction> = []
 ): LeaderboardEntry[] {
   const resultMap = new Map(allResults.map((r) => [r.round, r]));
 
-  // Group wildcard picks by userId for fast lookup
-  const wcPicksByUser = new Map<string, WildcardPick[]>();
-  for (const { userId, ...pick } of allWildcardPicks) {
-    if (!wcPicksByUser.has(userId)) wcPicksByUser.set(userId, []);
-    wcPicksByUser.get(userId)!.push(pick);
+  // Group wildcard predictions by userId for fast lookup
+  const wcPredictionsByUser = new Map<string, WildcardPrediction[]>();
+  for (const { userId, ...pick } of allWildcardPredictions) {
+    if (!wcPredictionsByUser.has(userId)) wcPredictionsByUser.set(userId, []);
+    wcPredictionsByUser.get(userId)!.push(pick);
   }
 
   // Build per-user score accumulator
   const userMap = new Map<string, { totalPoints: number; roundsScored: number; scoresByRound: Record<number, number>; breakdownsByRound: Record<number, ScoreBreakdown> }>();
 
-  for (const { userId, round, pick } of allPicks) {
+  for (const { userId, round, pick } of allPredictions) {
     const result = resultMap.get(round);
     if (!result) continue;
 
@@ -123,11 +123,11 @@ export function buildLeaderboard(
 
   // Add wildcard points for each user, tracked per round so scoresByRound stays in sync
   for (const profile of profiles) {
-    const userWcPicks = wcPicksByUser.get(profile.id) ?? [];
-    if (userWcPicks.length === 0) continue;
+    const userWcPredictions = wcPredictionsByUser.get(profile.id) ?? [];
+    if (userWcPredictions.length === 0) continue;
     for (const wc of allWildcards) {
       if (wc.correctAnswer === null) continue;
-      const pick = userWcPicks.find((p) => p.wildcardId === wc.id);
+      const pick = userWcPredictions.find((p) => p.wildcardId === wc.id);
       if (!pick || pick.pickValue !== wc.correctAnswer) continue;
       const pts = wc.points * (pick.boosted ? 2 : 1);
       if (!userMap.has(profile.id)) {

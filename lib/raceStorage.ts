@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { RacePick } from "./types";
+import type { RacePrediction } from "./types";
 
-const DEFAULT_RACE_PICK: RacePick = {
+const DEFAULT_RACE_PREDICTION: RacePrediction = {
   qualPole: null,
   qualP2: null,
   qualP3: null,
@@ -13,7 +13,7 @@ const DEFAULT_RACE_PICK: RacePick = {
   raceP6: null,
   fastestLap: null,
   safetyCar: null,
-  boostedPicks: [],
+  boostedPredictions: [],
   sprintQualPole: null,
   sprintQualP2: null,
   sprintQualP3: null,
@@ -22,7 +22,7 @@ const DEFAULT_RACE_PICK: RacePick = {
   sprintP3: null,
 };
 
-function dbRowToRacePick(row: Record<string, unknown>): RacePick {
+function dbRowToRacePick(row: Record<string, unknown>): RacePrediction {
   return {
     qualPole:     (row.qual_pole     as string | null) ?? null,
     qualP2:       (row.qual_p2       as string | null) ?? null,
@@ -35,7 +35,7 @@ function dbRowToRacePick(row: Record<string, unknown>): RacePick {
     raceP6:       (row.race_p6       as string | null) ?? null,
     fastestLap:   (row.fastest_lap   as string | null) ?? null,
     safetyCar:    (row.safety_car    as boolean | null) ?? null,
-    boostedPicks: (row.boosted_picks as string[] | null) ?? [],
+    boostedPredictions: (row.boosted_picks as string[] | null) ?? [],
     sprintQualPole: (row.sprint_qual_pole as string | null) ?? null,
     sprintQualP2:   (row.sprint_qual_p2   as string | null) ?? null,
     sprintQualP3:   (row.sprint_qual_p3   as string | null) ?? null,
@@ -49,7 +49,7 @@ export async function loadRacePick(
   userId: string,
   round: number,
   supabase: SupabaseClient
-): Promise<RacePick> {
+): Promise<RacePrediction> {
   const { data } = await supabase
     .from("race_picks")
     .select("*")
@@ -57,45 +57,45 @@ export async function loadRacePick(
     .eq("round", round)
     .maybeSingle();
 
-  if (!data) return { ...DEFAULT_RACE_PICK };
+  if (!data) return { ...DEFAULT_RACE_PREDICTION };
   return dbRowToRacePick(data);
 }
 
 export async function saveRacePick(
   userId: string,
   round: number,
-  picks: RacePick,
+  predictions: RacePrediction,
   supabase: SupabaseClient
 ): Promise<void> {
   await supabase.from("race_picks").upsert(
     {
       user_id:      userId,
       round,
-      qual_pole:    picks.qualPole,
-      qual_p2:      picks.qualP2,
-      qual_p3:      picks.qualP3,
-      race_winner:  picks.raceWinner,
-      race_p2:      picks.raceP2,
-      race_p3:      picks.raceP3,
-      race_p4:      picks.raceP4,
-      race_p5:      picks.raceP5,
-      race_p6:      picks.raceP6,
-      fastest_lap:  picks.fastestLap,
-      safety_car:   picks.safetyCar,
-      boosted_picks: picks.boostedPicks,
-      sprint_qual_pole: picks.sprintQualPole,
-      sprint_qual_p2:   picks.sprintQualP2,
-      sprint_qual_p3:   picks.sprintQualP3,
-      sprint_winner:    picks.sprintWinner,
-      sprint_p2:        picks.sprintP2,
-      sprint_p3:        picks.sprintP3,
+      qual_pole:    predictions.qualPole,
+      qual_p2:      predictions.qualP2,
+      qual_p3:      predictions.qualP3,
+      race_winner:  predictions.raceWinner,
+      race_p2:      predictions.raceP2,
+      race_p3:      predictions.raceP3,
+      race_p4:      predictions.raceP4,
+      race_p5:      predictions.raceP5,
+      race_p6:      predictions.raceP6,
+      fastest_lap:  predictions.fastestLap,
+      safety_car:   predictions.safetyCar,
+      boosted_picks: predictions.boostedPredictions,
+      sprint_qual_pole: predictions.sprintQualPole,
+      sprint_qual_p2:   predictions.sprintQualP2,
+      sprint_qual_p3:   predictions.sprintQualP3,
+      sprint_winner:    predictions.sprintWinner,
+      sprint_p2:        predictions.sprintP2,
+      sprint_p3:        predictions.sprintP3,
       updated_at:   new Date().toISOString(),
     },
     { onConflict: "user_id,round" }
   );
 }
 
-/** Returns a map of round → number of filled picks for all races the user has a row for. */
+/** Returns a map of round → number of filled predictions for all races the user has a row for. */
 export async function loadRacePickStatuses(
   userId: string,
   supabase: SupabaseClient

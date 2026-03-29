@@ -45,14 +45,14 @@ export interface Race {
   circuit: string;
   flag: string;
   date: string;
-  /** Approximate UTC race start time. Locks race picks and reveals all picks in Group page. */
+  /** Approximate UTC race start time. Locks race predictions and reveals all predictions in Group page. */
   startUtc: string;
-  /** Approximate UTC qualifying start time. Locks qualifying picks (Pole/P2/P3). */
+  /** Approximate UTC qualifying start time. Locks qualifying predictions (Pole/P2/P3). */
   qualifyingUtc: string;
   /** UTC start of FP1 — enables the race weekend countdown card when present. */
   weekendStartUtc?: string;
   sprint: boolean;
-  /** Sprint weekends only: UTC start of Sprint Qualifying. Locks sprint picks. */
+  /** Sprint weekends only: UTC start of Sprint Qualifying. Locks sprint predictions. */
   sprintQualifyingUtc?: string;
   /** Sprint weekends only: UTC start of the Sprint Race. */
   sprintStartUtc?: string;

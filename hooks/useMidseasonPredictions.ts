@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { MidseasonPicks } from "@/lib/types";
+import type { MidseasonPredictions } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 
-const DEFAULT: MidseasonPicks = { wdcWinner: null, wccWinner: null };
+const DEFAULT: MidseasonPredictions = { wdcWinner: null, wccWinner: null };
 
-export function useMidseasonPicks(userId: string | undefined) {
-  const [picks, setPicks] = useState<MidseasonPicks | null>(null);
-  const [savedKey, setSavedKey] = useState<keyof MidseasonPicks | null>(null);
+export function useMidseasonPredictions(userId: string | undefined) {
+  const [predictions, setPredictions] = useState<MidseasonPredictions | null>(null);
+  const [savedKey, setSavedKey] = useState<keyof MidseasonPredictions | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -21,16 +21,16 @@ export function useMidseasonPicks(userId: string | undefined) {
       .eq("user_id", userId)
       .maybeSingle()
       .then(({ data }) => {
-        setPicks(data ? { wdcWinner: data.wdc_winner ?? null, wccWinner: data.wcc_winner ?? null } : { ...DEFAULT });
+        setPredictions(data ? { wdcWinner: data.wdc_winner ?? null, wccWinner: data.wcc_winner ?? null } : { ...DEFAULT });
         setLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const setPick = useCallback(
-    (key: keyof MidseasonPicks, value: string | null) => {
+  const setPrediction = useCallback(
+    (key: keyof MidseasonPredictions, value: string | null) => {
       if (!userId) return;
-      setPicks((prev) => (prev ? { ...prev, [key]: value } : prev));
+      setPredictions((prev) => (prev ? { ...prev, [key]: value } : prev));
       if (value !== null) {
         setSavedKey(key);
         setTimeout(() => setSavedKey(null), 1500);
@@ -45,5 +45,5 @@ export function useMidseasonPicks(userId: string | undefined) {
     [userId]
   );
 
-  return { picks, setPick, savedKey, loading };
+  return { predictions, setPrediction, savedKey, loading };
 }

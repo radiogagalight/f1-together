@@ -6,7 +6,7 @@ import { buildLeaderboard } from "@/lib/scoring";
 import { RACES, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
 import { PICK_POINTS } from "@/lib/scoring";
-import type { RaceResult, RacePick, LeaderboardEntry, ScoreBreakdown } from "@/lib/types";
+import type { RaceResult, RacePrediction, LeaderboardEntry, ScoreBreakdown } from "@/lib/types";
 
 const MEDAL_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"] as const;
 
@@ -117,7 +117,7 @@ function RoundBreakdown({ breakdown, accent }: { breakdown: ScoreBreakdown; acce
   );
 }
 
-type RawPick = { userId: string; round: number; pick: RacePick };
+type RawPick = { userId: string; round: number; pick: RacePrediction };
 type ProfileRow = { id: string; display_name: string | null; fav_team_1: string | null };
 
 function driverLastName(id: string | null): string {
@@ -132,7 +132,7 @@ function driverTeamColor(id: string | null): string | null {
 
 export default function StandingsPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [rawPicks, setRawPicks] = useState<RawPick[]>([]);
+  const [rawPredictions, setRawPredictions] = useState<RawPick[]>([]);
   const [rawResults, setRawResults] = useState<RaceResult[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,10 +147,10 @@ export default function StandingsPage() {
       setError(false);
       const [
         { data: results },
-        { data: picks, error: e2 },
+        { data: predictions, error: e2 },
         { data: profiles, error: e3 },
         { data: wildcards },
-        { data: wcPicks },
+        { data: wcPredictions },
       ] = await Promise.all([
         supabase.from("race_results").select("*"),
         supabase.from("race_picks").select("user_id,round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,race_p4,race_p5,race_p6,fastest_lap,safety_car,boosted_picks,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3"),
@@ -159,7 +159,7 @@ export default function StandingsPage() {
         supabase.from("wildcard_picks").select("user_id,wildcard_id,pick_value,boosted"),
       ]);
 
-      // Only treat picks/profiles failures as a real error; missing results table = empty state
+      // Only treat predictions/profiles failures as a real error; missing results table = empty state
       if (e2 || e3) { setError(true); setLoading(false); return; }
 
       const allResults: RaceResult[] = (results ?? []).map((row) => ({
@@ -186,7 +186,7 @@ export default function StandingsPage() {
         updatedAt:          row.updated_at,
       }));
 
-      const allPicks = (picks ?? []).map((row) => ({
+      const allPredictions = (predictions ?? []).map((row) => ({
         userId: row.user_id,
         round: row.round,
         pick: {
@@ -201,14 +201,14 @@ export default function StandingsPage() {
           raceP6:       row.race_p6         ?? null,
           fastestLap:   row.fastest_lap     ?? null,
           safetyCar:    row.safety_car      ?? null,
-          boostedPicks: row.boosted_picks   ?? [],
+          boostedPredictions: row.boosted_picks   ?? [],
           sprintQualPole: row.sprint_qual_pole ?? null,
           sprintQualP2:   row.sprint_qual_p2   ?? null,
           sprintQualP3:   row.sprint_qual_p3   ?? null,
           sprintWinner:   row.sprint_winner    ?? null,
           sprintP2:       row.sprint_p2        ?? null,
           sprintP3:       row.sprint_p3        ?? null,
-        } as RacePick,
+        } as RacePrediction,
       }));
 
       const allWildcards = (wildcards ?? []).map((row) => ({
@@ -221,16 +221,16 @@ export default function StandingsPage() {
         correctAnswer: (row.correct_answer as string | null) ?? null,
         displayOrder:  row.display_order as number,
       }));
-      const allWildcardPicks = (wcPicks ?? []).map((row) => ({
+      const allWildcardPredictions = (wcPredictions ?? []).map((row) => ({
         userId:     row.user_id as string,
         wildcardId: row.wildcard_id as string,
         pickValue:  row.pick_value as string,
         boosted:    row.boosted as boolean,
       }));
 
-      const lb = buildLeaderboard(allPicks, allResults, profiles ?? [], allWildcards, allWildcardPicks);
+      const lb = buildLeaderboard(allPredictions, allResults, profiles ?? [], allWildcards, allWildcardPredictions);
       setLeaderboard(lb);
-      setRawPicks(allPicks);
+      setRawPredictions(allPredictions);
       setRawResults(allResults);
       setProfiles(profiles ?? []);
 
@@ -417,52 +417,52 @@ export default function StandingsPage() {
           if (revealedRaces.length === 0) return null;
 
           const selectedRace = revealedRaces.find((r) => r.r === predRound) ?? revealedRaces[revealedRaces.length - 1];
-          const roundPicks = rawPicks.filter((p) => p.round === selectedRace.r);
+          const roundPredictions = rawPredictions.filter((p) => p.round === selectedRace.r);
           const roundResult = rawResults.find((r) => r.round === selectedRace.r) ?? null;
           const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
-          type PredRow = { key: keyof RacePick; label: string; isBool?: boolean };
+          type PredRow = { key: keyof RacePrediction; label: string; isBool?: boolean };
           type PredGroup = { label: string; rows: PredRow[] };
           const PRED_GROUPS: PredGroup[] = [
             ...(selectedRace.sprint ? [
               { label: "Sprint Qualifying", rows: [
-                { key: "sprintQualPole" as keyof RacePick, label: "Pole" },
-                { key: "sprintQualP2"  as keyof RacePick, label: "P2"   },
-                { key: "sprintQualP3"  as keyof RacePick, label: "P3"   },
+                { key: "sprintQualPole" as keyof RacePrediction, label: "Pole" },
+                { key: "sprintQualP2"  as keyof RacePrediction, label: "P2"   },
+                { key: "sprintQualP3"  as keyof RacePrediction, label: "P3"   },
               ]},
               { label: "Sprint Race", rows: [
-                { key: "sprintWinner" as keyof RacePick, label: "Winner" },
-                { key: "sprintP2"    as keyof RacePick, label: "P2"     },
-                { key: "sprintP3"    as keyof RacePick, label: "P3"     },
+                { key: "sprintWinner" as keyof RacePrediction, label: "Winner" },
+                { key: "sprintP2"    as keyof RacePrediction, label: "P2"     },
+                { key: "sprintP3"    as keyof RacePrediction, label: "P3"     },
               ]},
             ] : []),
             { label: "Qualifying", rows: [
-              { key: "qualPole" as keyof RacePick, label: "Pole" },
-              { key: "qualP2"   as keyof RacePick, label: "P2"   },
-              { key: "qualP3"   as keyof RacePick, label: "P3"   },
+              { key: "qualPole" as keyof RacePrediction, label: "Pole" },
+              { key: "qualP2"   as keyof RacePrediction, label: "P2"   },
+              { key: "qualP3"   as keyof RacePrediction, label: "P3"   },
             ]},
             { label: "Race", rows: [
-              { key: "raceWinner" as keyof RacePick, label: "Winner"     },
-              { key: "raceP2"     as keyof RacePick, label: "P2"         },
-              { key: "raceP3"     as keyof RacePick, label: "P3"         },
-              { key: "raceP4"     as keyof RacePick, label: "P4"         },
-              { key: "raceP5"     as keyof RacePick, label: "P5"         },
-              { key: "raceP6"     as keyof RacePick, label: "P6"         },
-              { key: "fastestLap" as keyof RacePick, label: "Fastest Lap"},
-              { key: "safetyCar"  as keyof RacePick, label: "Safety Car", isBool: true },
+              { key: "raceWinner" as keyof RacePrediction, label: "Winner"     },
+              { key: "raceP2"     as keyof RacePrediction, label: "P2"         },
+              { key: "raceP3"     as keyof RacePrediction, label: "P3"         },
+              { key: "raceP4"     as keyof RacePrediction, label: "P4"         },
+              { key: "raceP5"     as keyof RacePrediction, label: "P5"         },
+              { key: "raceP6"     as keyof RacePrediction, label: "P6"         },
+              { key: "fastestLap" as keyof RacePrediction, label: "Fastest Lap"},
+              { key: "safetyCar"  as keyof RacePrediction, label: "Safety Car", isBool: true },
             ]},
           ];
 
           const QUAL_FIELDS = new Set(["qualPole", "qualP2", "qualP3"]);
 
-          function pickStatus(key: keyof RacePick, pickVal: string | boolean | null | string[]) {
-            if (Array.isArray(pickVal)) return undefined;
+          function predictionStatus(key: keyof RacePrediction, predictionVal: string | boolean | null | string[]) {
+            if (Array.isArray(predictionVal)) return undefined;
             const resultVal = roundResult?.[key as keyof RaceResult] as string | boolean | null | undefined;
-            if (resultVal == null || pickVal == null) return undefined;
-            if (pickVal === resultVal) return "correct";
+            if (resultVal == null || predictionVal == null) return undefined;
+            if (predictionVal === resultVal) return "correct";
             if (QUAL_FIELDS.has(key)) {
               const qualVals = [roundResult?.qualPole, roundResult?.qualP2, roundResult?.qualP3];
-              if (typeof pickVal === "string" && qualVals.includes(pickVal)) return "partial";
+              if (typeof predictionVal === "string" && qualVals.includes(predictionVal)) return "partial";
             }
             return "wrong";
           }
@@ -501,13 +501,13 @@ export default function StandingsPage() {
                 })}
               </div>
 
-              {roundPicks.length === 0 ? (
+              {roundPredictions.length === 0 ? (
                 <p className="text-sm text-center py-6" style={{ color: "var(--muted)" }}>
-                  No picks recorded for this race.
+                  No predictions recorded for this race.
                 </p>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {roundPicks.map(({ userId, pick }) => {
+                  {roundPredictions.map(({ userId, pick }) => {
                     const profile = profileMap.get(userId);
                     const accent = profile?.fav_team_1
                       ? (TEAM_COLORS[profile.fav_team_1] ?? "#888888")
@@ -545,8 +545,8 @@ export default function StandingsPage() {
                                     displayColor = driverTeamColor(val) ?? "var(--foreground)";
                                   }
 
-                                  const boosted = (pick.boostedPicks ?? []).includes(key as string);
-                                  const status = pickStatus(key, val as string | boolean | null);
+                                  const boosted = (pick.boostedPredictions ?? []).includes(key as string);
+                                  const status = predictionStatus(key, val as string | boolean | null);
                                   const dotColor = status === "correct" ? "#22c55e"
                                     : status === "partial" ? "#f59e0b"
                                     : status === "wrong" ? "#ef4444"

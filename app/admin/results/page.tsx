@@ -309,7 +309,7 @@ export default function AdminResultsPage() {
                   </div>
                   <button
                     onClick={async () => {
-                      if (!confirm("Delete this wildcard? All user picks for it will be lost.")) return;
+                      if (!confirm("Delete this wildcard? All user predictions for it will be lost.")) return;
                       setWcStatus(null);
                       const res = await fetch(`/api/wildcards/${selectedRound}`, {
                         method: "DELETE",

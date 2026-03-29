@@ -1,13 +1,13 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
-import { useSeasonPicks } from "@/hooks/useSeasonPicks";
+import { useSeasonPredictions } from "@/hooks/useSeasonPredictions";
 import CategoryCard from "./CategoryCard";
 import MidseasonPredictions from "./MidseasonPredictions";
 import { CATEGORIES } from "@/lib/data";
-import type { SeasonPicks } from "@/lib/types";
+import type { SeasonPredictions } from "@/lib/types";
 
-const GROUPS: { label: string; keys: (keyof SeasonPicks)[] }[] = [
+const GROUPS: { label: string; keys: (keyof SeasonPredictions)[] }[] = [
   { label: "Championship", keys: ["wdcWinner", "wccWinner"] },
   { label: "Dominance",    keys: ["mostWins", "mostPoles", "mostPodiums"] },
   { label: "Black Sheep",  keys: ["mostDnfsDriver", "mostDnfsConstructor"] },
@@ -15,11 +15,11 @@ const GROUPS: { label: string; keys: (keyof SeasonPicks)[] }[] = [
 
 export default function SeasonPredictions() {
   const { user } = useAuth();
-  const { picks, setPick, savedKey, loading } = useSeasonPicks(user?.id);
+  const { predictions, setPrediction, savedKey, loading } = useSeasonPredictions(user?.id);
   const isLocked = false;
 
-  const pickedCount = picks
-    ? Object.values(picks).filter((v) => v !== null).length
+  const predictedCount = predictions
+    ? Object.values(predictions).filter((v) => v !== null).length
     : 0;
 
   return (
@@ -30,19 +30,19 @@ export default function SeasonPredictions() {
           <span style={{ color: "var(--f1-red)" }}>F1</span> Season Predictions
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-          {loading || picks === null
+          {loading || predictions === null
             ? "Loading…"
-            : `${pickedCount} of ${CATEGORIES.length} picked`}
+            : `${predictedCount} of ${CATEGORIES.length} picked`}
         </p>
       </div>
 
       {/* Progress bar */}
-      {!loading && picks !== null && (
+      {!loading && predictions !== null && (
         <div className="mb-6 h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: "var(--border)" }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{
-              width: `${(pickedCount / CATEGORIES.length) * 100}%`,
+              width: `${(predictedCount / CATEGORIES.length) * 100}%`,
               backgroundColor: "var(--team-accent)",
             }}
           />
@@ -60,7 +60,7 @@ export default function SeasonPredictions() {
       )}
 
       {/* Category groups */}
-      {loading || picks === null ? (
+      {loading || predictions === null ? (
         <p className="text-center py-12" style={{ color: "var(--muted)" }}>Loading predictions…</p>
       ) : (
         <div className="flex flex-col gap-8">
@@ -91,10 +91,10 @@ export default function SeasonPredictions() {
                     <CategoryCard
                       key={cat.key}
                       category={cat}
-                      value={picks[cat.key]}
+                      value={predictions[cat.key]}
                       isSaved={savedKey === cat.key}
                       disabled={isLocked}
-                      onPick={setPick}
+                      onPrediction={setPrediction}
                     />
                   ))}
                 </div>

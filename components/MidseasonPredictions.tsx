@@ -1,10 +1,10 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
-import { useMidseasonPicks } from "@/hooks/useMidseasonPicks";
+import { useMidseasonPredictions } from "@/hooks/useMidseasonPredictions";
 import CategoryCard from "./CategoryCard";
 import { CATEGORIES, RACES } from "@/lib/data";
-import type { MidseasonPicks } from "@/lib/types";
+import type { MidseasonPredictions } from "@/lib/types";
 
 const RACE_12 = RACES.find((r) => r.r === 12)!; // Belgian GP  — window opens
 const RACE_13 = RACES.find((r) => r.r === 13)!; // Hungarian GP — window closes
@@ -15,7 +15,7 @@ const MIDSEASON_CATS = CATEGORIES.filter(
 
 export default function MidseasonPredictions() {
   const { user } = useAuth();
-  const { picks, setPick, savedKey, loading } = useMidseasonPicks(user?.id);
+  const { predictions, setPrediction, savedKey, loading } = useMidseasonPredictions(user?.id);
 
   const now = Date.now();
   const windowStart = new Date(RACE_12.startUtc).getTime();
@@ -76,12 +76,12 @@ export default function MidseasonPredictions() {
           {isLocked
             ? "Mid-season predictions are locked — the Hungarian GP has started."
             : isOpen
-            ? "Revise your championship picks — window closes at Hungarian GP lights out (26 Jul)."
-            : "Revise your WDC & WCC picks at the halfway point. Opens after the Belgian GP (19 Jul)."}
+            ? "Revise your championship predictions — window closes at Hungarian GP lights out (26 Jul)."
+            : "Revise your WDC & WCC predictions at the halfway point. Opens after the Belgian GP (19 Jul)."}
         </p>
       </div>
 
-      {/* Picks */}
+      {/* Predictions */}
       <div className="p-4">
         {loading ? (
           <p className="text-sm" style={{ color: "var(--muted)" }}>Loading…</p>
@@ -91,10 +91,10 @@ export default function MidseasonPredictions() {
               <CategoryCard
                 key={cat.key}
                 category={cat}
-                value={picks?.[cat.key as keyof MidseasonPicks] ?? null}
-                isSaved={savedKey === (cat.key as keyof MidseasonPicks)}
+                value={predictions?.[cat.key as keyof MidseasonPredictions] ?? null}
+                isSaved={savedKey === (cat.key as keyof MidseasonPredictions)}
                 disabled={!isOpen}
-                onPick={(key, value) => setPick(key as keyof MidseasonPicks, value)}
+                onPrediction={(key, value) => setPrediction(key as keyof MidseasonPredictions, value)}
               />
             ))}
           </div>

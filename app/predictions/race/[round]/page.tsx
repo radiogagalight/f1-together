@@ -7,9 +7,9 @@ import { useAuth } from "@/components/AuthProvider";
 import { RACES, DRIVERS, CONSTRUCTORS, formatRaceDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
 import type { RaceFact, RaceSession } from "@/lib/raceFacts";
-import { useRacePick } from "@/hooks/useRacePick";
+import { useRacePrediction } from "@/hooks/useRacePrediction";
 import DriverSelect from "@/components/DriverSelect";
-import type { RacePick, RaceResult, ScoreBreakdown, RaceWildcard, WildcardPick } from "@/lib/types";
+import type { RacePrediction, RaceResult, ScoreBreakdown, RaceWildcard, WildcardPrediction } from "@/lib/types";
 import { PICK_POINTS, scoreRound, scoreWildcards } from "@/lib/scoring";
 import { loadRaceResult } from "@/lib/resultsStorage";
 import { loadWildcards as loadWildcardsFromStorage, saveWildcardPick, deleteWildcardPick } from "@/lib/wildcardStorage";
@@ -297,13 +297,13 @@ export default function RaceDetailPage({
   const isMiami = round === 4;
   const race = RACES.find((r) => r.r === round);
   const { user, timezoneName } = useAuth();
-  const { picks, setPick, toggleBoost, savedField, loading } = useRacePick(user?.id, round);
+  const { predictions, setPrediction, toggleBoost, savedField, loading } = useRacePrediction(user?.id, round);
 
   const [now, setNow] = useState(Date.now());
   const [openInfo, setOpenInfo] = useState<string | null>(null);
   const [result, setResult] = useState<RaceResult | null>(null);
   const [wildcards, setWildcards] = useState<RaceWildcard[]>([]);
-  const [wildcardPicks, setWildcardPicks] = useState<WildcardPick[]>([]);
+  const [wildcardPredictions, setWildcardPredictions] = useState<WildcardPrediction[]>([]);
   const [wcSavedId, setWcSavedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -332,7 +332,7 @@ export default function RaceDetailPage({
       .eq("user_id", user.id)
       .eq("race_wildcards.round", round)
       .then(({ data }) => {
-        setWildcardPicks((data ?? []).map((r) => ({
+        setWildcardPredictions((data ?? []).map((r) => ({
           wildcardId: r.wildcard_id as string,
           pickValue:  r.pick_value as string,
           boosted:    r.boosted as boolean,
@@ -341,16 +341,16 @@ export default function RaceDetailPage({
   }, [user, round]);
 
   const breakdown: ScoreBreakdown | null =
-    picks && result && user ? scoreRound(user.id, picks, result).breakdown : null;
+    predictions && result && user ? scoreRound(user.id, predictions, result).breakdown : null;
 
   function pickResult(field: keyof ScoreBreakdown): { status: "correct" | "partial" | "wrong"; pts: number } | undefined {
-    if (!result || !picks || !breakdown) return undefined;
+    if (!result || !predictions || !breakdown) return undefined;
     const resultVal = result[field as keyof RaceResult] as string | boolean | null | undefined;
-    const pickVal = picks[field as keyof RacePick] as string | boolean | null | undefined;
+    const predictionVal = predictions[field as keyof RacePrediction] as string | boolean | null | undefined;
     if (resultVal === null || resultVal === undefined) return undefined;
-    if (pickVal === null || pickVal === undefined) return undefined;
+    if (predictionVal === null || predictionVal === undefined) return undefined;
     const pts = breakdown[field];
-    if (pickVal === resultVal) return { status: "correct", pts };
+    if (predictionVal === resultVal) return { status: "correct", pts };
     if (pts > 0) return { status: "partial", pts };
     return { status: "wrong", pts: 0 };
   }
@@ -375,22 +375,22 @@ export default function RaceDetailPage({
   const heroImage = raceData?.heroImage;
   const trackImage = raceData?.trackImage;
 
-  const QUAL_FIELDS:         (keyof RacePick)[] = ["qualPole", "qualP2", "qualP3"];
-  const SPRINT_QUAL_FIELDS:  (keyof RacePick)[] = ["sprintQualPole", "sprintQualP2", "sprintQualP3"];
-  const SPRINT_FIELDS:       (keyof RacePick)[] = ["sprintWinner", "sprintP2", "sprintP3"];
+  const QUAL_FIELDS:         (keyof RacePrediction)[] = ["qualPole", "qualP2", "qualP3"];
+  const SPRINT_QUAL_FIELDS:  (keyof RacePrediction)[] = ["sprintQualPole", "sprintQualP2", "sprintQualP3"];
+  const SPRINT_FIELDS:       (keyof RacePrediction)[] = ["sprintWinner", "sprintP2", "sprintP3"];
   const BOOSTABLE_RACE_FIELDS = ["raceWinner", "raceP2", "raceP3", "raceP4", "raceP5", "raceP6", "fastestLap", "safetyCar"];
 
-  function pick(field: keyof RacePick, value: string | boolean | null) {
+  function pick(field: keyof RacePrediction, value: string | boolean | null) {
     const locked = QUAL_FIELDS.includes(field)        ? isQualLocked
                  : SPRINT_QUAL_FIELDS.includes(field)  ? isSprintQualLocked
                  : SPRINT_FIELDS.includes(field)        ? isSprintLocked
                  : isRaceLocked;
-    if (!locked) setPick(field, value);
+    if (!locked) setPrediction(field, value);
   }
 
-  const boostedPicks = picks?.boostedPicks ?? [];
-  const boostedWildcardCount = wildcardPicks.filter((p) => p.boosted).length;
-  const totalBoostersUsed = boostedPicks.length + boostedWildcardCount;
+  const boostedPredictions = predictions?.boostedPredictions ?? [];
+  const boostedWildcardCount = wildcardPredictions.filter((p) => p.boosted).length;
+  const totalBoostersUsed = boostedPredictions.length + boostedWildcardCount;
   const boostersRemaining = 1 - totalBoostersUsed;
 
   function handleBoostRacePick(field: string) {
@@ -403,12 +403,12 @@ export default function RaceDetailPage({
     const supabase = createClient();
     if (pickValue === null) {
       await deleteWildcardPick(user.id, wildcardId, supabase);
-      setWildcardPicks((prev) => prev.filter((p) => p.wildcardId !== wildcardId));
+      setWildcardPredictions((prev) => prev.filter((p) => p.wildcardId !== wildcardId));
     } else {
-      const existing = wildcardPicks.find((p) => p.wildcardId === wildcardId);
+      const existing = wildcardPredictions.find((p) => p.wildcardId === wildcardId);
       const boosted = existing?.boosted ?? false;
       await saveWildcardPick(user.id, wildcardId, pickValue, boosted, supabase);
-      setWildcardPicks((prev) => {
+      setWildcardPredictions((prev) => {
         const filtered = prev.filter((p) => p.wildcardId !== wildcardId);
         return [...filtered, { wildcardId, pickValue, boosted }];
       });
@@ -419,14 +419,14 @@ export default function RaceDetailPage({
 
   async function handleWildcardBoost(wildcardId: string) {
     if (!user || isRaceLocked) return;
-    const existing = wildcardPicks.find((p) => p.wildcardId === wildcardId);
+    const existing = wildcardPredictions.find((p) => p.wildcardId === wildcardId);
     if (!existing) return; // must pick before boosting
     const alreadyBoosted = existing.boosted;
     if (!alreadyBoosted && boostersRemaining <= 0) return;
     const supabase = createClient();
     const newBoosted = !alreadyBoosted;
     await saveWildcardPick(user.id, wildcardId, existing.pickValue, newBoosted, supabase);
-    setWildcardPicks((prev) =>
+    setWildcardPredictions((prev) =>
       prev.map((p) => p.wildcardId === wildcardId ? { ...p, boosted: newBoosted } : p)
     );
   }
@@ -628,7 +628,7 @@ export default function RaceDetailPage({
 
         </div>
 
-        {/* ── Main column — picks ── */}
+        {/* ── Main column — predictions ── */}
         <div className="md:flex-1 min-w-0 md:order-first">
 
         {/* Circuit image */}
@@ -828,30 +828,30 @@ export default function RaceDetailPage({
                 <div className="flex flex-col gap-2">
                   <DriverSelect
                     label="Pole Position"
-                    value={picks?.sprintQualPole ?? null}
+                    value={predictions?.sprintQualPole ?? null}
                     isSaved={savedField === "sprintQualPole"}
                     disabled={isSprintQualLocked}
-                    onPick={(v) => pick("sprintQualPole", v)}
+                    onPrediction={(v) => pick("sprintQualPole", v)}
                     points={PICK_POINTS.sprintQualPole}
                     resultStatus={pickResult("sprintQualPole")?.status}
                     pointsEarned={pickResult("sprintQualPole")?.pts}
                   />
                   <DriverSelect
                     label="P2"
-                    value={picks?.sprintQualP2 ?? null}
+                    value={predictions?.sprintQualP2 ?? null}
                     isSaved={savedField === "sprintQualP2"}
                     disabled={isSprintQualLocked}
-                    onPick={(v) => pick("sprintQualP2", v)}
+                    onPrediction={(v) => pick("sprintQualP2", v)}
                     points={PICK_POINTS.sprintQualP2}
                     resultStatus={pickResult("sprintQualP2")?.status}
                     pointsEarned={pickResult("sprintQualP2")?.pts}
                   />
                   <DriverSelect
                     label="P3"
-                    value={picks?.sprintQualP3 ?? null}
+                    value={predictions?.sprintQualP3 ?? null}
                     isSaved={savedField === "sprintQualP3"}
                     disabled={isSprintQualLocked}
-                    onPick={(v) => pick("sprintQualP3", v)}
+                    onPrediction={(v) => pick("sprintQualP3", v)}
                     points={PICK_POINTS.sprintQualP3}
                     resultStatus={pickResult("sprintQualP3")?.status}
                     pointsEarned={pickResult("sprintQualP3")?.pts}
@@ -909,30 +909,30 @@ export default function RaceDetailPage({
                 <div className="flex flex-col gap-2">
                   <DriverSelect
                     label="Sprint Winner"
-                    value={picks?.sprintWinner ?? null}
+                    value={predictions?.sprintWinner ?? null}
                     isSaved={savedField === "sprintWinner"}
                     disabled={isSprintLocked}
-                    onPick={(v) => pick("sprintWinner", v)}
+                    onPrediction={(v) => pick("sprintWinner", v)}
                     points={PICK_POINTS.sprintWinner}
                     resultStatus={pickResult("sprintWinner")?.status}
                     pointsEarned={pickResult("sprintWinner")?.pts}
                   />
                   <DriverSelect
                     label="P2"
-                    value={picks?.sprintP2 ?? null}
+                    value={predictions?.sprintP2 ?? null}
                     isSaved={savedField === "sprintP2"}
                     disabled={isSprintLocked}
-                    onPick={(v) => pick("sprintP2", v)}
+                    onPrediction={(v) => pick("sprintP2", v)}
                     points={PICK_POINTS.sprintP2}
                     resultStatus={pickResult("sprintP2")?.status}
                     pointsEarned={pickResult("sprintP2")?.pts}
                   />
                   <DriverSelect
                     label="P3"
-                    value={picks?.sprintP3 ?? null}
+                    value={predictions?.sprintP3 ?? null}
                     isSaved={savedField === "sprintP3"}
                     disabled={isSprintLocked}
-                    onPick={(v) => pick("sprintP3", v)}
+                    onPrediction={(v) => pick("sprintP3", v)}
                     points={PICK_POINTS.sprintP3}
                     resultStatus={pickResult("sprintP3")?.status}
                     pointsEarned={pickResult("sprintP3")?.pts}
@@ -965,30 +965,30 @@ export default function RaceDetailPage({
               <div className="flex flex-col gap-2">
                 <DriverSelect
                   label="Pole Position"
-                  value={picks?.qualPole ?? null}
+                  value={predictions?.qualPole ?? null}
                   isSaved={savedField === "qualPole"}
                   disabled={isQualLocked}
-                  onPick={(v) => pick("qualPole", v)}
+                  onPrediction={(v) => pick("qualPole", v)}
                   points={PICK_POINTS.qualPole}
                   resultStatus={pickResult("qualPole")?.status}
                   pointsEarned={pickResult("qualPole")?.pts}
                 />
                 <DriverSelect
                   label="P2"
-                  value={picks?.qualP2 ?? null}
+                  value={predictions?.qualP2 ?? null}
                   isSaved={savedField === "qualP2"}
                   disabled={isQualLocked}
-                  onPick={(v) => pick("qualP2", v)}
+                  onPrediction={(v) => pick("qualP2", v)}
                   points={PICK_POINTS.qualP2}
                   resultStatus={pickResult("qualP2")?.status}
                   pointsEarned={pickResult("qualP2")?.pts}
                 />
                 <DriverSelect
                   label="P3"
-                  value={picks?.qualP3 ?? null}
+                  value={predictions?.qualP3 ?? null}
                   isSaved={savedField === "qualP3"}
                   disabled={isQualLocked}
-                  onPick={(v) => pick("qualP3", v)}
+                  onPrediction={(v) => pick("qualP3", v)}
                   points={PICK_POINTS.qualP3}
                   resultStatus={pickResult("qualP3")?.status}
                   pointsEarned={pickResult("qualP3")?.pts}
@@ -1041,92 +1041,92 @@ export default function RaceDetailPage({
               <div className="flex flex-col gap-2">
                 <DriverSelect
                   label="Race Winner"
-                  value={picks?.raceWinner ?? null}
+                  value={predictions?.raceWinner ?? null}
                   isSaved={savedField === "raceWinner"}
                   disabled={isRaceLocked}
-                  onPick={(v) => pick("raceWinner", v)}
+                  onPrediction={(v) => pick("raceWinner", v)}
                   points={PICK_POINTS.raceWinner}
                   resultStatus={pickResult("raceWinner")?.status}
                   pointsEarned={pickResult("raceWinner")?.pts}
-                  boosted={boostedPicks.includes("raceWinner")}
+                  boosted={boostedPredictions.includes("raceWinner")}
                   boostAvailable={boostersRemaining > 0}
                   onBoost={() => handleBoostRacePick("raceWinner")}
                 />
                 <DriverSelect
                   label="P2"
-                  value={picks?.raceP2 ?? null}
+                  value={predictions?.raceP2 ?? null}
                   isSaved={savedField === "raceP2"}
                   disabled={isRaceLocked}
-                  onPick={(v) => pick("raceP2", v)}
+                  onPrediction={(v) => pick("raceP2", v)}
                   points={PICK_POINTS.raceP2}
                   resultStatus={pickResult("raceP2")?.status}
                   pointsEarned={pickResult("raceP2")?.pts}
-                  boosted={boostedPicks.includes("raceP2")}
+                  boosted={boostedPredictions.includes("raceP2")}
                   boostAvailable={boostersRemaining > 0}
                   onBoost={() => handleBoostRacePick("raceP2")}
                 />
                 <DriverSelect
                   label="P3"
-                  value={picks?.raceP3 ?? null}
+                  value={predictions?.raceP3 ?? null}
                   isSaved={savedField === "raceP3"}
                   disabled={isRaceLocked}
-                  onPick={(v) => pick("raceP3", v)}
+                  onPrediction={(v) => pick("raceP3", v)}
                   points={PICK_POINTS.raceP3}
                   resultStatus={pickResult("raceP3")?.status}
                   pointsEarned={pickResult("raceP3")?.pts}
-                  boosted={boostedPicks.includes("raceP3")}
+                  boosted={boostedPredictions.includes("raceP3")}
                   boostAvailable={boostersRemaining > 0}
                   onBoost={() => handleBoostRacePick("raceP3")}
                 />
                 <DriverSelect
                   label="P4"
-                  value={picks?.raceP4 ?? null}
+                  value={predictions?.raceP4 ?? null}
                   isSaved={savedField === "raceP4"}
                   disabled={isRaceLocked}
-                  onPick={(v) => pick("raceP4", v)}
+                  onPrediction={(v) => pick("raceP4", v)}
                   points={PICK_POINTS.raceP4}
                   resultStatus={pickResult("raceP4")?.status}
                   pointsEarned={pickResult("raceP4")?.pts}
-                  boosted={boostedPicks.includes("raceP4")}
+                  boosted={boostedPredictions.includes("raceP4")}
                   boostAvailable={boostersRemaining > 0}
                   onBoost={() => handleBoostRacePick("raceP4")}
                 />
                 <DriverSelect
                   label="P5"
-                  value={picks?.raceP5 ?? null}
+                  value={predictions?.raceP5 ?? null}
                   isSaved={savedField === "raceP5"}
                   disabled={isRaceLocked}
-                  onPick={(v) => pick("raceP5", v)}
+                  onPrediction={(v) => pick("raceP5", v)}
                   points={PICK_POINTS.raceP5}
                   resultStatus={pickResult("raceP5")?.status}
                   pointsEarned={pickResult("raceP5")?.pts}
-                  boosted={boostedPicks.includes("raceP5")}
+                  boosted={boostedPredictions.includes("raceP5")}
                   boostAvailable={boostersRemaining > 0}
                   onBoost={() => handleBoostRacePick("raceP5")}
                 />
                 <DriverSelect
                   label="P6"
-                  value={picks?.raceP6 ?? null}
+                  value={predictions?.raceP6 ?? null}
                   isSaved={savedField === "raceP6"}
                   disabled={isRaceLocked}
-                  onPick={(v) => pick("raceP6", v)}
+                  onPrediction={(v) => pick("raceP6", v)}
                   points={PICK_POINTS.raceP6}
                   resultStatus={pickResult("raceP6")?.status}
                   pointsEarned={pickResult("raceP6")?.pts}
-                  boosted={boostedPicks.includes("raceP6")}
+                  boosted={boostedPredictions.includes("raceP6")}
                   boostAvailable={boostersRemaining > 0}
                   onBoost={() => handleBoostRacePick("raceP6")}
                 />
                 <DriverSelect
                   label="Fastest Lap"
-                  value={picks?.fastestLap ?? null}
+                  value={predictions?.fastestLap ?? null}
                   isSaved={savedField === "fastestLap"}
                   disabled={isRaceLocked}
-                  onPick={(v) => pick("fastestLap", v)}
+                  onPrediction={(v) => pick("fastestLap", v)}
                   points={PICK_POINTS.fastestLap}
                   resultStatus={pickResult("fastestLap")?.status}
                   pointsEarned={pickResult("fastestLap")?.pts}
-                  boosted={boostedPicks.includes("fastestLap")}
+                  boosted={boostedPredictions.includes("fastestLap")}
                   boostAvailable={boostersRemaining > 0}
                   onBoost={() => handleBoostRacePick("fastestLap")}
                 />
@@ -1134,12 +1134,12 @@ export default function RaceDetailPage({
                 {/* Safety Car — inline row matching DriverSelect style */}
                 {(() => {
                   const scResult = pickResult("safetyCar");
-                  const scBoosted = boostedPicks.includes("safetyCar");
+                  const scBoosted = boostedPredictions.includes("safetyCar");
                   const scBorderLeft = scResult?.status === "correct"
                     ? "3px solid rgba(34,197,94,0.8)"
                     : scResult?.status === "wrong"
                     ? "3px solid rgba(239,68,68,0.6)"
-                    : picks?.safetyCar === true ? "3px solid rgba(34,197,94,0.7)" : "2px solid rgba(225,6,0,0.45)";
+                    : predictions?.safetyCar === true ? "3px solid rgba(34,197,94,0.7)" : "2px solid rgba(225,6,0,0.45)";
                   return (
                 <div
                   className="rounded-xl overflow-hidden"
@@ -1186,11 +1186,11 @@ export default function RaceDetailPage({
                       <span className="text-sm leading-tight" style={{
                         color: savedField === "safetyCar"
                           ? "var(--f1-red)"
-                          : picks?.safetyCar === true
+                          : predictions?.safetyCar === true
                           ? "#22c55e"
                           : "var(--muted)",
                       }}>
-                        {savedField === "safetyCar" ? "Saved ✓" : picks?.safetyCar === true ? "Yes" : picks?.safetyCar === false ? "No" : "Make your prediction"}
+                        {savedField === "safetyCar" ? "Saved ✓" : predictions?.safetyCar === true ? "Yes" : predictions?.safetyCar === false ? "No" : "Make your prediction"}
                       </span>
                     </div>
                     {isRaceLocked ? (
@@ -1209,7 +1209,7 @@ export default function RaceDetailPage({
                     ) : (
                       <div className="flex gap-2 shrink-0">
                         {([true, false] as const).map((option) => {
-                          const isSelected = picks?.safetyCar === option;
+                          const isSelected = predictions?.safetyCar === option;
                           const isYes = option === true;
                           return (
                             <button
@@ -1271,13 +1271,13 @@ export default function RaceDetailPage({
 
                 <div className="flex flex-col gap-3">
                   {wildcards.map((wc) => {
-                    const myPick = wildcardPicks.find((p) => p.wildcardId === wc.id);
+                    const myPrediction = wildcardPredictions.find((p) => p.wildcardId === wc.id);
                     const isSaved = wcSavedId === wc.id;
                     const isBattle = wc.questionType === "battle";
-                    const hasResult = wc.correctAnswer !== null && myPick !== undefined;
-                    const isCorrect = hasResult && myPick!.pickValue === wc.correctAnswer;
-                    const isWrong = hasResult && myPick!.pickValue !== wc.correctAnswer;
-                    const ptsEarned = isCorrect ? wc.points * (myPick!.boosted ? 2 : 1) : 0;
+                    const hasResult = wc.correctAnswer !== null && myPrediction !== undefined;
+                    const isCorrect = hasResult && myPrediction!.pickValue === wc.correctAnswer;
+                    const isWrong = hasResult && myPrediction!.pickValue !== wc.correctAnswer;
+                    const ptsEarned = isCorrect ? wc.points * (myPrediction!.boosted ? 2 : 1) : 0;
                     const resultBorderLeft = isCorrect
                       ? "3px solid rgba(34,197,94,0.8)"
                       : isWrong
@@ -1292,14 +1292,14 @@ export default function RaceDetailPage({
                           </p>
                           <DriverSelect
                             label={`Wild Card · ${wc.points} pts`}
-                            value={myPick?.pickValue ?? null}
+                            value={myPrediction?.pickValue ?? null}
                             isSaved={isSaved}
                             disabled={isRaceLocked}
-                            onPick={(val) => handleWildcardPick(wc.id, val)}
+                            onPrediction={(val) => handleWildcardPick(wc.id, val)}
                             points={wc.points}
                             resultStatus={isCorrect ? "correct" : isWrong ? "wrong" : undefined}
                             pointsEarned={ptsEarned}
-                            boosted={myPick?.boosted}
+                            boosted={myPrediction?.boosted}
                             boostAvailable={boostersRemaining > 0}
                             onBoost={() => handleWildcardBoost(wc.id)}
                           />
@@ -1314,7 +1314,7 @@ export default function RaceDetailPage({
                         style={{
                           backgroundColor: "rgb(12, 8, 10)",
                           border: "1px solid rgba(150,100,255,0.2)",
-                          borderLeft: resultBorderLeft ?? (myPick ? "3px solid rgba(150,100,255,0.5)" : "2px solid rgba(150,100,255,0.2)"),
+                          borderLeft: resultBorderLeft ?? (myPrediction ? "3px solid rgba(150,100,255,0.5)" : "2px solid rgba(150,100,255,0.2)"),
                         }}
                       >
                         <div className="px-4 py-4">
@@ -1327,28 +1327,28 @@ export default function RaceDetailPage({
                               <span
                                 className="text-[10px] font-bold px-1.5 py-px rounded-full"
                                 style={{
-                                  backgroundColor: myPick?.boosted ? "rgba(255,200,0,0.22)" : "rgba(255,200,0,0.12)",
+                                  backgroundColor: myPrediction?.boosted ? "rgba(255,200,0,0.22)" : "rgba(255,200,0,0.12)",
                                   color: "#ffc800",
-                                  border: `1px solid ${myPick?.boosted ? "rgba(255,200,0,0.7)" : "rgba(255,200,0,0.3)"}`,
+                                  border: `1px solid ${myPrediction?.boosted ? "rgba(255,200,0,0.7)" : "rgba(255,200,0,0.3)"}`,
                                   lineHeight: 1.4,
                                 }}
                               >
-                                {myPick?.boosted ? `${wc.points * 2} pts ⚡` : `${wc.points} pts`}
+                                {myPrediction?.boosted ? `${wc.points * 2} pts ⚡` : `${wc.points} pts`}
                               </span>
-                              {!isBattle && !isRaceLocked && myPick && (
+                              {!isBattle && !isRaceLocked && myPrediction && (
                                 <button
                                   onClick={() => handleWildcardBoost(wc.id)}
                                   className="text-[10px] font-bold px-1.5 py-px rounded-full transition-colors"
                                   style={{
-                                    backgroundColor: myPick.boosted ? "rgba(255,200,0,0.18)" : boostersRemaining > 0 ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
-                                    color: myPick.boosted ? "#ffc800" : boostersRemaining > 0 ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)",
-                                    border: myPick.boosted ? "1px solid rgba(255,200,0,0.5)" : "1px solid rgba(255,255,255,0.12)",
-                                    cursor: myPick.boosted || boostersRemaining > 0 ? "pointer" : "default",
+                                    backgroundColor: myPrediction.boosted ? "rgba(255,200,0,0.18)" : boostersRemaining > 0 ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
+                                    color: myPrediction.boosted ? "#ffc800" : boostersRemaining > 0 ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)",
+                                    border: myPrediction.boosted ? "1px solid rgba(255,200,0,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                                    cursor: myPrediction.boosted || boostersRemaining > 0 ? "pointer" : "default",
                                     lineHeight: 1.4,
                                   }}
-                                  title={myPick.boosted ? "Remove booster" : boostersRemaining > 0 ? "Apply booster (2×)" : "No boosters left"}
+                                  title={myPrediction.boosted ? "Remove booster" : boostersRemaining > 0 ? "Apply booster (2×)" : "No boosters left"}
                                 >
-                                  {myPick.boosted ? "⚡ Boosted" : "⚡ Boost"}
+                                  {myPrediction.boosted ? "⚡ Boosted" : "⚡ Boost"}
                                 </button>
                               )}
                             </div>
@@ -1375,12 +1375,12 @@ export default function RaceDetailPage({
                             style={{
                               color: isSaved
                                 ? "var(--f1-red)"
-                                : myPick
+                                : myPrediction
                                 ? "rgba(150,100,255,0.9)"
                                 : "var(--muted)",
                             }}
                           >
-                            {isSaved ? "Saved ✓" : myPick ? wcDisplayName(wc, myPick.pickValue) : "Make your pick"}
+                            {isSaved ? "Saved ✓" : myPrediction ? wcDisplayName(wc, myPrediction.pickValue) : "Make your pick"}
                           </span>
 
                           {/* Pick input — only when unlocked */}
@@ -1389,7 +1389,7 @@ export default function RaceDetailPage({
                               {wc.questionType === "boolean" && (
                                 <div className="flex gap-2">
                                   {(["yes", "no"] as const).map((val) => {
-                                    const isSelected = myPick?.pickValue === val;
+                                    const isSelected = myPrediction?.pickValue === val;
                                     return (
                                       <button
                                         key={val}
@@ -1419,7 +1419,7 @@ export default function RaceDetailPage({
                               {(wc.questionType === "battle" || wc.questionType === "constructor") && wc.options && (
                                 <div className="flex gap-2 flex-wrap">
                                   {wc.options.map((opt) => {
-                                    const isSelected = myPick?.pickValue === opt.id;
+                                    const isSelected = myPrediction?.pickValue === opt.id;
                                     return (
                                       <button
                                         key={opt.id}

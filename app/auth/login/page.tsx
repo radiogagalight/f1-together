@@ -154,7 +154,7 @@ export default function LoginPage() {
           {/* Feature list — desktop only */}
           <ul className="hidden md:flex flex-col gap-3">
             {[
-              "WDC & WCC champion picks",
+              "WDC & WCC champion predictions",
               "Race winner & podium predictions",
               "Most wins, poles & podiums",
               "Most DNFs — driver & constructor",

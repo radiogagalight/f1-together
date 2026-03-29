@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { SeasonPicks } from "./types";
+import type { SeasonPredictions } from "./types";
 
-const DEFAULT_PICKS: SeasonPicks = {
+const DEFAULT_PREDICTIONS: SeasonPredictions = {
   wdcWinner: null,
   wccWinner: null,
   mostWins: null,
@@ -11,8 +11,8 @@ const DEFAULT_PICKS: SeasonPicks = {
   mostDnfsConstructor: null,
 };
 
-// Maps camelCase SeasonPicks keys → snake_case DB columns
-const KEY_MAP: Record<keyof SeasonPicks, string> = {
+// Maps camelCase SeasonPredictions keys → snake_case DB columns
+const KEY_MAP: Record<keyof SeasonPredictions, string> = {
   wdcWinner: "wdc_winner",
   wccWinner: "wcc_winner",
   mostWins: "most_wins",
@@ -22,7 +22,7 @@ const KEY_MAP: Record<keyof SeasonPicks, string> = {
   mostDnfsConstructor: "most_dnfs_constructor",
 };
 
-function dbRowToPicks(row: Record<string, string | null>): SeasonPicks {
+function dbRowToPredictions(row: Record<string, string | null>): SeasonPredictions {
   return {
     wdcWinner: row.wdc_winner ?? null,
     wccWinner: row.wcc_winner ?? null,
@@ -34,23 +34,23 @@ function dbRowToPicks(row: Record<string, string | null>): SeasonPicks {
   };
 }
 
-export async function loadPicks(
+export async function loadPredictions(
   userId: string,
   supabase: SupabaseClient
-): Promise<SeasonPicks> {
+): Promise<SeasonPredictions> {
   const { data } = await supabase
     .from("season_picks")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (!data) return { ...DEFAULT_PICKS };
-  return dbRowToPicks(data);
+  if (!data) return { ...DEFAULT_PREDICTIONS };
+  return dbRowToPredictions(data);
 }
 
-export async function savePick(
+export async function savePrediction(
   userId: string,
-  key: keyof SeasonPicks,
+  key: keyof SeasonPredictions,
   value: string | null,
   supabase: SupabaseClient
 ): Promise<void> {
@@ -61,7 +61,7 @@ export async function savePick(
   );
 }
 
-export async function clearPicks(
+export async function clearPredictions(
   userId: string,
   supabase: SupabaseClient
 ): Promise<void> {

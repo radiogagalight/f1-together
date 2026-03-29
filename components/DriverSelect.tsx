@@ -11,7 +11,7 @@ interface Props {
   value: string | null;
   isSaved: boolean;
   disabled: boolean;
-  onPick: (value: string | null) => void;
+  onPrediction: (value: string | null) => void;
   points?: number;
   resultStatus?: "correct" | "partial" | "wrong";
   pointsEarned?: number;
@@ -20,7 +20,7 @@ interface Props {
   onBoost?: () => void;
 }
 
-export default function DriverSelect({ label, value, isSaved, disabled, onPick, points, resultStatus, pointsEarned, boosted, boostAvailable, onBoost }: Props) {
+export default function DriverSelect({ label, value, isSaved, disabled, onPrediction, points, resultStatus, pointsEarned, boosted, boostAvailable, onBoost }: Props) {
   const [open, setOpen] = useState(false);
 
   const driver = value ? DRIVERS.find((d) => d.id === value) : null;
@@ -31,7 +31,7 @@ export default function DriverSelect({ label, value, isSaved, disabled, onPick, 
     : null;
 
   function handlePick(id: string) {
-    onPick(value === id ? null : id);
+    onPrediction(value === id ? null : id);
     setOpen(false);
   }
 

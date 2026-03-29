@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { RaceWildcard, WildcardPick, WildcardQuestionType } from "./types";
+import type { RaceWildcard, WildcardPrediction, WildcardQuestionType } from "./types";
 
 function dbRowToWildcard(row: Record<string, unknown>): RaceWildcard {
   return {
@@ -26,11 +26,11 @@ export async function loadWildcards(
   return (data ?? []).map(dbRowToWildcard);
 }
 
-export async function loadWildcardPicks(
+export async function loadWildcardPredictions(
   userId: string,
   round: number,
   supabase: SupabaseClient
-): Promise<WildcardPick[]> {
+): Promise<WildcardPrediction[]> {
   // Join via wildcard_id → race_wildcards.round
   const { data } = await supabase
     .from("wildcard_picks")

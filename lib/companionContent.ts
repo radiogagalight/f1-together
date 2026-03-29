@@ -6,7 +6,7 @@ export const PAGE_MESSAGES: Record<string, string[]> = {
     "Back at base. Let's check the standings!",
   ],
   "/predictions": [
-    "Time to make your picks! Who's taking P1?",
+    "Time to make your predictions! Who's taking P1?",
     "Crystal ball time — predict the podium! 🔮",
     "Bold strategy, let's see if it pays off.",
   ],
@@ -16,12 +16,12 @@ export const PAGE_MESSAGES: Record<string, string[]> = {
     "This race could change everything — choose wisely.",
   ],
   "/predictions/season": [
-    "Big picture picks — who wins it all? 🏆",
+    "Big picture predictions — who wins it all? 🏆",
     "Season predictions locked in? These are the long-game calls.",
-    "Championship picks are where legends are made. No pressure.",
+    "Championship predictions are where legends are made. No pressure.",
   ],
   "/intel": [
-    "Race intel incoming! Use this to sharpen your picks. 🧠",
+    "Race intel incoming! Use this to sharpen your predictions. 🧠",
     "Study the history, then back yourself.",
     "Data doesn't lie — let's find an edge before the race.",
   ],
@@ -49,10 +49,10 @@ export const PAGE_MESSAGES: Record<string, string[]> = {
 // One contextual help string per page
 export const PAGE_HELP: Record<string, string> = {
   "/": "Welcome to the pit wall! 🏎️ Tap the track buttons to navigate the app, and use the race schedule to jump straight to any race prediction. The race highlighted in red is up next — don't miss it!",
-  "/predictions": "This is your predictions hub! 🏁 Tap any race to lock in your podium picks, or head to Season Picks for the big-picture calls. Picks close the moment the lights go out — get in early!",
-  "/predictions/race/[round]": "Lock in your picks before the lights go out — they're frozen at race start! Race scoring: Winner 25 pts, P2 18 pts, P3 15 pts. Fastest Lap & Safety Car: 5 pts each. Qualifying: Pole 8 pts, P2 5 pts, P3 3 pts — exact position scores full points, right driver in the wrong slot scores 2 pts partial credit. Choose wisely! 🎯",
+  "/predictions": "This is your predictions hub! 🏁 Tap any race to lock in your podium predictions, or head to Season Predictions for the big-picture calls. Predictions close the moment the lights go out — get in early!",
+  "/predictions/race/[round]": "Lock in your predictions before the lights go out — they're frozen at race start! Race scoring: Winner 25 pts, P2 18 pts, P3 15 pts. Fastest Lap & Safety Car: 5 pts each. Qualifying: Pole 8 pts, P2 5 pts, P3 3 pts — exact position scores full points, right driver in the wrong slot scores 2 pts partial credit. Choose wisely! 🎯",
   "/predictions/season": "These are your season-long calls — WDC, WCC, most wins, most poles, and more. 🏆 Pick carefully, because these lock in early and don't change all season. Bold predictions = big bragging rights.",
-  "/intel": "Use the Race Intel page to sharpen your picks before each round! 🧠 The Circuit tab shows 2024 and 2025 results for this circuit plus live 2026 data as the season unfolds. The Tips tab turns all that history into pick hints.",
+  "/intel": "Use the Race Intel page to sharpen your predictions before each round! 🧠 The Circuit tab shows 2024 and 2025 results for this circuit plus live 2026 data as the season unfolds. The Tips tab turns all that history into pick hints.",
   "/standings": "This is the group leaderboard — points scored across all races so far this season. 📊 Each correct pick earns points: Race Winner 25 pts, Qualifying Pole 8 pts (2 pts if your driver is in top 3 but wrong slot), down to Safety Car and Fastest Lap at 5 pts each. Most points at season end wins!",
   "/members": "Your league's fan cards are all here! 👥 See everyone's favourite teams and drivers, and leave comments on their cards. Use @name in a comment to send someone a direct notification — great for a bit of trash talk. 😄",
   "/profile": "This is your driver profile! Set your display name, then rank your favourite teams and drivers. Your top team pick sets the colour theme across the whole app — so choose your true colours! 🎨",
