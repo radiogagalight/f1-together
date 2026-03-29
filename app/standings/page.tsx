@@ -401,9 +401,7 @@ export default function StandingsPage() {
 
                               <div className="text-right shrink-0 ml-1">
                                 <p className="text-2xl font-black tabular-nums" style={{ color: accent }}>{entry.totalPoints}</p>
-                                <p className="text-[10px] font-semibold" style={{ color: "var(--muted)" }}>
-                                  {entry.rank === 1 ? "Leader" : `−${gap} pts`}
-                                </p>
+                                <p className="text-[10px] font-semibold" style={{ color: "var(--muted)" }}>pts</p>
                               </div>
 
                               <ChevronDown size={14} style={{
