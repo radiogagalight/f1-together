@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:openf1.org)",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:api.openf1.org)",
+      "WebSearch",
+      "Bash(npm run:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
