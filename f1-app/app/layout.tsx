@@ -1,0 +1,53 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
+import "./globals.css";
+import BottomNav from "@/components/BottomNav";
+import { AuthProvider } from "@/components/AuthProvider";
+import { ProfileGate } from "@/components/ProfileGate";
+import { CompanionProvider } from "@/components/CompanionProvider";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const orbitron = localFont({
+  src: "./fonts/Orbitron-VariableFont_wght.ttf",
+  variable: "--font-orbitron",
+});
+
+export const metadata: Metadata = {
+  title: "F1 Together",
+  description: "Season predictions for your F1 group",
+  manifest: "/manifest.json",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} antialiased bg-background text-foreground`}
+        suppressHydrationWarning
+      >
+        <AuthProvider>
+          <CompanionProvider>
+            <ProfileGate>
+              <main className="md:pt-16">{children}</main>
+              <BottomNav />
+            </ProfileGate>
+          </CompanionProvider>
+        </AuthProvider>
+      </body>
+    </html>
+  );
+}
