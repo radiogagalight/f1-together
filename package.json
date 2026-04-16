@@ -1,0 +1,17 @@
+{
+  "name": "f1-together",
+  "private": true,
+  "description": "Repo root for tooling; the Next.js app is in f1-app/",
+  "scripts": {
+    "dev": "cd f1-app && npm run dev",
+    "build": "cd f1-app && npm run build",
+    "vercel-build": "cd f1-app && npm run vercel-build",
+    "start": "cd f1-app && npm run start",
+    "lint": "cd f1-app && npm run lint"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  }
+}
