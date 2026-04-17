@@ -30,11 +30,6 @@ export const PAGE_MESSAGES: Record<string, string[]> = {
     "Who's top of the pile? Let's find out.",
     "Check the standings — you might surprise yourself.",
   ],
-  "/members": [
-    "Check out the competition! 👀",
-    "Scouting the enemy paddock, are we?",
-    "See how your rivals are lining up.",
-  ],
   "/profile": [
     "Time to tweak your setup!",
     "Fine-tuning your driver profile? Smart.",
@@ -54,7 +49,6 @@ export const PAGE_HELP: Record<string, string> = {
   "/predictions/season": "These are your season-long calls — WDC, WCC, most wins, most poles, and more. 🏆 Pick carefully, because these lock in early and don't change all season. Bold predictions = big bragging rights.",
   "/intel": "Use the Race Intel page to sharpen your predictions before each round! 🧠 The Circuit tab shows 2024 and 2025 results for this circuit plus live 2026 data as the season unfolds. The Tips tab turns all that history into pick hints.",
   "/standings": "This is the group leaderboard — points scored across all races so far this season. 📊 Each correct pick earns points: Race Winner 25 pts, Qualifying Pole 8 pts (2 pts if your driver is in top 3 but wrong slot), down to Safety Car and Fastest Lap at 5 pts each. Most points at season end wins!",
-  "/members": "Your league's fan cards are all here! 👥 See everyone's favourite teams and drivers, and leave comments on their cards. Use @name in a comment to send someone a direct notification — great for a bit of trash talk. 😄",
   "/profile": "This is your driver profile! Set your display name, then rank your favourite teams and drivers. Your top team pick sets the colour theme across the whole app — so choose your true colours! 🎨",
   "/settings": "Here you can update your display name, toggle push notifications for @mentions, and manage your account. Turn on notifications so you never miss when someone calls you out on the Members page! 🔔",
 };

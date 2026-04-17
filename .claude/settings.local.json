@@ -8,7 +8,9 @@
       "WebFetch(domain:api.openf1.org)",
       "WebSearch",
       "Bash(npm run:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

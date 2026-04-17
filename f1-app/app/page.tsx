@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Users } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { RACES, CONSTRUCTORS, DRIVERS, formatRaceDate, flagToCC } from "@/lib/data";
 import { RACE_FACTS } from "@/lib/raceFacts";
@@ -478,20 +477,6 @@ function NextRaceHero({
               </span>
             )}
           </div>
-          <Link
-            href={`/members?tab=races&round=${race.r}`}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.14)",
-              color: "#ffffff",
-              border: "1px solid rgba(255,255,255,0.22)",
-              backdropFilter: "blur(6px)",
-              WebkitBackdropFilter: "blur(6px)",
-            }}
-          >
-            <Users size={12} strokeWidth={2} />
-            Go to the race chat
-          </Link>
         </div>
 
         {/* Bottom content */}

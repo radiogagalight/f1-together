@@ -172,7 +172,6 @@ export default function StandingsPage() {
   const [error, setError] = useState(false);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [expandedRound, setExpandedRound] = useState<Record<string, number | null>>({});
-  const [predRound, setPredRound] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState(0);
   useEffect(() => {
     queueMicrotask(() => setNowMs(Date.now()));
@@ -322,11 +321,7 @@ export default function StandingsPage() {
           })
         );
 
-        const nowMs = Date.now();
-        const revealedRaces = RACES.filter(
-          (r) => r.weekendStartUtc && new Date(r.weekendStartUtc).getTime() < nowMs
-        );
-        if (revealedRaces.length > 0) setPredRound(revealedRaces[revealedRaces.length - 1].r);
+        // no-op: selectedRace is derived from latestResultRound
       } catch {
         setError(true);
       }
@@ -339,7 +334,7 @@ export default function StandingsPage() {
   const leaderPts = leaderboard[0]?.totalPoints ?? 0;
   const revealedRaces = RACES.filter((r) => r.weekendStartUtc && new Date(r.weekendStartUtc).getTime() < nowMs);
   const latestResultRound = rawResults.length > 0 ? rawResults.map((r) => r.round).sort((a, b) => b - a)[0] : null;
-  const selectedRace = revealedRaces.find((r) => r.r === predRound) ?? revealedRaces[revealedRaces.length - 1] ?? null;
+  const selectedRace = revealedRaces[revealedRaces.length - 1] ?? null;
   const roundPredictions = selectedRace ? rawPredictions.filter((p) => p.round === selectedRace.r) : [];
   const roundResult = selectedRace ? rawResults.find((r) => r.round === selectedRace.r) ?? null : null;
   const hasResults = rawResults.length > 0 || leaderboard.some((e) => e.totalPoints > 0 || e.roundsScored > 0);
@@ -360,6 +355,17 @@ export default function StandingsPage() {
   const myRgb = hexToRgb(myAccent);
   const myLastRoundPts = latestResultRound != null ? (myEntry?.scoresByRound[latestResultRound] ?? 0) : 0;
   const myLastRace = latestResultRound != null ? RACES.find((r) => r.r === latestResultRound) : null;
+
+  // Who scored the most points in the most recent race
+  const roundWinner: { entry: LeaderboardEntry; pts: number; accent: string } | null =
+    latestResultRound != null
+      ? leaderboard.reduce<{ entry: LeaderboardEntry; pts: number; accent: string } | null>((best, entry) => {
+          const pts = entry.scoresByRound[latestResultRound] ?? 0;
+          const accent = entry.favTeam1 ? TEAM_COLORS[entry.favTeam1] ?? "#888888" : "#888888";
+          if (pts > 0 && (best === null || pts > best.pts)) return { entry, pts, accent };
+          return best;
+        }, null)
+      : null;
 
   type PredRow = { key: keyof RacePrediction; label: string; isBool?: boolean };
   type PredGroup = { label: string; rows: PredRow[] };
@@ -466,6 +472,172 @@ export default function StandingsPage() {
             </div>
           )}
 
+          {/* ── Most Recent Grand Prix ──────────────────────────────── */}
+          {selectedRace && (
+            <div className="mb-10">
+              <div className="flex flex-wrap items-center gap-3 mb-5">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-3xl leading-none">{selectedRace.flag}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--muted)" }}>
+                      Round {selectedRace.r} · Most Recent Race
+                    </p>
+                    <h2 className="text-xl font-black truncate" style={{ color: "var(--foreground)" }}>
+                      {selectedRace.name}
+                    </h2>
+                  </div>
+                </div>
+                {roundWinner && (
+                  <div className="flex items-center gap-2.5 px-4 py-2 rounded-full shrink-0" style={{
+                    backgroundColor: `rgba(${hexToRgb(roundWinner.accent)},0.12)`,
+                    border: `1px solid rgba(${hexToRgb(roundWinner.accent)},0.3)`,
+                  }}>
+                    <span className="text-base leading-none">🏆</span>
+                    <div className="flex flex-col leading-none gap-0.5">
+                      <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Round Winner</span>
+                      <span className="text-sm font-black" style={{ color: roundWinner.accent }}>
+                        {roundWinner.entry.displayName?.split(" ")[0] ?? "?"} · +{roundWinner.pts} pts
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {!hasAnyPicks ? (
+                <p className="text-sm text-center py-6" style={{ color: "var(--muted)" }}>No predictions recorded for this race.</p>
+              ) : (
+                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.12)", backgroundColor: "rgba(255,255,255,0.07)" }}>
+                          <th className="text-left py-3 pl-4 pr-3 font-bold text-[11px] uppercase tracking-widest whitespace-nowrap sticky left-0 z-10"
+                            style={{ color: "var(--muted)", backgroundColor: "#181820" }}>
+                            Category
+                          </th>
+                          <th className="py-3 px-3 font-bold text-[11px] uppercase tracking-widest whitespace-nowrap text-center"
+                            style={{ color: "rgba(255,255,255,0.45)", backgroundColor: "rgba(255,255,255,0.07)" }}>
+                            Result
+                          </th>
+                          {usersInTable.map(({ entry, accent, isMe }) => (
+                            <UserColHeader key={entry.userId} entry={entry} accent={accent} isMe={isMe} />
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {PRED_GROUPS.map((group) => (
+                          <React.Fragment key={group.label}>
+                            <tr style={{ borderTop: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.045)" }}>
+                              <td colSpan={2 + usersInTable.length} className="pl-4 py-2"
+                                style={{ borderLeft: "3px solid var(--f1-red)" }}>
+                                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
+                                  {group.label}
+                                </span>
+                              </td>
+                            </tr>
+                            {group.rows.map(({ key, label, isBool }) => {
+                              const resultRaw = roundResult ? (roundResult as unknown as Record<string, unknown>)[key as string] : undefined;
+                              let resultDisplay: string | null = null;
+                              let resultColor = "var(--foreground)";
+                              if (isBool) {
+                                if (resultRaw === true)  { resultDisplay = "Yes"; resultColor = "#22c55e"; }
+                                else if (resultRaw === false) { resultDisplay = "No"; resultColor = "#ef4444"; }
+                              } else if (typeof resultRaw === "string" && resultRaw) {
+                                resultDisplay = driverLastName(resultRaw);
+                                resultColor = driverTeamColor(resultRaw) ?? "var(--foreground)";
+                              }
+                              const resultBg = isBool
+                                ? (resultRaw === true ? "rgba(34,197,94,0.09)" : resultRaw === false ? "rgba(239,68,68,0.09)" : "transparent")
+                                : (typeof resultRaw === "string" && resultRaw
+                                  ? (() => { const tc = driverTeamColor(resultRaw as string); return tc ? `rgba(${hexToRgb(tc)},0.09)` : "transparent"; })()
+                                  : "transparent");
+                              return (
+                                <tr key={key} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                                  <td className="py-2 pl-4 pr-3 whitespace-nowrap sticky left-0 z-10 font-semibold text-[11px]"
+                                    style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
+                                    {label}
+                                  </td>
+                                  <td className="py-2 px-3 text-center whitespace-nowrap font-bold text-[11px]"
+                                    style={{ backgroundColor: resultBg }}>
+                                    <span style={{ color: resultDisplay ? resultColor : "rgba(255,255,255,0.2)" }}>
+                                      {resultDisplay ?? "—"}
+                                    </span>
+                                  </td>
+                                  {usersInTable.map(({ entry, pred, accent, isMe }) => {
+                                    const meBg = isMe ? `rgba(${hexToRgb(accent)},0.04)` : "transparent";
+                                    if (!pred) {
+                                      return (
+                                        <td key={entry.userId} className="py-2 px-3 text-center text-[11px]"
+                                          style={{ color: "rgba(255,255,255,0.18)", backgroundColor: meBg }}>—</td>
+                                      );
+                                    }
+                                    const val = pred.pick[key];
+                                    const status = (Array.isArray(val) || key === "boostedPredictions")
+                                      ? undefined
+                                      : getPickResultStatus(key as keyof RacePrediction, val as string | boolean | null, roundResult);
+                                    const boosted = (pred.pick.boostedPredictions ?? []).includes(key as string);
+                                    let displayVal: string | null = null;
+                                    let displayColor = "var(--foreground)";
+                                    if (isBool) {
+                                      if (val === true)  { displayVal = "Yes"; displayColor = "#22c55e"; }
+                                      else if (val === false) { displayVal = "No"; displayColor = "#ef4444"; }
+                                    } else if (typeof val === "string" && val) {
+                                      displayVal = driverLastName(val);
+                                      displayColor = driverTeamColor(val) ?? "var(--foreground)";
+                                    }
+                                    const indicatorColor = status === "correct" ? "#22c55e" : status === "partial" ? "#f59e0b" : status === "wrong" ? "#ef4444" : null;
+                                    const cellBg = status === "correct" ? "rgba(34,197,94,0.08)" : status === "partial" ? "rgba(245,158,11,0.08)" : status === "wrong" ? "rgba(239,68,68,0.07)" : meBg;
+                                    return (
+                                      <td key={entry.userId} className="py-2 px-3 text-center whitespace-nowrap" style={{ backgroundColor: cellBg }}>
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          {indicatorColor && (
+                                            <span style={{ color: indicatorColor, fontSize: "9px", lineHeight: 1, fontWeight: 800 }}>
+                                              {status === "correct" ? "✓" : status === "partial" ? "~" : "✗"}
+                                            </span>
+                                          )}
+                                          <span className="text-[11px]" style={{ color: displayVal ? (indicatorColor ?? displayColor) : "rgba(255,255,255,0.18)", fontWeight: displayVal ? 700 : 400 }}>
+                                            {displayVal ?? "—"}{boosted ? " ⚡" : ""}
+                                          </span>
+                                        </div>
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{ borderTop: "2px solid rgba(255,255,255,0.12)", backgroundColor: "rgba(255,255,255,0.03)" }}>
+                          <td className="py-3 pl-4 pr-3 font-black text-[10px] uppercase tracking-widest whitespace-nowrap sticky left-0"
+                            style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
+                            Round Total
+                          </td>
+                          <td />
+                          {usersInTable.map(({ entry, accent, isMe }) => {
+                            const roundTotal = selectedRace ? (entry.scoresByRound[selectedRace.r] ?? 0) : 0;
+                            return (
+                              <td key={entry.userId} className="py-3 px-3 text-center font-black tabular-nums text-sm"
+                                style={{
+                                  color: roundTotal > 0 ? accent : "rgba(255,255,255,0.18)",
+                                  backgroundColor: isMe ? `rgba(${hexToRgb(accent)},0.06)` : undefined,
+                                }}>
+                                {roundTotal > 0 ? `+${roundTotal}` : "—"}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 2026 Season Standings ────────────────────────────────── */}
+          <SectionHeader label="2026 Season Standings" />
           <div className="md:flex md:gap-8 md:items-start">
 
             {/* ── Left: Leaderboard ───────────────────────────────────── */}
@@ -612,167 +784,9 @@ export default function StandingsPage() {
               </div>
             </div>
 
-            {/* ── Right: Predictions + Season ─────────────────────────── */}
+            {/* ── Right: Season Predictions ────────────────────────── */}
             <div className="md:flex-1 min-w-0 mt-8 md:mt-0">
 
-              {/* Race predictions comparison */}
-              {revealedRaces.length > 0 && selectedRace && (
-                <>
-                  <SectionHeader label="What Everyone Picked" />
-
-                  {/* Round tabs */}
-                  <div className="flex gap-2 flex-wrap mb-5">
-                    {revealedRaces.map((r) => {
-                      const isActive = r.r === selectedRace.r;
-                      return (
-                        <button key={r.r} onClick={() => setPredRound(r.r)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
-                          style={{
-                            backgroundColor: isActive ? "rgba(225,6,0,0.15)" : "rgba(255,255,255,0.06)",
-                            border: isActive ? "1px solid rgba(225,6,0,0.5)" : "1px solid rgba(255,255,255,0.1)",
-                            color: isActive ? "var(--f1-red)" : "var(--muted)",
-                          }}>
-                          <span>{r.flag}</span>
-                          <span>{r.name.replace(" Grand Prix", " GP")}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {!hasAnyPicks ? (
-                    <p className="text-sm text-center py-6" style={{ color: "var(--muted)" }}>No predictions recorded for this race.</p>
-                  ) : (
-                    <div className="rounded-2xl overflow-hidden mb-8" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.12)", backgroundColor: "rgba(255,255,255,0.07)" }}>
-                              <th className="text-left py-3 pl-4 pr-3 font-bold text-[11px] uppercase tracking-widest whitespace-nowrap sticky left-0 z-10"
-                                style={{ color: "var(--muted)", backgroundColor: "#181820" }}>
-                                Category
-                              </th>
-                              <th className="py-3 px-3 font-bold text-[11px] uppercase tracking-widest whitespace-nowrap text-center"
-                                style={{ color: "rgba(255,255,255,0.45)", backgroundColor: "rgba(255,255,255,0.07)" }}>
-                                Result
-                              </th>
-                              {usersInTable.map(({ entry, accent, isMe }) => (
-                                <UserColHeader key={entry.userId} entry={entry} accent={accent} isMe={isMe} />
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {PRED_GROUPS.map((group) => (
-                              <React.Fragment key={group.label}>
-                                <tr style={{ borderTop: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.045)" }}>
-                                  <td colSpan={2 + usersInTable.length} className="pl-4 py-2"
-                                    style={{ borderLeft: "3px solid var(--f1-red)" }}>
-                                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.55)" }}>
-                                      {group.label}
-                                    </span>
-                                  </td>
-                                </tr>
-                                {group.rows.map(({ key, label, isBool }) => {
-                                  const resultRaw = roundResult ? (roundResult as unknown as Record<string, unknown>)[key as string] : undefined;
-                                  let resultDisplay: string | null = null;
-                                  let resultColor = "var(--foreground)";
-                                  if (isBool) {
-                                    if (resultRaw === true)  { resultDisplay = "Yes"; resultColor = "#22c55e"; }
-                                    else if (resultRaw === false) { resultDisplay = "No"; resultColor = "#ef4444"; }
-                                  } else if (typeof resultRaw === "string" && resultRaw) {
-                                    resultDisplay = driverLastName(resultRaw);
-                                    resultColor = driverTeamColor(resultRaw) ?? "var(--foreground)";
-                                  }
-                                  const resultBg = isBool
-                                    ? (resultRaw === true ? "rgba(34,197,94,0.09)" : resultRaw === false ? "rgba(239,68,68,0.09)" : "transparent")
-                                    : (typeof resultRaw === "string" && resultRaw
-                                      ? (() => { const tc = driverTeamColor(resultRaw as string); return tc ? `rgba(${hexToRgb(tc)},0.09)` : "transparent"; })()
-                                      : "transparent");
-                                  return (
-                                    <tr key={key} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                                      <td className="py-2 pl-4 pr-3 whitespace-nowrap sticky left-0 z-10 font-semibold text-[11px]"
-                                        style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
-                                        {label}
-                                      </td>
-                                      <td className="py-2 px-3 text-center whitespace-nowrap font-bold text-[11px]"
-                                        style={{ backgroundColor: resultBg }}>
-                                        <span style={{ color: resultDisplay ? resultColor : "rgba(255,255,255,0.2)" }}>
-                                          {resultDisplay ?? "—"}
-                                        </span>
-                                      </td>
-                                      {usersInTable.map(({ entry, pred, accent, isMe }) => {
-                                        const meBg = isMe ? `rgba(${hexToRgb(accent)},0.04)` : "transparent";
-                                        if (!pred) {
-                                          return (
-                                            <td key={entry.userId} className="py-2 px-3 text-center text-[11px]"
-                                              style={{ color: "rgba(255,255,255,0.18)", backgroundColor: meBg }}>—</td>
-                                          );
-                                        }
-                                        const val = pred.pick[key];
-                                        const status = (Array.isArray(val) || key === "boostedPredictions")
-                                          ? undefined
-                                          : getPickResultStatus(key as keyof RacePrediction, val as string | boolean | null, roundResult);
-                                        const boosted = (pred.pick.boostedPredictions ?? []).includes(key as string);
-                                        let displayVal: string | null = null;
-                                        let displayColor = "var(--foreground)";
-                                        if (isBool) {
-                                          if (val === true)  { displayVal = "Yes"; displayColor = "#22c55e"; }
-                                          else if (val === false) { displayVal = "No"; displayColor = "#ef4444"; }
-                                        } else if (typeof val === "string" && val) {
-                                          displayVal = driverLastName(val);
-                                          displayColor = driverTeamColor(val) ?? "var(--foreground)";
-                                        }
-                                        const indicatorColor = status === "correct" ? "#22c55e" : status === "partial" ? "#f59e0b" : status === "wrong" ? "#ef4444" : null;
-                                        const cellBg = status === "correct" ? "rgba(34,197,94,0.08)" : status === "partial" ? "rgba(245,158,11,0.08)" : status === "wrong" ? "rgba(239,68,68,0.07)" : meBg;
-                                        return (
-                                          <td key={entry.userId} className="py-2 px-3 text-center whitespace-nowrap" style={{ backgroundColor: cellBg }}>
-                                            <div className="flex flex-col items-center gap-0.5">
-                                              {indicatorColor && (
-                                                <span style={{ color: indicatorColor, fontSize: "9px", lineHeight: 1, fontWeight: 800 }}>
-                                                  {status === "correct" ? "✓" : status === "partial" ? "~" : "✗"}
-                                                </span>
-                                              )}
-                                              <span className="text-[11px]" style={{ color: displayVal ? (indicatorColor ?? displayColor) : "rgba(255,255,255,0.18)", fontWeight: displayVal ? 700 : 400 }}>
-                                                {displayVal ?? "—"}{boosted ? " ⚡" : ""}
-                                              </span>
-                                            </div>
-                                          </td>
-                                        );
-                                      })}
-                                    </tr>
-                                  );
-                                })}
-                              </React.Fragment>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr style={{ borderTop: "2px solid rgba(255,255,255,0.12)", backgroundColor: "rgba(255,255,255,0.03)" }}>
-                              <td className="py-3 pl-4 pr-3 font-black text-[10px] uppercase tracking-widest whitespace-nowrap sticky left-0"
-                                style={{ color: "var(--muted)", backgroundColor: STICKY_BG }}>
-                                Round Total
-                              </td>
-                              <td />
-                              {usersInTable.map(({ entry, accent, isMe }) => {
-                                const roundTotal = selectedRace ? (entry.scoresByRound[selectedRace.r] ?? 0) : 0;
-                                return (
-                                  <td key={entry.userId} className="py-3 px-3 text-center font-black tabular-nums text-sm"
-                                    style={{
-                                      color: roundTotal > 0 ? accent : "rgba(255,255,255,0.18)",
-                                      backgroundColor: isMe ? `rgba(${hexToRgb(accent)},0.06)` : undefined,
-                                    }}>
-                                    {roundTotal > 0 ? `+${roundTotal}` : "—"}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Season predictions comparison */}
               {seasonPicks.length > 0 && (
                 <>
                   <SectionHeader label="Season Predictions" />
