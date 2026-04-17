@@ -1,2 +1,9 @@
 .vercel
 .env*.local
+node_modules/
+.firebase/
+.next/
+dist/
+build/
+*.log
+.DS_Store

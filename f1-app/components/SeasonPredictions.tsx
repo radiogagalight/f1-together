@@ -15,7 +15,7 @@ const GROUPS: { label: string; keys: (keyof SeasonPredictions)[] }[] = [
 
 export default function SeasonPredictions() {
   const { user } = useAuth();
-  const { predictions, setPrediction, savedKey, loading } = useSeasonPredictions(user?.id);
+  const { predictions, setPrediction, savedKey, loading } = useSeasonPredictions(user?.uid);
   const isLocked = false;
 
   const predictedCount = predictions

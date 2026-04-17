@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthProvider";
-import { createClient } from "@/lib/supabase/client";
+import { getDb } from "@/lib/firebase/db";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export function ProfileGate({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -11,22 +12,18 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
   const [nameInput, setNameInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
+  const db = getDb();
 
   useEffect(() => {
     if (!user) return;
 
-    supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        setNeedsName(!data?.display_name?.trim());
-        setChecked(true);
-      });
+    getDoc(doc(db, "profiles", user.uid)).then((snap) => {
+      const data = snap.data();
+      setNeedsName(!data?.display_name?.trim());
+      setChecked(true);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.uid]);
 
   async function handleSave() {
     const trimmed = nameInput.trim();
@@ -37,17 +34,16 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
     if (!user) return;
 
     setSaving(true);
-    const { error: saveError } = await supabase
-      .from("profiles")
-      .upsert({ id: user.id, display_name: trimmed });
-
-    if (saveError) {
+    try {
+      await setDoc(
+        doc(db, "profiles", user.uid),
+        { id: user.uid, display_name: trimmed },
+        { merge: true }
+      );
+      setNeedsName(false);
+    } catch {
       setError("Couldn't save — please try again.");
-      setSaving(false);
-      return;
     }
-
-    setNeedsName(false);
     setSaving(false);
   }
 
@@ -70,21 +66,16 @@ export function ProfileGate({ children }: { children: React.ReactNode }) {
               backgroundColor: "var(--surface)",
             }}
           >
-            {/* Red accent */}
             <div
               className="h-1 w-8 rounded-full mb-6"
               style={{ backgroundColor: "var(--f1-red)" }}
             />
 
-            <h2
-              className="text-xl font-bold mb-2"
-              style={{ color: "var(--foreground)" }}
-            >
+            <h2 className="text-xl font-bold mb-2" style={{ color: "var(--foreground)" }}>
               Welcome to the grid
             </h2>
             <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
-              Choose a display name — this is how the rest of your league will
-              see you.
+              Choose a display name — this is how the rest of your league will see you.
             </p>
 
             <input

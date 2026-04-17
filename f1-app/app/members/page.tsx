@@ -3,13 +3,32 @@
 import { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import type { User } from "firebase/auth";
+import { getDb } from "@/lib/firebase/db";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  setDoc,
+  writeBatch,
+} from "firebase/firestore";
 import { useAuth } from "@/components/AuthProvider";
 import { CONSTRUCTORS, DRIVERS, RACES } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
 import { sendPushToUser } from "@/lib/pushActions";
 import { DRIVER_IMAGES } from "@/lib/driverImages";
+
+function reactionDocId(commentId: string, userId: string, emoji: string): string {
+  return `${commentId}__${userId}__${encodeURIComponent(emoji)}`;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -187,7 +206,7 @@ function FeedTab({
     typeof window !== "undefined" ? localStorage.getItem("f1_feed_cleared_before") : null
   );
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const supabase = createClient();
+  const db = getDb();
 
   function clearFeed() {
     const now = new Date().toISOString();
@@ -198,93 +217,92 @@ function FeedTab({
   useEffect(() => {
     async function load() {
       setError(false);
-      const [{ data: racePredictions, error: e1 }, { data: seasonPredictions, error: e2 }, { data: raceComments, error: e3 }] = await Promise.all([
-        supabase
-          .from("race_picks")
-          .select("user_id,round,updated_at")
-          .order("updated_at", { ascending: false })
-          .limit(20),
-        supabase
-          .from("season_picks")
-          .select("user_id,updated_at")
-          .order("updated_at", { ascending: false })
-          .limit(10),
-        supabase
-          .from("race_comments")
-          .select("user_id,round,created_at")
-          .order("created_at", { ascending: false })
-          .limit(15),
-      ]);
+      try {
+        const [picksSnap, seasonSnap, commentsSnap] = await Promise.all([
+          getDocs(query(collection(db, "race_picks"), orderBy("updated_at", "desc"), limit(20))),
+          getDocs(query(collection(db, "season_picks"), orderBy("updated_at", "desc"), limit(10))),
+          getDocs(query(collection(db, "race_comments"), orderBy("created_at", "desc"), limit(15))),
+        ]);
+        const racePredictions = picksSnap.docs.map((d) => d.data() as { user_id: string; round: number; updated_at: string });
+        const seasonPredictions = seasonSnap.docs.map((d) => d.data() as { user_id: string; updated_at: string });
+        const raceComments = commentsSnap.docs.map((d) => d.data() as { user_id: string; round: number; created_at: string });
 
-      if (e1 || e2 || e3) { setError(true); setLoading(false); return; }
-      const feed: ActivityItem[] = [];
-      for (const row of racePredictions ?? []) {
-        const race = RACES.find((r) => r.r === row.round);
-        feed.push({
-          userId: row.user_id,
-          label: `updated their ${race?.name ?? `Round ${row.round}`} predictions`,
-          updatedAt: row.updated_at,
-        });
+        const feed: ActivityItem[] = [];
+        for (const row of racePredictions) {
+          const race = RACES.find((r) => r.r === row.round);
+          feed.push({
+            userId: row.user_id,
+            label: `updated their ${race?.name ?? `Round ${row.round}`} predictions`,
+            updatedAt: row.updated_at,
+          });
+        }
+        for (const row of seasonPredictions) {
+          feed.push({
+            userId: row.user_id,
+            label: "updated their season predictions",
+            updatedAt: row.updated_at,
+          });
+        }
+        for (const row of raceComments) {
+          const race = RACES.find((r) => r.r === row.round);
+          feed.push({
+            userId: row.user_id,
+            label: `posted a comment about the ${race?.name ?? `Round ${row.round}`}`,
+            updatedAt: row.created_at,
+            onTap: () => onViewRace(row.round),
+          });
+        }
+        feed.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        setItems(feed.slice(0, 25));
+      } catch {
+        setError(true);
       }
-      for (const row of seasonPredictions ?? []) {
-        feed.push({
-          userId: row.user_id,
-          label: "updated their season predictions",
-          updatedAt: row.updated_at,
-        });
-      }
-      for (const row of raceComments ?? []) {
-        const race = RACES.find((r) => r.r === row.round);
-        feed.push({
-          userId: row.user_id,
-          label: `posted a comment about the ${race?.name ?? `Round ${row.round}`}`,
-          updatedAt: row.created_at,
-          onTap: () => onViewRace(row.round),
-        });
-      }
-      feed.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-      setItems(feed.slice(0, 25));
       setLoading(false);
     }
     load();
 
-    // Real-time: reload feed when anyone posts a new comment
-    const channel = supabase
-      .channel("feed-comments")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "race_comments" },
-        () => { load(); }
-      )
-      .subscribe();
+    const unsub = onSnapshot(
+      query(collection(db, "race_comments"), orderBy("created_at", "desc"), limit(1)),
+      () => {
+        load();
+      }
+    );
 
-    return () => { supabase.removeChannel(channel); };
+    return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load and mark-as-read any unread notifications for the current user
   useEffect(() => {
     if (!currentUser) return;
-    supabase
-      .from("notifications")
-      .select("id,from_user_id,round,created_at")
-      .eq("user_id", currentUser.id)
-      .is("read_at", null)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        const rows = data ?? [];
-        setMentions(rows);
-        if (rows.length > 0) {
-          supabase
-            .from("notifications")
-            .update({ read_at: new Date().toISOString() })
-            .eq("user_id", currentUser.id)
-            .is("read_at", null)
-            .then(() => refreshNotifications());
-        }
+    const q = query(
+      collection(db, "notifications"),
+      where("user_id", "==", currentUser.uid),
+      where("read_at", "==", null)
+    );
+    getDocs(q).then(async (snap) => {
+      const rows = snap.docs.map((d) => {
+        const x = d.data();
+        return {
+          id: d.id,
+          from_user_id: x.from_user_id as string,
+          round: x.round as number,
+          created_at: x.created_at as string,
+        };
       });
+      rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setMentions(rows);
+      if (rows.length > 0) {
+        const batch = writeBatch(db);
+        for (const d of snap.docs) {
+          batch.update(d.ref, { read_at: new Date().toISOString() });
+        }
+        await batch.commit();
+        refreshNotifications();
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id]);
+  }, [currentUser?.uid]);
 
   if (loading) {
     return <p className="text-sm py-4" style={{ color: "var(--muted)" }}>Loading feed…</p>;
@@ -515,7 +533,7 @@ function CommentThread({
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const atBottomRef = useRef(true);
-  const supabase = createClient();
+  const db = getDb();
 
   // Track whether the bottom sentinel is visible
   useEffect(() => {
@@ -534,19 +552,23 @@ function CommentThread({
 
   async function loadReactions(commentIds: string[]) {
     if (!commentIds.length) return;
-    const { data } = await supabase
-      .from("comment_reactions")
-      .select("comment_id, emoji, user_id")
-      .in("comment_id", commentIds);
+    const rows: { comment_id: string; emoji: string; user_id: string }[] = [];
+    for (let i = 0; i < commentIds.length; i += 30) {
+      const chunk = commentIds.slice(i, i + 30);
+      const snap = await getDocs(
+        query(collection(db, "comment_reactions"), where("comment_id", "in", chunk))
+      );
+      snap.forEach((d) => rows.push(d.data() as { comment_id: string; emoji: string; user_id: string }));
+    }
     setReactions((prev) => {
       const map = { ...prev };
       for (const id of commentIds) map[id] = {};
-      for (const row of data ?? []) {
+      for (const row of rows) {
         if (!map[row.comment_id]) map[row.comment_id] = {};
         const cur = map[row.comment_id][row.emoji] ?? { count: 0, userReacted: false };
         map[row.comment_id][row.emoji] = {
           count: cur.count + 1,
-          userReacted: cur.userReacted || row.user_id === currentUser?.id,
+          userReacted: cur.userReacted || row.user_id === currentUser?.uid,
         };
       }
       return map;
@@ -571,14 +593,15 @@ function CommentThread({
       return { ...prev, [commentId]: { ...cr, [emoji]: { count: cur.count + 1, userReacted: true } } };
     });
     setShowPickerFor(null);
+    const rid = reactionDocId(commentId, currentUser.uid, emoji);
     if (userReacted) {
-      await supabase.from("comment_reactions").delete()
-        .eq("comment_id", commentId).eq("user_id", currentUser.id).eq("emoji", emoji);
+      await deleteDoc(doc(db, "comment_reactions", rid));
     } else {
-      await supabase.from("comment_reactions").upsert(
-        { comment_id: commentId, user_id: currentUser.id, emoji },
-        { onConflict: "comment_id,user_id,emoji" }
-      );
+      await setDoc(doc(db, "comment_reactions", rid), {
+        comment_id: commentId,
+        user_id: currentUser.uid,
+        emoji,
+      });
     }
   }
 
@@ -590,67 +613,58 @@ function CommentThread({
     setEditingId(null);
     setConfirmDeleteId(null);
     setHasNewMessages(false);
-    supabase
-      .from("race_comments")
-      .select("id,user_id,content,created_at,reply_to_id")
-      .eq("round", round)
-      .order("created_at", { ascending: true })
-      .then(({ data, error }) => {
-        if (error) { setLoadError(true); } else {
-          setComments(data ?? []);
-          loadReactions((data ?? []).map((c) => c.id));
+    const q = query(
+      collection(db, "race_comments"),
+      where("round", "==", round),
+      orderBy("created_at", "asc")
+    );
+    let prevLen = 0;
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list: Comment[] = snap.docs.map((d) => {
+          const x = d.data();
+          return {
+            id: d.id,
+            user_id: x.user_id as string,
+            content: x.content as string,
+            created_at: x.created_at as string,
+            reply_to_id: (x.reply_to_id as string | null) ?? null,
+          };
+        });
+        if (list.length > prevLen && prevLen > 0 && !atBottomRef.current) {
+          setHasNewMessages(true);
         }
+        prevLen = list.length;
+        setComments(list);
+        loadReactions(list.map((c) => c.id));
         setLoading(false);
-      });
+      },
+      () => {
+        setLoadError(true);
+        setLoading(false);
+      }
+    );
 
-    const channel = supabase
-      .channel(`race-comments-${round}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "race_comments", filter: `round=eq.${round}` },
-        (payload) => {
-          setComments((prev) => {
-            if (prev.some((c) => c.id === payload.new.id)) return prev;
-            loadReactions([payload.new.id]);
-            if (!atBottomRef.current) setHasNewMessages(true);
-            return [...prev, payload.new as Comment];
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "race_comments", filter: `round=eq.${round}` },
-        (payload) => {
-          setComments((prev) =>
-            prev.map((c) => c.id === payload.new.id ? { ...c, content: payload.new.content } : c)
-          );
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "race_comments" },
-        (payload) => {
-          setComments((prev) => prev.filter((c) => c.id !== payload.old.id));
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round]);
 
   async function saveEdit(commentId: string) {
     const trimmed = editText.trim();
-    if (!trimmed) { setEditingId(null); return; }
-    setComments((prev) => prev.map((c) => c.id === commentId ? { ...c, content: trimmed } : c));
+    if (!trimmed) {
+      setEditingId(null);
+      return;
+    }
+    setComments((prev) => prev.map((c) => (c.id === commentId ? { ...c, content: trimmed } : c)));
     setEditingId(null);
-    await supabase.from("race_comments").update({ content: trimmed }).eq("id", commentId);
+    await updateDoc(doc(db, "race_comments", commentId), { content: trimmed });
   }
 
   async function deleteComment(commentId: string) {
     setConfirmDeleteId(null);
     setComments((prev) => prev.filter((c) => c.id !== commentId));
-    await supabase.from("race_comments").delete().eq("id", commentId);
+    await deleteDoc(doc(db, "race_comments", commentId));
   }
 
   async function submit() {
@@ -658,38 +672,49 @@ function CommentThread({
     setSubmitting(true);
     setSubmitError(false);
     const content = text.trim();
-    const { data } = await supabase
-      .from("race_comments")
-      .insert({ user_id: currentUser.id, round, content, reply_to_id: replyingTo?.id ?? null })
-      .select("id,user_id,content,created_at,reply_to_id")
-      .single();
-    if (!data) {
-      setSubmitError(true);
-    } else {
-      setComments((prev) => [...prev, data]);
-      const mentionedIds = parseMentionIds(content, profileMap, currentUser.id);
+    const created_at = new Date().toISOString();
+    try {
+      const ref = await addDoc(collection(db, "race_comments"), {
+        user_id: currentUser.uid,
+        round,
+        content,
+        reply_to_id: replyingTo?.id ?? null,
+        created_at,
+      });
+      const data: Comment = {
+        id: ref.id,
+        user_id: currentUser.uid,
+        content,
+        created_at,
+        reply_to_id: replyingTo?.id ?? null,
+      };
+      const mentionedIds = parseMentionIds(content, profileMap, currentUser.uid);
       for (const userId of mentionedIds) {
-        await supabase.from("notifications").insert({
+        await addDoc(collection(db, "notifications"), {
           user_id: userId,
-          from_user_id: currentUser.id,
-          comment_id: data.id,
+          from_user_id: currentUser.uid,
+          comment_id: ref.id,
           round,
+          read_at: null,
+          created_at,
         });
       }
-      const senderName = profileMap.get(currentUser.id)?.display_name ?? 'Someone';
+      const senderName = profileMap.get(currentUser.uid)?.display_name ?? "Someone";
       const raceName = RACES.find((r) => r.r === round)?.name ?? `Round ${round}`;
       for (const userId of mentionedIds) {
         void sendPushToUser(
           userId,
-          'F1 Together',
+          "F1 Together",
           `${senderName} mentioned you in the ${raceName} discussion`,
-          '/members'
+          "/members"
         );
       }
       setText("");
       setShowEmojis(false);
       setReplyingTo(null);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    } catch {
+      setSubmitError(true);
     }
     setSubmitting(false);
   }
@@ -699,7 +724,7 @@ function CommentThread({
   const mentionSuggestions =
     mentionQuery !== null
       ? Array.from(profileMap.values()).filter((p) => {
-          if (p.id === currentUser?.id) return false;
+          if (p.id === currentUser?.uid) return false;
           return firstWord(p.display_name).toLowerCase().startsWith(mentionQuery);
         })
       : [];
@@ -726,7 +751,7 @@ function CommentThread({
             const profile = profileMap.get(c.user_id);
             const accent = profileAccent(profile);
             const rgb = hexToRgb(accent);
-            const isOwn = currentUser?.id === c.user_id;
+            const isOwn = currentUser?.uid === c.user_id;
             const parentComment = c.reply_to_id ? comments.find((p) => p.id === c.reply_to_id) : null;
             const parentProfile = parentComment ? profileMap.get(parentComment.user_id) : null;
             const parentAccent = parentProfile ? profileAccent(parentProfile) : "#888";
@@ -1076,7 +1101,7 @@ function RacesTab({
   const [raceActivity, setRaceActivity] = useState<Record<number, { content: string; userId: string; createdAt: string }>>({});
   const [lastReadTimes, setLastReadTimes] = useState<Record<number, number>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const supabase = createClient();
+  const db = getDb();
 
   const race = RACES.find((r) => r.r === selectedRound)!;
 
@@ -1091,20 +1116,29 @@ function RacesTab({
 
     const revealedRounds = RACES.filter((r) => new Date(r.startUtc) < new Date()).map((r) => r.r);
     if (!revealedRounds.length) return;
-    supabase
-      .from("race_comments")
-      .select("round, content, user_id, created_at")
-      .in("round", revealedRounds)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        const activity: Record<number, { content: string; userId: string; createdAt: string }> = {};
-        for (const row of data ?? []) {
-          if (!activity[row.round]) {
-            activity[row.round] = { content: row.content, userId: row.user_id, createdAt: row.created_at };
-          }
+    (async () => {
+      type Row = { round: number; content: string; user_id: string; created_at: string };
+      const rows: Row[] = [];
+      for (let i = 0; i < revealedRounds.length; i += 30) {
+        const chunk = revealedRounds.slice(i, i + 30);
+        const snap = await getDocs(
+          query(collection(db, "race_comments"), where("round", "in", chunk))
+        );
+        snap.forEach((d) => rows.push(d.data() as Row));
+      }
+      rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const activity: Record<number, { content: string; userId: string; createdAt: string }> = {};
+      for (const row of rows) {
+        if (!activity[row.round]) {
+          activity[row.round] = {
+            content: row.content,
+            userId: row.user_id,
+            createdAt: row.created_at,
+          };
         }
-        setRaceActivity(activity);
-      });
+      }
+      setRaceActivity(activity);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1356,7 +1390,7 @@ function GroupPageInner() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [profilesError, setProfilesError] = useState(false);
-  const supabase = createClient();
+  const db = getDb();
 
   // selectedRound lives here so FeedTab can deep-link into a race
   const [selectedRound, setSelectedRound] = useState<number>(() => {
@@ -1379,15 +1413,25 @@ function GroupPageInner() {
   });
 
   useEffect(() => {
-    supabase
-      .from("profiles")
-      .select(
-        "id,display_name,fav_team_1,fav_team_2,fav_team_3,fav_driver_1,fav_driver_2,fav_driver_3"
-      )
-      .then(({ data, error }) => {
-        if (error) { setProfilesError(true); } else { setProfiles(data ?? []); }
-        setLoadingProfiles(false);
-      });
+    getDocs(collection(db, "profiles"))
+      .then((snap) => {
+        const data: Profile[] = snap.docs.map((d) => {
+          const x = d.data() as Record<string, unknown>;
+          return {
+            id: (x.id as string) ?? d.id,
+            display_name: (x.display_name as string | null) ?? null,
+            fav_team_1: (x.fav_team_1 as string | null) ?? null,
+            fav_team_2: (x.fav_team_2 as string | null) ?? null,
+            fav_team_3: (x.fav_team_3 as string | null) ?? null,
+            fav_driver_1: (x.fav_driver_1 as string | null) ?? null,
+            fav_driver_2: (x.fav_driver_2 as string | null) ?? null,
+            fav_driver_3: (x.fav_driver_3 as string | null) ?? null,
+          };
+        });
+        setProfiles(data);
+      })
+      .catch(() => setProfilesError(true))
+      .finally(() => setLoadingProfiles(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

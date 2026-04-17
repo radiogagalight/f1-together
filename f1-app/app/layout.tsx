@@ -7,6 +7,8 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { ProfileGate } from "@/components/ProfileGate";
 import { CompanionProvider } from "@/components/CompanionProvider";
 
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

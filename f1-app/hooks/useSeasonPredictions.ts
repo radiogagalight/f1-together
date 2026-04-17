@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import type { SeasonPredictions } from "@/lib/types";
 import { loadPredictions, savePrediction } from "@/lib/storage";
-import { createClient } from "@/lib/supabase/client";
+import { getDb } from "@/lib/firebase/db";
 
 export function useSeasonPredictions(userId: string | undefined) {
   const [predictions, setPredictions] = useState<SeasonPredictions | null>(null);
   const [savedKey, setSavedKey] = useState<keyof SeasonPredictions | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const db = getDb();
 
   useEffect(() => {
     if (!userId) {
@@ -18,7 +18,7 @@ export function useSeasonPredictions(userId: string | undefined) {
     }
 
     setLoading(true);
-    loadPredictions(userId, supabase).then((data) => {
+    loadPredictions(userId, db).then((data) => {
       setPredictions(data);
       setLoading(false);
     });
@@ -29,20 +29,17 @@ export function useSeasonPredictions(userId: string | undefined) {
     (key: keyof SeasonPredictions, value: string | null) => {
       if (!userId) return;
 
-      // Optimistic update
       setPredictions((prev) => {
         if (!prev) return prev;
         return { ...prev, [key]: value };
       });
 
-      // Flash "Saved ✓" immediately (only when picking, not deselecting)
       if (value !== null) {
         setSavedKey(key);
         setTimeout(() => setSavedKey(null), 1500);
       }
 
-      // Background save to Supabase
-      savePrediction(userId, key, value, supabase);
+      savePrediction(userId, key, value, db);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [userId]

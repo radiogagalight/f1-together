@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { getDb } from "@/lib/firebase/db";
+import { collection, getDocs } from "firebase/firestore";
 import { useAuth } from "@/components/AuthProvider";
 import { buildLeaderboard, getPickResultStatus, PICK_POINTS } from "@/lib/scoring";
 import { RACES, DRIVERS } from "@/lib/data";
@@ -38,6 +39,19 @@ const SEASON_ROWS: { key: keyof SeasonPredictions; label: string; type: "driver"
 
 function sumBreakdown(b: ScoreBreakdown): number {
   return Object.values(b).reduce((s, v) => s + v, 0);
+}
+
+function fsStr(row: Record<string, unknown>, key: string): string | null {
+  const v = row[key];
+  return typeof v === "string" ? v : null;
+}
+function fsBool(row: Record<string, unknown>, key: string): boolean | null {
+  const v = row[key];
+  return typeof v === "boolean" ? v : null;
+}
+function fsStrArr(row: Record<string, unknown>, key: string): string[] {
+  const v = row[key];
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 }
 
 type BreakdownRowDef = { key: keyof ScoreBreakdown; label: string };
@@ -97,7 +111,6 @@ function RoundBreakdown({ breakdown, accent, showSprintSections, wildcardPoints 
 }
 
 type RawPick = { userId: string; round: number; pick: RacePrediction };
-type ProfileRow = { id: string; display_name: string | null; fav_team_1: string | null };
 type SeasonPickRow = { userId: string; picks: SeasonPredictions };
 
 function driverLastName(id: string | null | undefined): string {
@@ -149,104 +162,181 @@ function UserColHeader({ entry, accent, isMe }: { entry: LeaderboardEntry; accen
 
 export default function StandingsPage() {
   const { user } = useAuth();
-  const currentUserId = user?.id ?? null;
+  const currentUserId = user?.uid ?? null;
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [rawPredictions, setRawPredictions] = useState<RawPick[]>([]);
   const [rawResults, setRawResults] = useState<RaceResult[]>([]);
-  const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [seasonPicks, setSeasonPicks] = useState<SeasonPickRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [expandedRound, setExpandedRound] = useState<Record<string, number | null>>({});
   const [predRound, setPredRound] = useState<number | null>(null);
-  const supabase = createClient();
-
+  const [nowMs, setNowMs] = useState(0);
+  useEffect(() => {
+    queueMicrotask(() => setNowMs(Date.now()));
+    const id = window.setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
   useEffect(() => {
     async function load() {
       setError(false);
-      const [
-        { data: results },
-        { data: predictions, error: e2 },
-        { data: profilesData, error: e3 },
-        { data: wildcards },
-        { data: wcPredictions },
-        { data: seasonPicksData },
-      ] = await Promise.all([
-        supabase.from("race_results").select("*"),
-        supabase.from("race_picks").select("user_id,round,qual_pole,qual_p2,qual_p3,race_winner,race_p2,race_p3,race_p4,race_p5,race_p6,fastest_lap,safety_car,boosted_picks,sprint_qual_pole,sprint_qual_p2,sprint_qual_p3,sprint_winner,sprint_p2,sprint_p3"),
-        supabase.from("profiles").select("id,display_name,fav_team_1"),
-        supabase.from("race_wildcards").select("id,round,question,question_type,options,points,correct_answer,display_order"),
-        supabase.from("wildcard_picks").select("user_id,wildcard_id,pick_value,boosted"),
-        supabase.from("season_picks").select("user_id,wdc_winner,wcc_winner,most_wins,most_poles,most_podiums,most_dnfs_driver,most_dnfs_constructor"),
-      ]);
+      const db = getDb();
+      try {
+        const [resultsSnap, picksSnap, profilesSnap, wildSnap, wcPickSnap, seasonSnap] = await Promise.all([
+          getDocs(collection(db, "race_results")),
+          getDocs(collection(db, "race_picks")),
+          getDocs(collection(db, "profiles")),
+          getDocs(collection(db, "race_wildcards")),
+          getDocs(collection(db, "wildcard_picks")),
+          getDocs(collection(db, "season_picks")),
+        ]);
 
-      if (e2 || e3) { setError(true); setLoading(false); return; }
+        const results: Array<Record<string, unknown> & { round: number }> =
+          resultsSnap.docs.map((d) => {
+            const row = d.data() as Record<string, unknown>;
+            const round =
+              typeof row.round === "number" ? row.round : parseInt(d.id, 10);
+            return { ...row, round };
+          });
 
-      const allResults: RaceResult[] = (results ?? []).map((row) => ({
-        round: row.round, qualPole: row.qual_pole ?? null, qualP2: row.qual_p2 ?? null, qualP3: row.qual_p3 ?? null,
-        raceWinner: row.race_winner ?? null, raceP2: row.race_p2 ?? null, raceP3: row.race_p3 ?? null,
-        raceP4: row.race_p4 ?? null, raceP5: row.race_p5 ?? null, raceP6: row.race_p6 ?? null,
-        fastestLap: row.fastest_lap ?? null, safetyCar: row.safety_car ?? null,
-        sprintQualPole: row.sprint_qual_pole ?? null, sprintQualP2: row.sprint_qual_p2 ?? null, sprintQualP3: row.sprint_qual_p3 ?? null,
-        sprintWinner: row.sprint_winner ?? null, sprintP2: row.sprint_p2 ?? null, sprintP3: row.sprint_p3 ?? null,
-        fetchedAt: row.fetched_at ?? null, manuallyOverridden: row.manually_overridden ?? false, updatedAt: row.updated_at,
-      }));
+        const predictions = picksSnap.docs.map((d) => d.data() as Record<string, unknown>);
+        const profilesData = profilesSnap.docs.map((d) => {
+          const row = d.data() as Record<string, unknown>;
+          return {
+            id: (typeof row.id === "string" ? row.id : null) ?? d.id,
+            display_name: fsStr(row, "display_name"),
+            fav_team_1: fsStr(row, "fav_team_1"),
+          };
+        });
+        const wildcards: Array<Record<string, unknown> & { id: string }> =
+          wildSnap.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as Record<string, unknown>),
+          }));
+        const wcPredictions = wcPickSnap.docs.map((d) => d.data() as Record<string, unknown>);
+        const seasonPicksData = seasonSnap.docs.map((d) => {
+          const row = d.data() as Record<string, unknown>;
+          return { user_id: (row.user_id as string) ?? d.id, ...row };
+        });
 
-      const allPredictions = (predictions ?? []).map((row) => ({
-        userId: row.user_id, round: row.round,
-        pick: {
-          qualPole: row.qual_pole ?? null, qualP2: row.qual_p2 ?? null, qualP3: row.qual_p3 ?? null,
-          raceWinner: row.race_winner ?? null, raceP2: row.race_p2 ?? null, raceP3: row.race_p3 ?? null,
-          raceP4: row.race_p4 ?? null, raceP5: row.race_p5 ?? null, raceP6: row.race_p6 ?? null,
-          fastestLap: row.fastest_lap ?? null, safetyCar: row.safety_car ?? null,
-          boostedPredictions: row.boosted_picks ?? [],
-          sprintQualPole: row.sprint_qual_pole ?? null, sprintQualP2: row.sprint_qual_p2 ?? null, sprintQualP3: row.sprint_qual_p3 ?? null,
-          sprintWinner: row.sprint_winner ?? null, sprintP2: row.sprint_p2 ?? null, sprintP3: row.sprint_p3 ?? null,
-        } as RacePrediction,
-      }));
+        const allResults: RaceResult[] = results.map((row) => ({
+          round: row.round,
+          qualPole: fsStr(row, "qual_pole"),
+          qualP2: fsStr(row, "qual_p2"),
+          qualP3: fsStr(row, "qual_p3"),
+          raceWinner: fsStr(row, "race_winner"),
+          raceP2: fsStr(row, "race_p2"),
+          raceP3: fsStr(row, "race_p3"),
+          raceP4: fsStr(row, "race_p4"),
+          raceP5: fsStr(row, "race_p5"),
+          raceP6: fsStr(row, "race_p6"),
+          fastestLap: fsStr(row, "fastest_lap"),
+          safetyCar: fsBool(row, "safety_car"),
+          sprintQualPole: fsStr(row, "sprint_qual_pole"),
+          sprintQualP2: fsStr(row, "sprint_qual_p2"),
+          sprintQualP3: fsStr(row, "sprint_qual_p3"),
+          sprintWinner: fsStr(row, "sprint_winner"),
+          sprintP2: fsStr(row, "sprint_p2"),
+          sprintP3: fsStr(row, "sprint_p3"),
+          fetchedAt: fsStr(row, "fetched_at"),
+          manuallyOverridden: fsBool(row, "manually_overridden") === true,
+          updatedAt: fsStr(row, "updated_at") ?? "",
+        }));
 
-      const allWildcards = (wildcards ?? []).map((row) => ({
-        id: row.id as string, round: row.round as number, question: row.question as string,
-        questionType: row.question_type as import("@/lib/types").WildcardQuestionType,
-        options: (row.options as { id: string; name: string }[] | null) ?? null,
-        points: row.points as number, correctAnswer: (row.correct_answer as string | null) ?? null,
-        displayOrder: row.display_order as number,
-      }));
-      const allWildcardPredictions = (wcPredictions ?? []).map((row) => ({
-        userId: row.user_id as string, wildcardId: row.wildcard_id as string,
-        pickValue: row.pick_value as string, boosted: row.boosted as boolean,
-      }));
+        const allPredictions = predictions.map((row) => {
+          const r = row as Record<string, unknown>;
+          return {
+            userId: r.user_id as string,
+            round: r.round as number,
+            pick: {
+              qualPole: fsStr(r, "qual_pole"),
+              qualP2: fsStr(r, "qual_p2"),
+              qualP3: fsStr(r, "qual_p3"),
+              raceWinner: fsStr(r, "race_winner"),
+              raceP2: fsStr(r, "race_p2"),
+              raceP3: fsStr(r, "race_p3"),
+              raceP4: fsStr(r, "race_p4"),
+              raceP5: fsStr(r, "race_p5"),
+              raceP6: fsStr(r, "race_p6"),
+              fastestLap: fsStr(r, "fastest_lap"),
+              safetyCar: fsBool(r, "safety_car"),
+              boostedPredictions: fsStrArr(r, "boosted_picks"),
+              sprintQualPole: fsStr(r, "sprint_qual_pole"),
+              sprintQualP2: fsStr(r, "sprint_qual_p2"),
+              sprintQualP3: fsStr(r, "sprint_qual_p3"),
+              sprintWinner: fsStr(r, "sprint_winner"),
+              sprintP2: fsStr(r, "sprint_p2"),
+              sprintP3: fsStr(r, "sprint_p3"),
+            } satisfies RacePrediction,
+          };
+        });
 
-      const lb = buildLeaderboard(allPredictions, allResults, profilesData ?? [], allWildcards, allWildcardPredictions);
-      setLeaderboard(lb);
-      setRawPredictions(allPredictions);
-      setRawResults(allResults);
-      setProfiles(profilesData ?? []);
+        const allWildcards = wildcards.map((row) => ({
+          id: row.id,
+          round: row.round as number,
+          question: row.question as string,
+          questionType: row.question_type as import("@/lib/types").WildcardQuestionType,
+          options: (row.options as { id: string; name: string }[] | null) ?? null,
+          points: row.points as number,
+          correctAnswer: fsStr(row, "correct_answer"),
+          displayOrder: row.display_order as number,
+        }));
+        const allWildcardPredictions = wcPredictions.map((row) => {
+          const r = row as Record<string, unknown>;
+          return {
+            userId: r.user_id as string,
+            wildcardId: r.wildcard_id as string,
+            pickValue: fsStr(r, "pick_value") ?? "",
+            boosted: fsBool(r, "boosted") === true,
+          };
+        });
 
-      setSeasonPicks((seasonPicksData ?? []).map((row) => ({
-        userId: row.user_id as string,
-        picks: {
-          wdcWinner: row.wdc_winner ?? null, wccWinner: row.wcc_winner ?? null,
-          mostWins: row.most_wins ?? null, mostPoles: row.most_poles ?? null,
-          mostPodiums: row.most_podiums ?? null,
-          mostDnfsDriver: row.most_dnfs_driver ?? null, mostDnfsConstructor: row.most_dnfs_constructor ?? null,
-        },
-      })));
+        const lb = buildLeaderboard(
+          allPredictions,
+          allResults,
+          profilesData,
+          allWildcards,
+          allWildcardPredictions
+        );
+        setLeaderboard(lb);
+        setRawPredictions(allPredictions);
+        setRawResults(allResults);
 
-      const nowMs = Date.now();
-      const revealedRaces = RACES.filter((r) => r.weekendStartUtc && new Date(r.weekendStartUtc).getTime() < nowMs);
-      if (revealedRaces.length > 0) setPredRound(revealedRaces[revealedRaces.length - 1].r);
+        setSeasonPicks(
+          seasonPicksData.map((row) => {
+            const r = row as Record<string, unknown>;
+            return {
+              userId: r.user_id as string,
+              picks: {
+                wdcWinner: fsStr(r, "wdc_winner"),
+                wccWinner: fsStr(r, "wcc_winner"),
+                mostWins: fsStr(r, "most_wins"),
+                mostPoles: fsStr(r, "most_poles"),
+                mostPodiums: fsStr(r, "most_podiums"),
+                mostDnfsDriver: fsStr(r, "most_dnfs_driver"),
+                mostDnfsConstructor: fsStr(r, "most_dnfs_constructor"),
+              },
+            };
+          })
+        );
+
+        const nowMs = Date.now();
+        const revealedRaces = RACES.filter(
+          (r) => r.weekendStartUtc && new Date(r.weekendStartUtc).getTime() < nowMs
+        );
+        if (revealedRaces.length > 0) setPredRound(revealedRaces[revealedRaces.length - 1].r);
+      } catch {
+        setError(true);
+      }
       setLoading(false);
     }
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const leaderPts = leaderboard[0]?.totalPoints ?? 0;
-  const nowMs = Date.now();
   const revealedRaces = RACES.filter((r) => r.weekendStartUtc && new Date(r.weekendStartUtc).getTime() < nowMs);
   const latestResultRound = rawResults.length > 0 ? rawResults.map((r) => r.round).sort((a, b) => b - a)[0] : null;
   const selectedRace = revealedRaces.find((r) => r.r === predRound) ?? revealedRaces[revealedRaces.length - 1] ?? null;

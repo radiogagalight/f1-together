@@ -15,7 +15,7 @@ const MIDSEASON_CATS = CATEGORIES.filter(
 
 export default function MidseasonPredictions() {
   const { user } = useAuth();
-  const { predictions, setPrediction, savedKey, loading } = useMidseasonPredictions(user?.id);
+  const { predictions, setPrediction, savedKey, loading } = useMidseasonPredictions(user?.uid);
 
   const now = Date.now();
   const windowStart = new Date(RACE_12.startUtc).getTime();

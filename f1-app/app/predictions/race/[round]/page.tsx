@@ -12,8 +12,13 @@ import DriverSelect from "@/components/DriverSelect";
 import type { RacePrediction, RaceResult, ScoreBreakdown, RaceWildcard, WildcardPrediction } from "@/lib/types";
 import { PICK_POINTS, scoreRound, scoreWildcards } from "@/lib/scoring";
 import { loadRaceResult } from "@/lib/resultsStorage";
-import { loadWildcards as loadWildcardsFromStorage, saveWildcardPick, deleteWildcardPick } from "@/lib/wildcardStorage";
-import { createClient } from "@/lib/supabase/client";
+import {
+  loadWildcards as loadWildcardsFromStorage,
+  loadWildcardPredictions,
+  saveWildcardPick,
+  deleteWildcardPick,
+} from "@/lib/wildcardStorage";
+import { getDb } from "@/lib/firebase/db";
 
 function driverLastName(id: string | null): string {
   if (!id) return "—";
@@ -297,7 +302,7 @@ export default function RaceDetailPage({
   const isMiami = round === 4;
   const race = RACES.find((r) => r.r === round);
   const { user, timezoneName } = useAuth();
-  const { predictions, setPrediction, toggleBoost, savedField, loading } = useRacePrediction(user?.id, round);
+  const { predictions, setPrediction, toggleBoost, savedField, loading } = useRacePrediction(user?.uid, round);
 
   const [now, setNow] = useState(Date.now());
   const [openInfo, setOpenInfo] = useState<string | null>(null);
@@ -312,36 +317,28 @@ export default function RaceDetailPage({
   }, []);
 
   useEffect(() => {
-    const supabase = createClient();
-    loadRaceResult(round, supabase).then(setResult);
+    const db = getDb();
+    loadRaceResult(round, db).then(setResult);
   }, [round]);
 
   const loadWildcards = useCallback(async () => {
-    const supabase = createClient();
-    setWildcards(await loadWildcardsFromStorage(round, supabase));
+    const db = getDb();
+    setWildcards(await loadWildcardsFromStorage(round, db));
   }, [round]);
 
   useEffect(() => { loadWildcards(); }, [loadWildcards]);
 
   useEffect(() => {
-    if (!user) return;
-    const supabase = createClient();
-    supabase
-      .from("wildcard_picks")
-      .select("wildcard_id, pick_value, boosted, race_wildcards!inner(round)")
-      .eq("user_id", user.id)
-      .eq("race_wildcards.round", round)
-      .then(({ data }) => {
-        setWildcardPredictions((data ?? []).map((r) => ({
-          wildcardId: r.wildcard_id as string,
-          pickValue:  r.pick_value as string,
-          boosted:    r.boosted as boolean,
-        })));
-      });
+    if (!user) {
+      setWildcardPredictions([]);
+      return;
+    }
+    const db = getDb();
+    loadWildcardPredictions(user.uid, round, db).then(setWildcardPredictions);
   }, [user, round]);
 
   const breakdown: ScoreBreakdown | null =
-    predictions && result && user ? scoreRound(user.id, predictions, result).breakdown : null;
+    predictions && result && user ? scoreRound(user.uid, predictions, result).breakdown : null;
 
   function pickResult(field: keyof ScoreBreakdown): { status: "correct" | "partial" | "wrong"; pts: number } | undefined {
     if (!result || !predictions || !breakdown) return undefined;
@@ -400,14 +397,14 @@ export default function RaceDetailPage({
 
   async function handleWildcardPick(wildcardId: string, pickValue: string | null) {
     if (!user || isRaceLocked) return;
-    const supabase = createClient();
+    const db = getDb();
     if (pickValue === null) {
-      await deleteWildcardPick(user.id, wildcardId, supabase);
+      await deleteWildcardPick(user.uid, wildcardId, db);
       setWildcardPredictions((prev) => prev.filter((p) => p.wildcardId !== wildcardId));
     } else {
       const existing = wildcardPredictions.find((p) => p.wildcardId === wildcardId);
       const boosted = existing?.boosted ?? false;
-      await saveWildcardPick(user.id, wildcardId, pickValue, boosted, supabase);
+      await saveWildcardPick(user.uid, wildcardId, pickValue, boosted, round, db);
       setWildcardPredictions((prev) => {
         const filtered = prev.filter((p) => p.wildcardId !== wildcardId);
         return [...filtered, { wildcardId, pickValue, boosted }];
@@ -423,9 +420,9 @@ export default function RaceDetailPage({
     if (!existing) return; // must pick before boosting
     const alreadyBoosted = existing.boosted;
     if (!alreadyBoosted && boostersRemaining <= 0) return;
-    const supabase = createClient();
+    const db = getDb();
     const newBoosted = !alreadyBoosted;
-    await saveWildcardPick(user.id, wildcardId, existing.pickValue, newBoosted, supabase);
+    await saveWildcardPick(user.uid, wildcardId, existing.pickValue, newBoosted, round, db);
     setWildcardPredictions((prev) =>
       prev.map((p) => p.wildcardId === wildcardId ? { ...p, boosted: newBoosted } : p)
     );

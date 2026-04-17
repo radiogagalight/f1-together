@@ -127,8 +127,8 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
     if (pathname?.startsWith("/auth/")) return;
 
     // Already set up for this user — let other effects handle phase changes
-    if (initializedForUser.current === user.id) return;
-    initializedForUser.current = user.id;
+    if (initializedForUser.current === user.uid) return;
+    initializedForUser.current = user.uid;
 
     if (!companionIntroDone) {
       setPhase("intro-step-1");

@@ -11,8 +11,9 @@ import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 import { DRIVER_IMAGES } from "@/lib/driverImages";
 import PredictionsWidget from "@/components/PredictionsWidget";
 import Companion from "@/components/Companion";
-import { createClient } from "@/lib/supabase/client";
+import { getDb } from "@/lib/firebase/db";
 import { loadRaceResult } from "@/lib/resultsStorage";
+import { loadRacePick } from "@/lib/raceStorage";
 import { scoreRound } from "@/lib/scoring";
 import type { RacePrediction, RaceResult, ScoreBreakdown } from "@/lib/types";
 
@@ -690,16 +691,10 @@ export default function HomePage() {
   const [heroPredictions, setHeroPredictions] = useState<{ pole: string | null; winner: string | null }>({ pole: null, winner: null });
   useEffect(() => {
     if (!user) return;
-    const supabase = createClient();
-    supabase
-      .from("race_picks")
-      .select("qual_pole,race_winner")
-      .eq("user_id", user.id)
-      .eq("round", RACES[nextRaceIdx].r)
-      .maybeSingle()
-      .then(({ data }) => {
-        setHeroPredictions({ pole: data?.qual_pole ?? null, winner: data?.race_winner ?? null });
-      });
+    const db = getDb();
+    loadRacePick(user.uid, RACES[nextRaceIdx].r, db).then((p) => {
+      setHeroPredictions({ pole: p.qualPole, winner: p.raceWinner });
+    });
   }, [user, nextRaceIdx]);
 
   // Fetch last race score
@@ -721,73 +716,27 @@ export default function HomePage() {
   const [currentRacePick, setCurrentRacePick] = useState<RacePrediction | null>(null);
   useEffect(() => {
     if (qualifiedRaceIdx < 0) return;
-    const supabase = createClient();
-    loadRaceResult(RACES[qualifiedRaceIdx].r, supabase).then(setCurrentRaceResult);
+    const db = getDb();
+    const r = RACES[qualifiedRaceIdx].r;
+    loadRaceResult(r, db).then(setCurrentRaceResult);
     if (user) {
-      supabase
-        .from("race_picks")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("round", RACES[qualifiedRaceIdx].r)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (!data) return;
-          setCurrentRacePick({
-            qualPole:       data.qual_pole        ?? null,
-            qualP2:         data.qual_p2          ?? null,
-            qualP3:         data.qual_p3          ?? null,
-            raceWinner:     data.race_winner      ?? null,
-            raceP2:         data.race_p2          ?? null,
-            raceP3:         data.race_p3          ?? null,
-            raceP4:         data.race_p4          ?? null,
-            raceP5:         data.race_p5          ?? null,
-            raceP6:         data.race_p6          ?? null,
-            fastestLap:     data.fastest_lap      ?? null,
-            safetyCar:      data.safety_car       ?? null,
-            boostedPredictions:   data.boosted_picks    ?? [],
-            sprintQualPole: data.sprint_qual_pole ?? null,
-            sprintQualP2:   data.sprint_qual_p2   ?? null,
-            sprintQualP3:   data.sprint_qual_p3   ?? null,
-            sprintWinner:   data.sprint_winner    ?? null,
-            sprintP2:       data.sprint_p2        ?? null,
-            sprintP3:       data.sprint_p3        ?? null,
-          });
-        });
+      loadRacePick(user.uid, r, db).then(setCurrentRacePick);
+    } else {
+      setCurrentRacePick(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.uid, qualifiedRaceIdx]);
 
   useEffect(() => {
     if (!user || !lastRace) return;
-    const supabase = createClient();
-    Promise.all([
-      supabase.from("race_picks").select("*").eq("user_id", user.id).eq("round", lastRace.r).maybeSingle(),
-      loadRaceResult(lastRace.r, supabase),
-    ]).then(([{ data: pickRow }, result]) => {
-      if (!pickRow || !result) return;
-      const pick: RacePrediction = {
-        qualPole: pickRow.qual_pole ?? null,
-        qualP2: pickRow.qual_p2 ?? null,
-        qualP3: pickRow.qual_p3 ?? null,
-        raceWinner: pickRow.race_winner ?? null,
-        raceP2: pickRow.race_p2 ?? null,
-        raceP3: pickRow.race_p3 ?? null,
-        raceP4: pickRow.race_p4 ?? null,
-        raceP5: pickRow.race_p5 ?? null,
-        raceP6: pickRow.race_p6 ?? null,
-        fastestLap: pickRow.fastest_lap ?? null,
-        safetyCar: pickRow.safety_car ?? null,
-        boostedPredictions: pickRow.boosted_picks ?? [],
-        sprintQualPole: pickRow.sprint_qual_pole ?? null,
-        sprintQualP2: pickRow.sprint_qual_p2 ?? null,
-        sprintQualP3: pickRow.sprint_qual_p3 ?? null,
-        sprintWinner: pickRow.sprint_winner ?? null,
-        sprintP2: pickRow.sprint_p2 ?? null,
-        sprintP3: pickRow.sprint_p3 ?? null,
-      };
-      const { totalPoints } = scoreRound(user.id, pick, result);
-      setLastRaceScore({ raceName: lastRace.name, totalPoints, flag: lastRace.flag });
-    });
+    const db = getDb();
+    Promise.all([loadRacePick(user.uid, lastRace.r, db), loadRaceResult(lastRace.r, db)]).then(
+      ([pick, result]) => {
+        if (!result) return;
+        const { totalPoints } = scoreRound(user.uid, pick, result);
+        setLastRaceScore({ raceName: lastRace.name, totalPoints, flag: lastRace.flag });
+      }
+    );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, lastRace?.r]);
 
@@ -885,7 +834,7 @@ export default function HomePage() {
         <div className="md:w-[620px] md:shrink-0">
           <NextRaceHero race={RACES[nextRaceIdx]} predictions={heroPredictions} lastRaceScore={lastRaceScore} />
           {currentRaceResult?.qualPole && qualifiedRaceIdx === nextRaceIdx && (
-            <WeekendResultsCard result={currentRaceResult} pick={currentRacePick} userId={user?.id ?? ""} />
+            <WeekendResultsCard result={currentRaceResult} pick={currentRacePick} userId={user?.uid ?? ""} />
           )}
         </div>
 

@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { clearPredictions } from "@/lib/storage";
-import { createClient } from "@/lib/supabase/client";
+import { getDb } from "@/lib/firebase/db";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { apiFetch } from "@/lib/api/fetch";
 import { CONSTRUCTORS, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
 
@@ -79,7 +81,11 @@ export default function SettingsPage() {
 
   async function handleSaveName() {
     if (!user || !nameInput.trim()) return;
-    await supabase.from("profiles").upsert({ id: user.id, display_name: nameInput.trim() });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      { id: user.uid, display_name: nameInput.trim() },
+      { merge: true }
+    );
     setDisplayName(nameInput.trim());
     setEditingName(false);
     setNameSaved(true);
@@ -93,7 +99,16 @@ export default function SettingsPage() {
     setTeams(newTeams);
     setOpenTeamSlot(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({ id: user.id, fav_team_1: newTeams[0], fav_team_2: newTeams[1], fav_team_3: newTeams[2] });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      {
+        id: user.uid,
+        fav_team_1: newTeams[0],
+        fav_team_2: newTeams[1],
+        fav_team_3: newTeams[2],
+      },
+      { merge: true }
+    );
     await refreshFavorites();
   }
 
@@ -103,7 +118,16 @@ export default function SettingsPage() {
     setTeams(newTeams);
     setOpenTeamSlot(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({ id: user.id, fav_team_1: newTeams[0], fav_team_2: newTeams[1], fav_team_3: newTeams[2] });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      {
+        id: user.uid,
+        fav_team_1: newTeams[0],
+        fav_team_2: newTeams[1],
+        fav_team_3: newTeams[2],
+      },
+      { merge: true }
+    );
     await refreshFavorites();
   }
 
@@ -113,7 +137,16 @@ export default function SettingsPage() {
     setDrivers(newDrivers);
     setOpenDriverSlot(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({ id: user.id, fav_driver_1: newDrivers[0], fav_driver_2: newDrivers[1], fav_driver_3: newDrivers[2] });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      {
+        id: user.uid,
+        fav_driver_1: newDrivers[0],
+        fav_driver_2: newDrivers[1],
+        fav_driver_3: newDrivers[2],
+      },
+      { merge: true }
+    );
   }
 
   async function clearDriver(slotIdx: number) {
@@ -122,7 +155,16 @@ export default function SettingsPage() {
     setDrivers(newDrivers);
     setOpenDriverSlot(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({ id: user.id, fav_driver_1: newDrivers[0], fav_driver_2: newDrivers[1], fav_driver_3: newDrivers[2] });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      {
+        id: user.uid,
+        fav_driver_1: newDrivers[0],
+        fav_driver_2: newDrivers[1],
+        fav_driver_3: newDrivers[2],
+      },
+      { merge: true }
+    );
   }
 
   function toggleTeamSlot(idx: number) { setOpenDriverSlot(null); setOpenTeamSlot((p) => (p === idx ? null : idx)); }
@@ -135,7 +177,7 @@ export default function SettingsPage() {
   const [pushLoading, setPushLoading] = useState(false);
   const [pushError, setPushError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const db = getDb();
 
   // Sync local state when context loads (after DB fetch)
   useEffect(() => { setTzName(timezoneName); }, [timezoneName]);
@@ -143,14 +185,11 @@ export default function SettingsPage() {
   // Check admin status
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setIsAdmin(data?.is_admin === true));
+    getDoc(doc(db, "profiles", user.uid)).then((snap) =>
+      setIsAdmin(snap.data()?.is_admin === true)
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.uid]);
 
   // Check current push permission / subscription status
   useEffect(() => {
@@ -181,9 +220,9 @@ export default function SettingsPage() {
       }
       const sub = await subscribeToPush();
       if (!sub) { setPushStatus('disabled'); return; }
-      const res = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await apiFetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sub.toJSON()),
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
@@ -204,7 +243,7 @@ export default function SettingsPage() {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub) await sub.unsubscribe();
-      await fetch('/api/push/subscribe', { method: 'DELETE' });
+      await apiFetch("/api/push/subscribe", { method: "DELETE" });
       setPushStatus('disabled');
     } finally {
       setPushLoading(false);
@@ -216,9 +255,10 @@ export default function SettingsPage() {
     setTzSaved(false);
     setTzError(null);
     if (!user) return;
-    const { error } = await supabase.from("profiles").upsert({ id: user.id, timezone_name: value });
-    if (error) {
-      setTzError("Save failed: " + error.message);
+    try {
+      await setDoc(doc(db, "profiles", user.uid), { id: user.uid, timezone_name: value }, { merge: true });
+    } catch (e) {
+      setTzError("Save failed: " + (e instanceof Error ? e.message : String(e)));
       return;
     }
     await refreshFavorites();
@@ -233,7 +273,7 @@ export default function SettingsPage() {
 
   async function handleConfirmDelete() {
     if (!user) return;
-    await clearPredictions(user.id, supabase);
+    await clearPredictions(user.uid, db);
     setConfirming(false);
     router.push("/");
   }
@@ -387,7 +427,7 @@ export default function SettingsPage() {
         <div className="rounded-xl border px-4 py-3 flex items-center justify-between" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
           <span className="text-sm" style={{ color: "var(--muted)" }}>Member since</span>
           <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-            {user?.created_at ? new Date(user.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "—"}
+            {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "—"}
           </span>
         </div>
       </section>

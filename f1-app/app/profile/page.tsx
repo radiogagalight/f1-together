@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
-import { createClient } from "@/lib/supabase/client";
+import { getDb } from "@/lib/firebase/db";
+import { doc, setDoc } from "firebase/firestore";
 import { CONSTRUCTORS, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
 import { DRIVER_IMAGES } from "@/lib/driverImages";
@@ -30,7 +31,7 @@ export default function ProfilePage() {
   const [openTeamSlot, setOpenTeamSlot] = useState<number | null>(null);
   const [openDriverSlot, setOpenDriverSlot] = useState<number | null>(null);
 
-  const supabase = createClient();
+  const db = getDb();
 
   // Sync from context — handles hard-refresh where context loads after component mount
   useEffect(() => { setDisplayName(ctxDisplayName ?? ""); }, [ctxDisplayName]);
@@ -43,7 +44,11 @@ export default function ProfilePage() {
 
   async function handleSaveName() {
     if (!user || !nameInput.trim()) return;
-    await supabase.from("profiles").upsert({ id: user.id, display_name: nameInput.trim() });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      { id: user.uid, display_name: nameInput.trim() },
+      { merge: true }
+    );
     setDisplayName(nameInput.trim());
     setEditingName(false);
     setNameSaved(true);
@@ -62,12 +67,16 @@ export default function ProfilePage() {
     setTeams(newTeams);
     setOpenTeamSlot(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      fav_team_1: newTeams[0],
-      fav_team_2: newTeams[1],
-      fav_team_3: newTeams[2],
-    });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      {
+        id: user.uid,
+        fav_team_1: newTeams[0],
+        fav_team_2: newTeams[1],
+        fav_team_3: newTeams[2],
+      },
+      { merge: true }
+    );
     await refreshFavorites();
   }
 
@@ -77,12 +86,16 @@ export default function ProfilePage() {
     setTeams(newTeams);
     setOpenTeamSlot(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      fav_team_1: newTeams[0],
-      fav_team_2: newTeams[1],
-      fav_team_3: newTeams[2],
-    });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      {
+        id: user.uid,
+        fav_team_1: newTeams[0],
+        fav_team_2: newTeams[1],
+        fav_team_3: newTeams[2],
+      },
+      { merge: true }
+    );
     await refreshFavorites();
   }
 
@@ -92,12 +105,16 @@ export default function ProfilePage() {
     setDrivers(newDrivers);
     setOpenDriverSlot(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      fav_driver_1: newDrivers[0],
-      fav_driver_2: newDrivers[1],
-      fav_driver_3: newDrivers[2],
-    });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      {
+        id: user.uid,
+        fav_driver_1: newDrivers[0],
+        fav_driver_2: newDrivers[1],
+        fav_driver_3: newDrivers[2],
+      },
+      { merge: true }
+    );
   }
 
   async function clearDriver(slotIdx: number) {
@@ -106,12 +123,16 @@ export default function ProfilePage() {
     setDrivers(newDrivers);
     setOpenDriverSlot(null);
     if (!user) return;
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      fav_driver_1: newDrivers[0],
-      fav_driver_2: newDrivers[1],
-      fav_driver_3: newDrivers[2],
-    });
+    await setDoc(
+      doc(db, "profiles", user.uid),
+      {
+        id: user.uid,
+        fav_driver_1: newDrivers[0],
+        fav_driver_2: newDrivers[1],
+        fav_driver_3: newDrivers[2],
+      },
+      { merge: true }
+    );
   }
 
   function toggleTeamSlot(idx: number) {
@@ -436,8 +457,8 @@ export default function ProfilePage() {
           Member since
         </span>
         <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-          {user?.created_at
-            ? new Date(user.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+          {user?.metadata?.creationTime
+            ? new Date(user.metadata.creationTime).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
             : "—"}
         </span>
       </div>

@@ -1,20 +1,13 @@
-'use server';
+"use server";
 
-import { createClient } from '@supabase/supabase-js';
-import webpush from 'web-push';
+import webpush from "web-push";
+import { getAdminDb } from "@/lib/firebase/admin";
 
 webpush.setVapidDetails(
-  'mailto:f1together@example.com',
+  "mailto:f1together@example.com",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );
-
-function adminSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 export async function sendPushToUser(
   userId: string,
@@ -22,26 +15,18 @@ export async function sendPushToUser(
   body: string,
   url: string
 ) {
-  const supabase = adminSupabase();
-  const { data } = await supabase
-    .from('push_subscriptions')
-    .select('subscription')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (!data?.subscription) return;
+  const db = getAdminDb();
+  const snap = await db.collection("push_subscriptions").doc(userId).get();
+  const subscription = snap.data()?.subscription as webpush.PushSubscription | undefined;
+  if (!subscription) return;
 
   try {
-    await webpush.sendNotification(
-      data.subscription as webpush.PushSubscription,
-      JSON.stringify({ title, body, url })
-    );
+    await webpush.sendNotification(subscription, JSON.stringify({ title, body, url }));
   } catch (err: unknown) {
-    if (typeof err === 'object' && err !== null && 'statusCode' in err) {
+    if (typeof err === "object" && err !== null && "statusCode" in err) {
       const statusCode = (err as { statusCode: number }).statusCode;
       if (statusCode === 410 || statusCode === 404) {
-        // Subscription expired or invalid — clean it up
-        await supabase.from('push_subscriptions').delete().eq('user_id', userId);
+        await db.collection("push_subscriptions").doc(userId).delete();
       } else {
         console.error(`[push] Failed to send notification to ${userId}:`, err);
       }

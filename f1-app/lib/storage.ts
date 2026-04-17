@@ -1,4 +1,5 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Firestore } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import type { SeasonPredictions } from "./types";
 
 const DEFAULT_PREDICTIONS: SeasonPredictions = {
@@ -11,7 +12,6 @@ const DEFAULT_PREDICTIONS: SeasonPredictions = {
   mostDnfsConstructor: null,
 };
 
-// Maps camelCase SeasonPredictions keys → snake_case DB columns
 const KEY_MAP: Record<keyof SeasonPredictions, string> = {
   wdcWinner: "wdc_winner",
   wccWinner: "wcc_winner",
@@ -34,36 +34,32 @@ function dbRowToPredictions(row: Record<string, string | null>): SeasonPredictio
   };
 }
 
-export async function loadPredictions(
-  userId: string,
-  supabase: SupabaseClient
-): Promise<SeasonPredictions> {
-  const { data } = await supabase
-    .from("season_picks")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (!data) return { ...DEFAULT_PREDICTIONS };
-  return dbRowToPredictions(data);
+export async function loadPredictions(userId: string, db: Firestore): Promise<SeasonPredictions> {
+  const ref = doc(db, "season_picks", userId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return { ...DEFAULT_PREDICTIONS };
+  return dbRowToPredictions(snap.data() as Record<string, string | null>);
 }
 
 export async function savePrediction(
   userId: string,
   key: keyof SeasonPredictions,
   value: string | null,
-  supabase: SupabaseClient
+  db: Firestore
 ): Promise<void> {
   const column = KEY_MAP[key];
-  await supabase.from("season_picks").upsert(
-    { user_id: userId, [column]: value, updated_at: new Date().toISOString() },
-    { onConflict: "user_id" }
+  const ref = doc(db, "season_picks", userId);
+  await setDoc(
+    ref,
+    {
+      user_id: userId,
+      [column]: value,
+      updated_at: new Date().toISOString(),
+    },
+    { merge: true }
   );
 }
 
-export async function clearPredictions(
-  userId: string,
-  supabase: SupabaseClient
-): Promise<void> {
-  await supabase.from("season_picks").delete().eq("user_id", userId);
+export async function clearPredictions(userId: string, db: Firestore): Promise<void> {
+  await deleteDoc(doc(db, "season_picks", userId));
 }

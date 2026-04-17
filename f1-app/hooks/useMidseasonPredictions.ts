@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { MidseasonPredictions } from "@/lib/types";
-import { createClient } from "@/lib/supabase/client";
+import { getDb } from "@/lib/firebase/db";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const DEFAULT: MidseasonPredictions = { wdcWinner: null, wccWinner: null };
 
@@ -10,20 +11,26 @@ export function useMidseasonPredictions(userId: string | undefined) {
   const [predictions, setPredictions] = useState<MidseasonPredictions | null>(null);
   const [savedKey, setSavedKey] = useState<keyof MidseasonPredictions | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const db = getDb();
 
   useEffect(() => {
-    if (!userId) { setLoading(false); return; }
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    supabase
-      .from("midseason_picks")
-      .select("wdc_winner,wcc_winner")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        setPredictions(data ? { wdcWinner: data.wdc_winner ?? null, wccWinner: data.wcc_winner ?? null } : { ...DEFAULT });
-        setLoading(false);
-      });
+    getDoc(doc(db, "midseason_picks", userId)).then((snap) => {
+      const data = snap.data();
+      setPredictions(
+        data
+          ? {
+              wdcWinner: (data.wdc_winner as string | null) ?? null,
+              wccWinner: (data.wcc_winner as string | null) ?? null,
+            }
+          : { ...DEFAULT }
+      );
+      setLoading(false);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
@@ -36,9 +43,14 @@ export function useMidseasonPredictions(userId: string | undefined) {
         setTimeout(() => setSavedKey(null), 1500);
       }
       const col = key === "wdcWinner" ? "wdc_winner" : "wcc_winner";
-      supabase.from("midseason_picks").upsert(
-        { user_id: userId, [col]: value, updated_at: new Date().toISOString() },
-        { onConflict: "user_id" }
+      setDoc(
+        doc(db, "midseason_picks", userId),
+        {
+          user_id: userId,
+          [col]: value,
+          updated_at: new Date().toISOString(),
+        },
+        { merge: true }
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

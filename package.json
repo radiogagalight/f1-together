@@ -1,13 +1,13 @@
 {
   "name": "f1-together",
   "private": true,
-  "description": "Repo root for tooling; the Next.js app is in f1-app/",
+  "description": "F1 Together — Next.js app in f1-app/. Deploy with Firebase (firebase.json at repo root).",
   "scripts": {
     "dev": "cd f1-app && npm run dev",
     "build": "cd f1-app && npm run build",
-    "vercel-build": "cd f1-app && npm run vercel-build",
     "start": "cd f1-app && npm run start",
-    "lint": "cd f1-app && npm run lint"
+    "lint": "cd f1-app && npm run lint",
+    "deploy": "firebase deploy"
   },
   "dependencies": {
     "next": "16.1.6",

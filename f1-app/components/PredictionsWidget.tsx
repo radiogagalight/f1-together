@@ -69,8 +69,8 @@ export default function PredictionsWidget() {
   }, []);
 
   const nextRace = getNextRace();
-  const { predictions: racePredictions, loading: raceLoading } = useRacePrediction(user?.id, nextRace?.r ?? 0);
-  const { predictions: seasonPredictions, loading: seasonLoading } = useSeasonPredictions(user?.id);
+  const { predictions: racePredictions, loading: raceLoading } = useRacePrediction(user?.uid, nextRace?.r ?? 0);
+  const { predictions: seasonPredictions, loading: seasonLoading } = useSeasonPredictions(user?.uid);
 
   if (!user || !nextRace) return null;
   // Don't flash a skeleton — just wait silently

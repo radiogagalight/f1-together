@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getFirebaseApp } from "@/lib/firebase/app";
+import { getDb } from "@/lib/firebase/db";
+import { doc, getDoc } from "firebase/firestore";
+import { apiFetch } from "@/lib/api/fetch";
 import { RACES, DRIVERS, CONSTRUCTORS } from "@/lib/data";
 import type { RaceResult, RaceWildcard, WildcardQuestionType } from "@/lib/types";
 import { loadWildcards as loadWildcardsFromStorage } from "@/lib/wildcardStorage";
@@ -120,24 +124,23 @@ export default function AdminResultsPage() {
   const [newWcBattleTeam, setNewWcBattleTeam] = useState<string | null>(null);
   const [creatingWc, setCreatingWc] = useState(false);
 
-  const supabase = createClient();
-
   // Admin check
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setIsAdmin(false); return; }
-      supabase
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .maybeSingle()
-        .then(({ data }) => setIsAdmin(data?.is_admin === true));
+    const auth = getAuth(getFirebaseApp());
+    const db = getDb();
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (!u) {
+        setIsAdmin(false);
+        return;
+      }
+      const snap = await getDoc(doc(db, "profiles", u.uid));
+      setIsAdmin(snap.data()?.is_admin === true);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => unsub();
   }, []);
 
   const loadResult = useCallback(async (round: number) => {
-    const res = await fetch(`/api/results/${round}`);
+    const res = await apiFetch(`/api/results/${round}`);
     if (res.ok) {
       const data = await res.json();
       setResult(data);
@@ -147,8 +150,7 @@ export default function AdminResultsPage() {
   }, []);
 
   const loadWildcards = useCallback(async (round: number) => {
-    const supabase = createClient();
-    setWildcards(await loadWildcardsFromStorage(round, supabase));
+    setWildcards(await loadWildcardsFromStorage(round, getDb()));
   }, []);
 
   useEffect(() => {
@@ -183,7 +185,7 @@ export default function AdminResultsPage() {
   async function handleSave() {
     setSaving(true);
     setStatusMsg(null);
-    const res = await fetch(`/api/results/${selectedRound}`, {
+    const res = await apiFetch(`/api/results/${selectedRound}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(result),
@@ -311,7 +313,7 @@ export default function AdminResultsPage() {
                     onClick={async () => {
                       if (!confirm("Delete this wildcard? All user predictions for it will be lost.")) return;
                       setWcStatus(null);
-                      const res = await fetch(`/api/wildcards/${selectedRound}`, {
+                      const res = await apiFetch(`/api/wildcards/${selectedRound}`, {
                         method: "DELETE",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ id: wc.id }),
@@ -337,7 +339,7 @@ export default function AdminResultsPage() {
                         <button
                           key={v}
                           onClick={async () => {
-                            await fetch(`/api/wildcards/${selectedRound}`, {
+                            await apiFetch(`/api/wildcards/${selectedRound}`, {
                               method: "PATCH",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ id: wc.id, correctAnswer: v }),
@@ -361,7 +363,7 @@ export default function AdminResultsPage() {
                         <button
                           key={opt.id}
                           onClick={async () => {
-                            await fetch(`/api/wildcards/${selectedRound}`, {
+                            await apiFetch(`/api/wildcards/${selectedRound}`, {
                               method: "PATCH",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ id: wc.id, correctAnswer: opt.id }),
@@ -384,7 +386,7 @@ export default function AdminResultsPage() {
                       label=""
                       value={wc.correctAnswer}
                       onChange={async (v) => {
-                        await fetch(`/api/wildcards/${selectedRound}`, {
+                        await apiFetch(`/api/wildcards/${selectedRound}`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ id: wc.id, correctAnswer: v }),
@@ -397,7 +399,7 @@ export default function AdminResultsPage() {
                       label=""
                       value={wc.correctAnswer}
                       onChange={async (v) => {
-                        await fetch(`/api/wildcards/${selectedRound}`, {
+                        await apiFetch(`/api/wildcards/${selectedRound}`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ id: wc.id, correctAnswer: v }),
@@ -537,7 +539,7 @@ export default function AdminResultsPage() {
                         { id: newWcBattleB!, name: DRIVERS.find(d => d.id === newWcBattleB)?.name ?? newWcBattleB! },
                       ]
                     : null;
-                  const res = await fetch(`/api/wildcards/${selectedRound}`, {
+                  const res = await apiFetch(`/api/wildcards/${selectedRound}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
