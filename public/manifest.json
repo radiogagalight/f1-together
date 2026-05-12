@@ -1,0 +1,16 @@
+{
+  "name": "F1 Together",
+  "short_name": "F1 Together",
+  "description": "Season predictions for your F1 group",
+  "theme_color": "#e10600",
+  "background_color": "#0f0f0f",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/images/f1-logo-3.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}

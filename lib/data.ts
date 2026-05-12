@@ -1,0 +1,156 @@
+import type { Driver, Constructor, Category } from "./types";
+
+export const DRIVERS: Driver[] = [
+  { id: "max-verstappen",    name: "Max Verstappen",    team: "Red Bull"      },
+  { id: "isack-hadjar",      name: "Isack Hadjar",      team: "Red Bull"      },
+  { id: "lewis-hamilton",    name: "Lewis Hamilton",    team: "Ferrari"       },
+  { id: "charles-leclerc",   name: "Charles Leclerc",   team: "Ferrari"       },
+  { id: "george-russell",    name: "George Russell",    team: "Mercedes"      },
+  { id: "kimi-antonelli",    name: "Kimi Antonelli",    team: "Mercedes"      },
+  { id: "lando-norris",      name: "Lando Norris",      team: "McLaren"       },
+  { id: "oscar-piastri",     name: "Oscar Piastri",     team: "McLaren"       },
+  { id: "fernando-alonso",   name: "Fernando Alonso",   team: "Aston Martin"  },
+  { id: "lance-stroll",      name: "Lance Stroll",      team: "Aston Martin"  },
+  { id: "pierre-gasly",      name: "Pierre Gasly",      team: "Alpine"        },
+  { id: "franco-colapinto",  name: "Franco Colapinto",  team: "Alpine"        },
+  { id: "carlos-sainz",      name: "Carlos Sainz",      team: "Williams"      },
+  { id: "alexander-albon",   name: "Alexander Albon",   team: "Williams"      },
+  { id: "nico-hulkenberg",   name: "Nico Hülkenberg",   team: "Audi"          },
+  { id: "gabriel-bortoleto", name: "Gabriel Bortoleto", team: "Audi"          },
+  { id: "liam-lawson",       name: "Liam Lawson",       team: "Racing Bulls"  },
+  { id: "arvid-lindblad",    name: "Arvid Lindblad",    team: "Racing Bulls"  },
+  { id: "oliver-bearman",    name: "Oliver Bearman",    team: "Haas"          },
+  { id: "esteban-ocon",      name: "Esteban Ocon",      team: "Haas"          },
+  { id: "valtteri-bottas",   name: "Valtteri Bottas",   team: "Cadillac"      },
+  { id: "sergio-perez",      name: "Sergio Pérez",      team: "Cadillac"      },
+];
+
+export const CONSTRUCTORS: Constructor[] = [
+  { id: "red-bull", name: "Red Bull" },
+  { id: "ferrari", name: "Ferrari" },
+  { id: "mercedes", name: "Mercedes" },
+  { id: "mclaren", name: "McLaren" },
+  { id: "aston-martin", name: "Aston Martin" },
+  { id: "alpine", name: "Alpine" },
+  { id: "williams", name: "Williams" },
+  { id: "audi", name: "Audi" },
+  { id: "racing-bulls", name: "Racing Bulls" },
+  { id: "haas", name: "Haas" },
+  { id: "cadillac", name: "Cadillac" },
+];
+
+export interface Race {
+  r: number;
+  name: string;
+  circuit: string;
+  flag: string;
+  date: string;
+  /** Approximate UTC race start time. Locks race predictions and reveals all predictions in Group page. */
+  startUtc: string;
+  /** Approximate UTC qualifying start time. Locks qualifying predictions (Pole/P2/P3). */
+  qualifyingUtc: string;
+  /** UTC start of FP1 — enables the race weekend countdown card when present. */
+  weekendStartUtc?: string;
+  sprint: boolean;
+  /** Sprint weekends only: UTC start of Sprint Qualifying. Locks sprint predictions. */
+  sprintQualifyingUtc?: string;
+  /** Sprint weekends only: UTC start of the Sprint Race. */
+  sprintStartUtc?: string;
+}
+
+// startUtc: approximate UTC race start time (based on historical patterns per circuit).
+// qualifyingUtc: approximate UTC qualifying start time. Confirmed from session data where available,
+//   otherwise estimated from historical patterns. Sprint weekends: qualifying is Sunday morning
+//   before the race (~3h prior). Regular weekends: qualifying is Saturday afternoon.
+export const RACES: Race[] = [
+  { r:  1, name: "Australian Grand Prix",          circuit: "Albert Park Circuit",             flag: "🇦🇺", date: "2026-03-08", startUtc: "2026-03-08T04:00:00Z", qualifyingUtc: "2026-03-07T05:00:00Z", weekendStartUtc: "2026-03-06T01:30:00Z", sprint: false },
+  { r:  2, name: "Chinese Grand Prix",              circuit: "Shanghai International Circuit",  flag: "🇨🇳", date: "2026-03-15", startUtc: "2026-03-15T07:00:00Z", qualifyingUtc: "2026-03-14T07:00:00Z", weekendStartUtc: "2026-03-13T03:30:00Z", sprint: true,  sprintQualifyingUtc: "2026-03-13T07:30:00Z", sprintStartUtc: "2026-03-14T03:00:00Z" },
+  { r:  3, name: "Japanese Grand Prix",             circuit: "Suzuka Circuit",                  flag: "🇯🇵", date: "2026-03-29", startUtc: "2026-03-29T05:00:00Z", qualifyingUtc: "2026-03-28T06:00:00Z", weekendStartUtc: "2026-03-27T02:30:00Z", sprint: false },
+  { r:  4, name: "Miami Grand Prix",                circuit: "Miami International Autodrome",   flag: "🇺🇸", date: "2026-05-03", startUtc: "2026-05-03T20:00:00Z", qualifyingUtc: "2026-05-02T20:00:00Z", weekendStartUtc: "2026-05-01T16:30:00Z", sprint: true,  sprintQualifyingUtc: "2026-05-01T21:00:00Z", sprintStartUtc: "2026-05-02T16:00:00Z" },
+  { r:  5, name: "Canadian Grand Prix",             circuit: "Circuit Gilles Villeneuve",       flag: "🇨🇦", date: "2026-05-24", startUtc: "2026-05-24T20:00:00Z", qualifyingUtc: "2026-05-23T20:00:00Z", weekendStartUtc: "2026-05-22T16:30:00Z", sprint: true,  sprintQualifyingUtc: "2026-05-22T21:00:00Z", sprintStartUtc: "2026-05-23T15:30:00Z" },
+  { r:  6, name: "Monaco Grand Prix",               circuit: "Circuit de Monaco",               flag: "🇲🇨", date: "2026-06-07", startUtc: "2026-06-07T13:00:00Z", qualifyingUtc: "2026-06-06T14:00:00Z", weekendStartUtc: "2026-06-05T11:30:00Z", sprint: false },
+  { r:  7, name: "Barcelona-Catalunya Grand Prix",  circuit: "Circuit de Barcelona-Catalunya",  flag: "🇪🇸", date: "2026-06-14", startUtc: "2026-06-14T13:00:00Z", qualifyingUtc: "2026-06-13T14:00:00Z", weekendStartUtc: "2026-06-12T11:30:00Z", sprint: false },
+  { r:  8, name: "Austrian Grand Prix",             circuit: "Red Bull Ring",                   flag: "🇦🇹", date: "2026-06-28", startUtc: "2026-06-28T13:00:00Z", qualifyingUtc: "2026-06-27T14:00:00Z", weekendStartUtc: "2026-06-26T11:30:00Z", sprint: false },
+  { r:  9, name: "British Grand Prix",              circuit: "Silverstone Circuit",             flag: "🇬🇧", date: "2026-07-05", startUtc: "2026-07-05T14:00:00Z", qualifyingUtc: "2026-07-04T15:00:00Z", weekendStartUtc: "2026-07-03T11:30:00Z", sprint: true,  sprintQualifyingUtc: "2026-07-03T15:30:00Z", sprintStartUtc: "2026-07-04T10:00:00Z" },
+  { r: 10, name: "Belgian Grand Prix",              circuit: "Circuit de Spa-Francorchamps",    flag: "🇧🇪", date: "2026-07-19", startUtc: "2026-07-19T13:00:00Z", qualifyingUtc: "2026-07-18T14:00:00Z", weekendStartUtc: "2026-07-17T11:30:00Z", sprint: false },
+  { r: 11, name: "Hungarian Grand Prix",            circuit: "Hungaroring",                     flag: "🇭🇺", date: "2026-07-26", startUtc: "2026-07-26T13:00:00Z", qualifyingUtc: "2026-07-25T14:00:00Z", weekendStartUtc: "2026-07-24T11:30:00Z", sprint: false },
+  { r: 12, name: "Dutch Grand Prix",                circuit: "Circuit Zandvoort",               flag: "🇳🇱", date: "2026-08-23", startUtc: "2026-08-23T13:00:00Z", qualifyingUtc: "2026-08-22T14:00:00Z", weekendStartUtc: "2026-08-21T10:30:00Z", sprint: true,  sprintQualifyingUtc: "2026-08-21T14:30:00Z", sprintStartUtc: "2026-08-22T09:00:00Z" },
+  { r: 13, name: "Italian Grand Prix",              circuit: "Autodromo Nazionale Monza",       flag: "🇮🇹", date: "2026-09-06", startUtc: "2026-09-06T13:00:00Z", qualifyingUtc: "2026-09-05T14:00:00Z", weekendStartUtc: "2026-09-04T10:30:00Z", sprint: false },
+  { r: 14, name: "Spanish Grand Prix",              circuit: "Madring, Madrid",                 flag: "🇪🇸", date: "2026-09-13", startUtc: "2026-09-13T13:00:00Z", qualifyingUtc: "2026-09-12T14:00:00Z", weekendStartUtc: "2026-09-11T11:30:00Z", sprint: false },
+  { r: 15, name: "Azerbaijan Grand Prix",           circuit: "Baku City Circuit",               flag: "🇦🇿", date: "2026-09-26", startUtc: "2026-09-26T11:00:00Z", qualifyingUtc: "2026-09-25T12:00:00Z", weekendStartUtc: "2026-09-24T08:30:00Z", sprint: false },
+  { r: 16, name: "Singapore Grand Prix",            circuit: "Marina Bay Street Circuit",       flag: "🇸🇬", date: "2026-10-11", startUtc: "2026-10-11T12:00:00Z", qualifyingUtc: "2026-10-10T13:00:00Z", weekendStartUtc: "2026-10-09T08:30:00Z", sprint: true,  sprintQualifyingUtc: "2026-10-09T13:00:00Z", sprintStartUtc: "2026-10-10T08:00:00Z" },
+  { r: 17, name: "United States Grand Prix",        circuit: "Circuit of the Americas",         flag: "🇺🇸", date: "2026-10-25", startUtc: "2026-10-25T20:00:00Z", qualifyingUtc: "2026-10-24T21:00:00Z", weekendStartUtc: "2026-10-23T17:30:00Z", sprint: false },
+  { r: 18, name: "Mexico City Grand Prix",          circuit: "Autódromo Hermanos Rodríguez",    flag: "🇲🇽", date: "2026-11-01", startUtc: "2026-11-01T20:00:00Z", qualifyingUtc: "2026-10-31T21:00:00Z", weekendStartUtc: "2026-10-30T18:30:00Z", sprint: false },
+  { r: 19, name: "Brazilian Grand Prix",            circuit: "Autódromo José Carlos Pace",      flag: "🇧🇷", date: "2026-11-08", startUtc: "2026-11-08T17:00:00Z", qualifyingUtc: "2026-11-07T18:00:00Z", weekendStartUtc: "2026-11-06T15:30:00Z", sprint: false },
+  { r: 20, name: "Las Vegas Grand Prix",            circuit: "Las Vegas Strip Circuit",         flag: "🇺🇸", date: "2026-11-21", startUtc: "2026-11-22T04:00:00Z", qualifyingUtc: "2026-11-21T04:00:00Z", weekendStartUtc: "2026-11-20T00:30:00Z", sprint: false },
+  { r: 21, name: "Qatar Grand Prix",                circuit: "Lusail International Circuit",    flag: "🇶🇦", date: "2026-11-29", startUtc: "2026-11-29T16:00:00Z", qualifyingUtc: "2026-11-28T18:00:00Z", weekendStartUtc: "2026-11-27T13:30:00Z", sprint: false },
+  { r: 22, name: "Abu Dhabi Grand Prix",            circuit: "Yas Marina Circuit",              flag: "🇦🇪", date: "2026-12-06", startUtc: "2026-12-06T13:00:00Z", qualifyingUtc: "2026-12-05T14:00:00Z", weekendStartUtc: "2026-12-04T09:30:00Z", sprint: false },
+];
+
+/** Converts a flag emoji (e.g. 🇦🇺) to a lowercase ISO country code (e.g. "au") */
+export function flagToCC(flag: string): string {
+  return [...flag]
+    .map((c) => String.fromCharCode((c.codePointAt(0) ?? 0) - 0x1f1e6 + 65))
+    .join("")
+    .toLowerCase();
+}
+
+export function formatDate(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00Z");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+/**
+ * Format a race date in the given IANA timezone (e.g. "America/Chicago").
+ * DST is handled automatically by the browser's Intl APIs.
+ */
+export function formatRaceDate(race: Race, timezoneName: string = "UTC"): string {
+  return new Date(race.startUtc).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", timeZone: timezoneName,
+  });
+}
+
+export const CATEGORIES: Category[] = [
+  {
+    key: "wdcWinner",
+    label: "World Drivers' Champion",
+    description: "Who wins the 2026 WDC?",
+    type: "driver",
+  },
+  {
+    key: "wccWinner",
+    label: "World Constructors' Champion",
+    description: "Which team wins the 2026 WCC?",
+    type: "constructor",
+  },
+  {
+    key: "mostWins",
+    label: "Most Race Wins",
+    description: "Which driver wins the most races?",
+    type: "driver",
+  },
+  {
+    key: "mostPoles",
+    label: "Most Pole Positions",
+    description: "Which driver takes the most poles?",
+    type: "driver",
+  },
+  {
+    key: "mostPodiums",
+    label: "Most Podiums",
+    description: "Which driver finishes on the podium most?",
+    type: "driver",
+  },
+  {
+    key: "mostDnfsDriver",
+    label: "Most Season DNFs — Driver",
+    description: "Which driver will have the most DNFs by season end?",
+    type: "driver",
+  },
+  {
+    key: "mostDnfsConstructor",
+    label: "Most Season DNFs — Constructor",
+    description: "Which team will have the most DNFs by season end?",
+    type: "constructor",
+  },
+];
