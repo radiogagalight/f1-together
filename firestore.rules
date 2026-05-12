@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('is_admin', false) == true;
+    }
+
+    match /profiles/{userId} {
+      allow read: if signedIn();
+      allow create: if isOwner(userId)
+        && request.resource.data.get('is_admin', false) == false;
+      allow update: if isOwner(userId)
+        && request.resource.data.get('is_admin', false) == resource.data.get('is_admin', false);
+      allow delete: if false;
+    }
+
+    match /race_results/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /race_picks/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.user_id == request.auth.uid;
+      allow delete: if signedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    match /season_picks/{userId} {
+      allow read: if signedIn();
+      allow write: if isOwner(userId);
+    }
+
+    match /midseason_picks/{userId} {
+      allow read: if signedIn();
+      allow write: if isOwner(userId);
+    }
+
+    match /race_wildcards/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /wildcard_picks/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.user_id == request.auth.uid;
+      allow delete: if signedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    match /race_comments/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.user_id == request.auth.uid;
+      allow update, delete: if signedIn()
+        && resource.data.user_id == request.auth.uid;
+    }
+
+    match /comment_reactions/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.user_id == request.auth.uid;
+      allow delete: if signedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    match /notifications/{docId} {
+      allow read: if signedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.from_user_id == request.auth.uid;
+      allow update, delete: if signedIn()
+        && resource.data.user_id == request.auth.uid;
+    }
+
+    match /push_subscriptions/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}
