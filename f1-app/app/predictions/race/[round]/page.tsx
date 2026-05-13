@@ -688,8 +688,30 @@ export default function RaceDetailPage({
           </div>
         )}
 
-        {!authReady || loading ? (
+        {!authReady || (user && loading) ? (
           <p className="text-sm" style={{ color: "var(--muted)" }}>Loading…</p>
+        ) : !user ? (
+          <div
+            className="rounded-xl p-6 text-center"
+            style={{
+              border: "1px solid rgba(225,6,0,0.35)",
+              background: "linear-gradient(135deg, rgba(225,6,0,0.08) 0%, rgba(30,6,6,0.6) 100%)",
+            }}
+          >
+            <h3 className="text-base font-bold mb-1" style={{ color: "var(--foreground)" }}>
+              Sign in to make predictions
+            </h3>
+            <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
+              Your picks are saved to your account. Sign in to lock in your predictions for {race.name}.
+            </p>
+            <Link
+              href="/auth/login"
+              className="inline-block rounded-lg px-4 py-2.5 text-sm font-bold text-white transition-colors active:opacity-80"
+              style={{ backgroundColor: "var(--f1-red)", minHeight: "44px", textDecoration: "none" }}
+            >
+              Sign in →
+            </Link>
+          </div>
         ) : (
           <div className="flex flex-col gap-6">
 

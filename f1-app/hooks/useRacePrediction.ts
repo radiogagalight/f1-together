@@ -26,7 +26,10 @@ export function useRacePrediction(userId: string | undefined, round: number) {
 
   const setPrediction = useCallback(
     (field: keyof RacePrediction, value: string | boolean | null) => {
-      if (!userId) return;
+      if (!userId) {
+        console.warn("[useRacePrediction] dropped pick — no userId (user not signed in)");
+        return;
+      }
 
       setPredictions((prev) => {
         const updated: RacePrediction = prev

@@ -185,13 +185,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let unsubNotif: (() => void) | undefined;
-    const unsubAuth = onAuthStateChanged(auth, async (u) => {
+    const unsubAuth = onAuthStateChanged(auth, (u) => {
       unsubNotif?.();
       unsubNotif = undefined;
       setUser(u);
-      await syncServerSession(u);
+      setAuthReady(true);
+      void syncServerSession(u);
       if (u?.uid) {
-        await Promise.all([loadFavorites(u.uid), fetchUnreadCount(u.uid)]);
+        void loadFavorites(u.uid);
+        void fetchUnreadCount(u.uid);
         const q = query(
           collection(db, "notifications"),
           where("user_id", "==", u.uid),
@@ -212,7 +214,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCompanionIntroDone(false);
         setCompanionFirstDismissSeen(false);
       }
-      setAuthReady(true);
     });
     return () => {
       unsubAuth();
