@@ -648,7 +648,7 @@ function NextRaceHero({
           <Link
             href={`/predictions/race/${race.r}`}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-lg font-bold"
-            style={{ backgroundColor: "#00D4BE", color: "#0a0a12", boxShadow: "0 0 24px rgba(0,212,190,0.45)" }}
+            style={{ backgroundColor: "var(--f1-red)", color: "#ffffff", boxShadow: "0 0 24px rgba(225,6,0,0.45)" }}
           >
             {hasPredictions ? "Edit predictions →" : "Make your predictions →"}
           </Link>
@@ -669,14 +669,14 @@ function getNextRaceIndex() {
 
 // ── Speed lines background ──────────────────────────────────────
 const SPEED_LINES = [
-  { top:  8, width: 68, dur: 4.2, delay: 0.0, opacity: 0.55, color: "#00D4BE", height: 3 },
-  { top: 19, width: 48, dur: 5.2, delay: 1.4, opacity: 0.45, color: "#FF0090", height: 2 },
-  { top: 31, width: 74, dur: 3.5, delay: 3.1, opacity: 0.52, color: "#00B4D8", height: 3 },
-  { top: 44, width: 55, dur: 6.0, delay: 0.8, opacity: 0.42, color: "#FF0090", height: 2 },
-  { top: 57, width: 72, dur: 4.0, delay: 2.5, opacity: 0.56, color: "#00D4BE", height: 3 },
-  { top: 69, width: 42, dur: 4.8, delay: 1.9, opacity: 0.40, color: "#00B4D8", height: 2 },
-  { top: 81, width: 62, dur: 4.4, delay: 4.3, opacity: 0.50, color: "#FF0090", height: 2 },
-  { top: 91, width: 52, dur: 5.5, delay: 0.6, opacity: 0.44, color: "#00D4BE", height: 3 },
+  { top:  8, width: 68, dur: 4.2, delay: 0.0, opacity: 0.55, color: "#e10600", height: 3 },
+  { top: 19, width: 48, dur: 5.2, delay: 1.4, opacity: 0.45, color: "#ffffff", height: 2 },
+  { top: 31, width: 74, dur: 3.5, delay: 3.1, opacity: 0.52, color: "#e10600", height: 3 },
+  { top: 44, width: 55, dur: 6.0, delay: 0.8, opacity: 0.42, color: "#c0c0c0", height: 2 },
+  { top:  57, width: 72, dur: 4.0, delay: 2.5, opacity: 0.56, color: "#e10600", height: 3 },
+  { top: 69, width: 42, dur: 4.8, delay: 1.9, opacity: 0.40, color: "#ffffff", height: 2 },
+  { top: 81, width: 62, dur: 4.4, delay: 4.3, opacity: 0.50, color: "#ffc800", height: 2 },
+  { top: 91, width: 52, dur: 5.5, delay: 0.6, opacity: 0.44, color: "#e10600", height: 3 },
 ];
 
 
@@ -821,7 +821,7 @@ export default function HomePage() {
 
   return (
     <>
-    <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "#1c1c2c" }}>
+    <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "var(--background)" }}>
       {/* ── Speed lines background ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         {SPEED_LINES.map((line, i) => (
@@ -847,7 +847,7 @@ export default function HomePage() {
         </h1>
         {currentTeamName && currentTeamColor ? (
           <div className="flex flex-col mt-5" style={{ gap: "1px" }}>
-            <span className="inline-block h-px w-8 rounded-full mb-2" style={{ backgroundColor: "#FF0090" }} />
+            <span className="inline-block h-px w-8 rounded-full mb-2" style={{ backgroundColor: currentTeamColor }} />
             <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--muted)" }}>
               Let&apos;s go
             </span>
@@ -898,7 +898,7 @@ export default function HomePage() {
           className="flex flex-col rounded-xl overflow-hidden"
           style={{
             border: "1px solid rgba(255,255,255,0.14)",
-            backgroundColor: "rgba(10,10,18,0.92)",
+            backgroundColor: "rgba(15,15,15,0.92)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
           }}
@@ -916,7 +916,7 @@ export default function HomePage() {
             }}
           >
             <h2 style={{ fontFamily: "var(--font-orbitron)", fontSize: "22px", fontWeight: 600, letterSpacing: "0.02em", lineHeight: 1 }}>
-              <span style={{ color: "#FF0090" }}>F1</span>
+              <span style={{ color: "var(--f1-red)" }}>F1</span>
               <span style={{ color: "rgba(255,255,255,0.90)" }}> 2026 Season</span>
             </h2>
           </div>
@@ -934,11 +934,11 @@ export default function HomePage() {
                   style={{
                     minHeight: isNext ? "96px" : "44px",
                     borderBottom: "1px solid rgba(255,255,255,0.07)",
-                    borderLeft: isNext ? "5px solid #FF0090" : "3px solid transparent",
+                    borderLeft: isNext ? "5px solid var(--f1-red)" : "3px solid transparent",
                     background: isNext
-                      ? "linear-gradient(to right, rgba(255,0,144,0.28) 0%, rgba(255,0,144,0.09) 60%, transparent 100%)"
+                      ? "linear-gradient(to right, rgba(225,6,0,0.28) 0%, rgba(225,6,0,0.09) 60%, transparent 100%)"
                       : "transparent",
-                    boxShadow: isNext ? "0 0 0 1px rgba(255,0,144,0.22), inset 0 0 60px rgba(255,0,144,0.09)" : "none",
+                    boxShadow: isNext ? "0 0 0 1px rgba(225,6,0,0.22), inset 0 0 60px rgba(225,6,0,0.09)" : "none",
                   }}
                 >
                   {/* Round */}
@@ -985,7 +985,7 @@ export default function HomePage() {
                       {isNext && (
                         <span
                           className="text-[11px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"
-                          style={{ backgroundColor: "rgba(255,0,144,0.55)", color: "#ffffff", border: "1px solid rgba(255,0,144,0.9)", boxShadow: "0 0 8px rgba(255,0,144,0.4)" }}
+                          style={{ backgroundColor: "rgba(225,6,0,0.55)", color: "#ffffff", border: "1px solid rgba(225,6,0,0.9)", boxShadow: "0 0 8px rgba(225,6,0,0.4)" }}
                         >
                           Next Race
                         </span>
