@@ -533,7 +533,7 @@ export default function SettingsPage() {
                 Push notifications
               </p>
               <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                Get notified when someone @mentions you in a race discussion
+                Get reminded to lock in your predictions before each race weekend
               </p>
             </div>
             <span

@@ -2,5 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "cd f1-app && npm ci",
-  "buildCommand": "cd f1-app && npm run build"
+  "buildCommand": "cd f1-app && npm run build",
+  "crons": [
+    { "path": "/api/cron/race-reminders", "schedule": "0 * * * *" }
+  ]
 }
