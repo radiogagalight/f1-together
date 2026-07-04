@@ -10,6 +10,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { apiFetch } from "@/lib/api/fetch";
 import { CONSTRUCTORS, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
+import { checkIsAdmin } from "@/lib/adminAccess";
 
 const RANK_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"];
 const RANK_LABELS = ["#1", "#2", "#3"];
@@ -182,14 +183,14 @@ export default function SettingsPage() {
   // Sync local state when context loads (after DB fetch)
   useEffect(() => { setTzName(timezoneName); }, [timezoneName]);
 
-  // Check admin status
+  // Check admin status (profile flag or allowlisted email)
   useEffect(() => {
     if (!user) return;
     getDoc(doc(db, "profiles", user.uid)).then((snap) =>
-      setIsAdmin(snap.data()?.is_admin === true)
+      setIsAdmin(checkIsAdmin(user.email, snap.data()?.is_admin === true))
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+  }, [user?.uid, user?.email]);
 
   // Check current push permission / subscription status
   useEffect(() => {

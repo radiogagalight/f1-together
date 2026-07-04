@@ -1,14 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getFirebaseApp } from "@/lib/firebase/app";
+import { useAuth } from "@/components/AuthProvider";
 import { getDb } from "@/lib/firebase/db";
-import { doc, getDoc } from "firebase/firestore";
-import { apiFetch } from "@/lib/api/fetch";
 import { RACES, DRIVERS, CONSTRUCTORS } from "@/lib/data";
+import { checkIsAdmin } from "@/lib/adminAccess";
+import { loadRaceResult, saveRaceResult } from "@/lib/resultsStorage";
 import type { RaceResult, RaceWildcard, WildcardQuestionType } from "@/lib/types";
-import { loadWildcards as loadWildcardsFromStorage } from "@/lib/wildcardStorage";
+import {
+  loadWildcards as loadWildcardsFromStorage,
+  createWildcard,
+  updateWildcard,
+  deleteWildcard,
+} from "@/lib/wildcardStorage";
 
 const NULL_OPTION = "__null__";
 
@@ -107,7 +111,8 @@ function ConstructorSelect({ value, onChange, label }: { value: string | null; o
 }
 
 export default function AdminResultsPage() {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { user, authReady } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [selectedRound, setSelectedRound] = useState(1);
   const [result, setResult] = useState<Partial<RaceResult>>({});
   const [saving, setSaving] = useState(false);
@@ -124,29 +129,18 @@ export default function AdminResultsPage() {
   const [newWcBattleTeam, setNewWcBattleTeam] = useState<string | null>(null);
   const [creatingWc, setCreatingWc] = useState(false);
 
-  // Admin check
   useEffect(() => {
-    const auth = getAuth(getFirebaseApp());
-    const db = getDb();
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) {
-        setIsAdmin(false);
-        return;
-      }
-      const snap = await getDoc(doc(db, "profiles", u.uid));
-      setIsAdmin(snap.data()?.is_admin === true);
-    });
-    return () => unsub();
-  }, []);
+    if (!authReady) return;
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    setIsAdmin(checkIsAdmin(user.email));
+  }, [authReady, user]);
 
   const loadResult = useCallback(async (round: number) => {
-    const res = await apiFetch(`/api/results/${round}`);
-    if (res.ok) {
-      const data = await res.json();
-      setResult(data);
-    } else {
-      setResult({});
-    }
+    const data = await loadRaceResult(round, getDb());
+    setResult(data ?? {});
   }, []);
 
   const loadWildcards = useCallback(async (round: number) => {
@@ -157,7 +151,7 @@ export default function AdminResultsPage() {
     if (isAdmin) { loadResult(selectedRound); loadWildcards(selectedRound); }
   }, [isAdmin, selectedRound, loadResult, loadWildcards]);
 
-  if (isAdmin === null) {
+  if (!authReady) {
     return (
       <div className="max-w-lg mx-auto px-4 pt-10 text-center" style={{ color: "var(--muted)" }}>
         Checking access…
@@ -185,16 +179,12 @@ export default function AdminResultsPage() {
   async function handleSave() {
     setSaving(true);
     setStatusMsg(null);
-    const res = await apiFetch(`/api/results/${selectedRound}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(result),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setResult(data);
+    try {
+      await saveRaceResult(selectedRound, result, true, getDb());
+      const saved = await loadRaceResult(selectedRound, getDb());
+      setResult(saved ?? result);
       setStatusMsg("Overrides saved.");
-    } else {
+    } catch {
       setStatusMsg("Save failed. Try again.");
     }
     setSaving(false);
@@ -313,13 +303,13 @@ export default function AdminResultsPage() {
                     onClick={async () => {
                       if (!confirm("Delete this wildcard? All user predictions for it will be lost.")) return;
                       setWcStatus(null);
-                      const res = await apiFetch(`/api/wildcards/${selectedRound}`, {
-                        method: "DELETE",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ id: wc.id }),
-                      });
-                      if (res.ok) { setWcStatus("Deleted."); loadWildcards(selectedRound); }
-                      else setWcStatus("Delete failed.");
+                      try {
+                        await deleteWildcard(wc.id, getDb());
+                        setWcStatus("Deleted.");
+                        loadWildcards(selectedRound);
+                      } catch {
+                        setWcStatus("Delete failed.");
+                      }
                     }}
                     className="text-xs px-2 py-1 rounded-lg shrink-0"
                     style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.25)" }}
@@ -339,11 +329,7 @@ export default function AdminResultsPage() {
                         <button
                           key={v}
                           onClick={async () => {
-                            await apiFetch(`/api/wildcards/${selectedRound}`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ id: wc.id, correctAnswer: v }),
-                            });
+                            await updateWildcard(wc.id, { correctAnswer: v }, getDb());
                             loadWildcards(selectedRound);
                           }}
                           className="px-3 py-1 text-xs font-semibold rounded-lg"
@@ -363,11 +349,7 @@ export default function AdminResultsPage() {
                         <button
                           key={opt.id}
                           onClick={async () => {
-                            await apiFetch(`/api/wildcards/${selectedRound}`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ id: wc.id, correctAnswer: opt.id }),
-                            });
+                            await updateWildcard(wc.id, { correctAnswer: opt.id }, getDb());
                             loadWildcards(selectedRound);
                           }}
                           className="px-3 py-1 text-xs font-semibold rounded-lg"
@@ -386,11 +368,7 @@ export default function AdminResultsPage() {
                       label=""
                       value={wc.correctAnswer}
                       onChange={async (v) => {
-                        await apiFetch(`/api/wildcards/${selectedRound}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: wc.id, correctAnswer: v }),
-                        });
+                        await updateWildcard(wc.id, { correctAnswer: v }, getDb());
                         loadWildcards(selectedRound);
                       }}
                     />
@@ -399,11 +377,7 @@ export default function AdminResultsPage() {
                       label=""
                       value={wc.correctAnswer}
                       onChange={async (v) => {
-                        await apiFetch(`/api/wildcards/${selectedRound}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: wc.id, correctAnswer: v }),
-                        });
+                        await updateWildcard(wc.id, { correctAnswer: v }, getDb());
                         loadWildcards(selectedRound);
                       }}
                     />
@@ -539,26 +513,26 @@ export default function AdminResultsPage() {
                         { id: newWcBattleB!, name: DRIVERS.find(d => d.id === newWcBattleB)?.name ?? newWcBattleB! },
                       ]
                     : null;
-                  const res = await apiFetch(`/api/wildcards/${selectedRound}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      question: newWcQuestion.trim(),
-                      questionType: newWcType,
-                      options: battleOptions,
-                      points: newWcPoints,
-                      displayOrder: wildcards.length,
-                    }),
-                  });
-                  setCreatingWc(false);
-                  if (res.ok) {
+                  try {
+                    await createWildcard(
+                      selectedRound,
+                      {
+                        question: newWcQuestion.trim(),
+                        questionType: newWcType,
+                        options: battleOptions,
+                        points: newWcPoints,
+                        displayOrder: wildcards.length,
+                      },
+                      getDb()
+                    );
                     setNewWcQuestion(""); setNewWcBattleA(null); setNewWcBattleB(null);
                     setNewWcBattleTeam(null); setNewWcPoints(10);
                     setWcStatus("Question added.");
                     loadWildcards(selectedRound);
-                  } else {
+                  } catch {
                     setWcStatus("Failed to add question.");
                   }
+                  setCreatingWc(false);
                 }}
                 disabled={creatingWc}
                 className="py-2 text-sm font-semibold rounded-xl"

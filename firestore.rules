@@ -7,9 +7,19 @@ service cloud.firestore {
     function isOwner(uid) {
       return signedIn() && request.auth.uid == uid;
     }
-    function isAdmin() {
+    function isAdminEmail() {
       return signedIn()
-        && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('is_admin', false) == true;
+        && request.auth.token.email is string
+        && request.auth.token.email.lower() in [
+          'lightharas@gmail.com'
+        ];
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('is_admin', false) == true
+        || isAdminEmail()
+      );
     }
 
     match /profiles/{userId} {

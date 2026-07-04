@@ -7,6 +7,8 @@ import {
   orderBy,
   getDocs,
   setDoc,
+  addDoc,
+  updateDoc,
   deleteDoc,
 } from "firebase/firestore";
 import type { RaceWildcard, WildcardPrediction, WildcardQuestionType } from "./types";
@@ -88,4 +90,63 @@ export async function deleteWildcardPick(
   db: Firestore
 ): Promise<void> {
   await deleteDoc(doc(db, "wildcard_picks", wcPickDocId(userId, wildcardId)));
+}
+
+export async function createWildcard(
+  round: number,
+  data: {
+    question: string;
+    questionType: WildcardQuestionType;
+    options?: { id: string; name: string }[] | null;
+    points?: number;
+    displayOrder?: number;
+  },
+  db: Firestore
+): Promise<RaceWildcard> {
+  const ref = await addDoc(collection(db, "race_wildcards"), {
+    round,
+    question: data.question,
+    question_type: data.questionType,
+    options: data.options ?? null,
+    points: data.points ?? 10,
+    display_order: data.displayOrder ?? 0,
+    correct_answer: null,
+    created_at: new Date().toISOString(),
+  });
+  return {
+    id: ref.id,
+    round,
+    question: data.question,
+    questionType: data.questionType,
+    options: data.options ?? null,
+    points: data.points ?? 10,
+    correctAnswer: null,
+    displayOrder: data.displayOrder ?? 0,
+  };
+}
+
+export async function updateWildcard(
+  id: string,
+  updates: {
+    question?: string;
+    questionType?: WildcardQuestionType;
+    options?: { id: string; name: string }[] | null;
+    points?: number;
+    correctAnswer?: string | null;
+    displayOrder?: number;
+  },
+  db: Firestore
+): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  if (updates.question !== undefined) payload.question = updates.question;
+  if (updates.questionType !== undefined) payload.question_type = updates.questionType;
+  if (updates.options !== undefined) payload.options = updates.options;
+  if (updates.points !== undefined) payload.points = updates.points;
+  if (updates.correctAnswer !== undefined) payload.correct_answer = updates.correctAnswer;
+  if (updates.displayOrder !== undefined) payload.display_order = updates.displayOrder;
+  await updateDoc(doc(db, "race_wildcards", id), payload);
+}
+
+export async function deleteWildcard(id: string, db: Firestore): Promise<void> {
+  await deleteDoc(doc(db, "race_wildcards", id));
 }
