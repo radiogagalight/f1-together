@@ -5,10 +5,10 @@ import { adminLoadRaceResult, adminSaveRaceResult } from "@/lib/resultsStorageAd
 import type { RaceResult } from "@/lib/types";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ round: string }> }
 ) {
-  const uid = await getSessionUid();
+  const uid = await getSessionUid(req);
   if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { round: roundStr } = await params;
@@ -22,7 +22,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ round: string }> }
 ) {
-  const uid = await getSessionUid();
+  const uid = await getSessionUid(req);
   if (!uid || !(await isAdminUid(uid))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

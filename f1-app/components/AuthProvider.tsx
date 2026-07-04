@@ -56,13 +56,17 @@ async function syncServerSession(user: User | null) {
       await fetch("/api/auth/session", { method: "DELETE", credentials: "include" });
       return;
     }
-    const idToken = await user.getIdToken();
-    await fetch("/api/auth/session", {
+    // Force-refresh so the server always gets a live token (not a cached expired one).
+    const idToken = await user.getIdToken(true);
+    const res = await fetch("/api/auth/session", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idToken }),
     });
+    if (!res.ok) {
+      console.error("[auth] session sync failed", res.status, await res.text());
+    }
   } catch (e) {
     console.error("[auth] session sync", e);
   }

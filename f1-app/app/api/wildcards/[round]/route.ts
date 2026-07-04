@@ -4,10 +4,10 @@ import { isAdminUid } from "@/lib/server/isAdmin";
 import { getAdminDb } from "@/lib/firebase/admin";
 // GET — any authenticated user; returns wildcards for a round
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ round: string }> }
 ) {
-  const uid = await getSessionUid();
+  const uid = await getSessionUid(req);
   if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { round: roundStr } = await params;
@@ -27,7 +27,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ round: string }> }
 ) {
-  const uid = await getSessionUid();
+  const uid = await getSessionUid(req);
   if (!uid || !(await isAdminUid(uid))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -54,7 +54,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ round: string }> }
 ) {
-  const uid = await getSessionUid();
+  const uid = await getSessionUid(req);
   if (!uid || !(await isAdminUid(uid))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -87,7 +87,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ round: string }> }
 ) {
-  const uid = await getSessionUid();
+  const uid = await getSessionUid(req);
   if (!uid || !(await isAdminUid(uid))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

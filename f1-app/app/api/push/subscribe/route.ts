@@ -3,7 +3,7 @@ import { getSessionUid } from "@/lib/server/session";
 import { getAdminDb } from "@/lib/firebase/admin";
 
 export async function POST(request: Request) {
-  const uid = await getSessionUid();
+  const uid = await getSessionUid(request);
   if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const subscription = await request.json();
@@ -16,8 +16,8 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE() {
-  const uid = await getSessionUid();
+export async function DELETE(request: Request) {
+  const uid = await getSessionUid(request);
   if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await getAdminDb().collection("push_subscriptions").doc(uid).delete();

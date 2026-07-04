@@ -213,6 +213,7 @@ export default function SettingsPage() {
     setPushLoading(true);
     setPushError(null);
     try {
+      if (!user) throw new Error("Sign in to enable notifications");
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         setPushStatus(permission === 'denied' ? 'denied' : 'disabled');
@@ -225,7 +226,14 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sub.toJSON()),
       });
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(
+          res.status === 401
+            ? "Not signed in on the server — try signing out and back in"
+            : `Server error ${res.status}${detail ? `: ${detail}` : ""}`
+        );
+      }
       setPushStatus('enabled');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
