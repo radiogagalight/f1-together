@@ -9,7 +9,6 @@ import { RACE_FACTS } from "@/lib/raceFacts";
 import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 import { DRIVER_IMAGES } from "@/lib/driverImages";
 import PredictionsWidget from "@/components/PredictionsWidget";
-import Companion from "@/components/Companion";
 import { getDb } from "@/lib/firebase/db";
 import { loadRaceResult } from "@/lib/resultsStorage";
 import { loadRacePick } from "@/lib/raceStorage";
@@ -754,7 +753,6 @@ export default function HomePage() {
   const pageRaces = RACES.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <>
     <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "var(--background)" }}>
       {/* ── Speed lines background ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
@@ -980,7 +978,5 @@ export default function HomePage() {
         </div>
       </div>
     </div>
-    <Companion />
-    </>
   );
 }
