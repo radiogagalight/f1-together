@@ -244,6 +244,23 @@ export function aggregateChampionship(
     }
   }
 
+  /** FIA countback: most wins, then most 2nds, 3rds, … decides points ties. */
+  function countbackCompare(
+    a: { finishesByRound: Record<number, number | null> },
+    b: { finishesByRound: Record<number, number | null> }
+  ): number {
+    const countAt = (
+      finishes: Record<number, number | null>,
+      pos: number
+    ): number =>
+      Object.values(finishes).filter((p) => p === pos).length;
+    for (let pos = 1; pos <= DRIVERS.length; pos++) {
+      const diff = countAt(b.finishesByRound, pos) - countAt(a.finishesByRound, pos);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  }
+
   function rankDrivers(): ChampionshipStanding[] {
     return [...drivers.entries()]
       .map(([id, a]) => {
@@ -262,7 +279,8 @@ export function aggregateChampionship(
       })
       .sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
-        if (b.wins !== a.wins) return b.wins - a.wins;
+        const cb = countbackCompare(a, b);
+        if (cb !== 0) return cb;
         return a.name.localeCompare(b.name);
       });
   }
