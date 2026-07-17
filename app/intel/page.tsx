@@ -45,7 +45,7 @@ function OvertakingPill({ value }: { value: "Rare" | "Occasional" | "Frequent" }
     Frequent: "#22c55e",
   };
   return (
-    <span className="text-xs md:text-sm" style={{ background: `${colors[value]}22`, color: colors[value], border: `1px solid ${colors[value]}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
+    <span className="text-sm md:text-base" style={{ background: `${colors[value]}22`, color: colors[value], border: `1px solid ${colors[value]}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
       {value}
     </span>
   );
@@ -58,7 +58,7 @@ function SCPill({ value }: { value: "Low" | "Medium" | "High" }) {
     High: "#ef4444",
   };
   return (
-    <span className="text-xs md:text-sm" style={{ background: `${colors[value]}22`, color: colors[value], border: `1px solid ${colors[value]}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
+    <span className="text-sm md:text-base" style={{ background: `${colors[value]}22`, color: colors[value], border: `1px solid ${colors[value]}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
       {value}
     </span>
   );
@@ -67,7 +67,7 @@ function SCPill({ value }: { value: "Low" | "Medium" | "High" }) {
 function PoleWinPill({ pct }: { pct: number }) {
   const color = pct >= 70 ? "#ef4444" : pct >= 55 ? "#f59e0b" : "#22c55e";
   return (
-    <span className="text-xs md:text-sm" style={{ background: `${color}22`, color, border: `1px solid ${color}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
+    <span className="text-sm md:text-base" style={{ background: `${color}22`, color, border: `1px solid ${color}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
       {pct}%
     </span>
   );
@@ -76,9 +76,9 @@ function PoleWinPill({ pct }: { pct: number }) {
 function DriverPill({ ref: dRef }: { ref: DriverRef | null }) {
   const color = driverColor(dRef);
   const name = driverDisplay(dRef);
-  if (!dRef) return <span className="text-[13px] md:text-[15px]" style={{ color: "var(--muted)" }}>—</span>;
+  if (!dRef) return <span className="text-[15px] md:text-[17px]" style={{ color: "var(--muted)" }}>—</span>;
   return (
-    <span className="text-[13px] md:text-[15px]" style={{ color, fontWeight: 700 }}>{name}</span>
+    <span className="text-[15px] md:text-[17px]" style={{ color, fontWeight: 700 }}>{name}</span>
   );
 }
 
@@ -106,7 +106,7 @@ function ResultCard({ result, raceName, newCircuit = false }: { result: Historic
   if (!result) {
     return (
       <Card>
-        <div className="text-[13px] md:text-sm" style={{ color: "var(--muted)", textAlign: "center", padding: "12px 0" }}>
+        <div className="text-[15px] md:text-base" style={{ color: "var(--muted)", textAlign: "center", padding: "12px 0" }}>
           Loading {raceName}…
         </div>
       </Card>
@@ -120,11 +120,11 @@ function ResultCard({ result, raceName, newCircuit = false }: { result: Historic
     return (
       <Card>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-          <span className="text-xs md:text-sm" style={{ background: `${yearBadgeColor}22`, color: yearBadgeColor, border: `1px solid ${yearBadgeColor}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
+          <span className="text-sm md:text-base" style={{ background: `${yearBadgeColor}22`, color: yearBadgeColor, border: `1px solid ${yearBadgeColor}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
             {result.year}
           </span>
         </div>
-        <p className="text-[13px] md:text-sm" style={{ color: "var(--muted)", fontStyle: "italic" }}>
+        <p className="text-[15px] md:text-base" style={{ color: "var(--muted)", fontStyle: "italic" }}>
           {newCircuit ? `No data for ${result.year} — new circuit` : `No data found for ${result.year}.`}
         </p>
       </Card>
@@ -134,7 +134,7 @@ function ResultCard({ result, raceName, newCircuit = false }: { result: Historic
   function Section({ label, children }: { label: string; children: React.ReactNode }) {
     return (
       <div style={{ marginBottom: "10px" }}>
-        <div className="text-[10px] md:text-xs" style={{ fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>{label}</div>
+        <div className="text-xs md:text-sm" style={{ fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>{label}</div>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>{children}</div>
       </div>
     );
@@ -143,7 +143,7 @@ function ResultCard({ result, raceName, newCircuit = false }: { result: Historic
   function Row({ label, dRef, extra }: { label: string; dRef: DriverRef | null; extra?: React.ReactNode }) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span className="text-xs md:text-sm" style={{ color: "var(--muted)", minWidth: "80px" }}>{label}</span>
+        <span className="text-sm md:text-base" style={{ color: "var(--muted)", minWidth: "80px" }}>{label}</span>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           {extra}
           <DriverPill ref={dRef} />
@@ -155,7 +155,7 @@ function ResultCard({ result, raceName, newCircuit = false }: { result: Historic
   return (
     <Card>
       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-        <span className="text-xs md:text-sm" style={{ background: `${yearBadgeColor}22`, color: yearBadgeColor, border: `1px solid ${yearBadgeColor}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
+        <span className="text-sm md:text-base" style={{ background: `${yearBadgeColor}22`, color: yearBadgeColor, border: `1px solid ${yearBadgeColor}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
           {result.year}
         </span>
       </div>
@@ -172,8 +172,8 @@ function ResultCard({ result, raceName, newCircuit = false }: { result: Historic
         <Row label="P3" dRef={result.raceP3} />
         <Row label="Fastest Lap" dRef={result.fastestLap} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span className="text-xs md:text-sm" style={{ color: "var(--muted)" }}>Safety Car</span>
-          <span className="text-xs md:text-sm" style={{
+          <span className="text-sm md:text-base" style={{ color: "var(--muted)" }}>Safety Car</span>
+          <span className="text-sm md:text-base" style={{
             fontWeight: 700,
             color: result.safetyCar === true ? "#ef4444" : result.safetyCar === false ? "#22c55e" : "var(--muted)"
           }}>
@@ -228,12 +228,12 @@ function TipsTab({
     return (
       <Card style={{ marginBottom: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-          <span className="text-sm md:text-base" style={{ fontWeight: 700, color: "var(--foreground)" }}>{label}</span>
-          <span className="text-[11px] md:text-xs" style={{ background: "rgba(225,6,0,0.15)", color: "#e10600", border: "1px solid rgba(225,6,0,0.4)", borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
+          <span className="text-base md:text-lg" style={{ fontWeight: 700, color: "var(--foreground)" }}>{label}</span>
+          <span className="text-[13px] md:text-sm" style={{ background: "rgba(225,6,0,0.15)", color: "#e10600", border: "1px solid rgba(225,6,0,0.4)", borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
             {pts} pts
           </span>
         </div>
-        <p className="text-[13px] md:text-sm" style={{ color: "var(--muted)", fontStyle: "italic", lineHeight: 1.5 }}>{hint}</p>
+        <p className="text-[15px] md:text-base" style={{ color: "var(--muted)", fontStyle: "italic", lineHeight: 1.5 }}>{hint}</p>
       </Card>
     );
   }
@@ -412,8 +412,8 @@ function IntelPageInner() {
       <div className="sticky top-0 z-20" style={{ backgroundColor: "rgba(19,19,31,0.95)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="px-4 pt-4 pb-2" style={{ maxWidth: "800px", margin: "0 auto" }}>
           <div className="flex items-center gap-3 mb-3">
-            <Link href="/" className="text-[13px] md:text-sm" style={{ color: "var(--muted)" }}>← Home</Link>
-            <h1 className="text-lg md:text-xl" style={{ fontFamily: "var(--font-orbitron)", fontWeight: 700, color: "var(--foreground)" }}>
+            <Link href="/" className="text-[15px] md:text-base" style={{ color: "var(--muted)" }}>← Home</Link>
+            <h1 className="text-xl md:text-2xl" style={{ fontFamily: "var(--font-orbitron)", fontWeight: 700, color: "var(--foreground)" }}>
               Race Intel
             </h1>
           </div>
@@ -427,7 +427,7 @@ function IntelPageInner() {
                 <button
                   key={r.r}
                   onClick={() => handleRoundChange(r.r)}
-                  className="text-xs md:text-sm"
+                  className="text-sm md:text-base"
                   style={{
                     flexShrink: 0,
                     padding: "4px 12px",
@@ -449,9 +449,9 @@ function IntelPageInner() {
 
           {/* Race name + sprint badge */}
           <div className="flex items-center gap-2 mt-1 mb-2">
-            <span className="text-sm md:text-base" style={{ fontWeight: 700, color: "var(--foreground)" }}>{race.name}</span>
+            <span className="text-base md:text-lg" style={{ fontWeight: 700, color: "var(--foreground)" }}>{race.name}</span>
             {race.sprint && (
-              <span className="text-[10px] md:text-xs" style={{ background: "rgba(255,200,0,0.1)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.3)", borderRadius: "999px", padding: "1px 8px", fontWeight: 700 }}>
+              <span className="text-xs md:text-sm" style={{ background: "rgba(255,200,0,0.1)", color: "#ffc800", border: "1px solid rgba(255,200,0,0.3)", borderRadius: "999px", padding: "1px 8px", fontWeight: 700 }}>
                 Sprint
               </span>
             )}
@@ -463,7 +463,7 @@ function IntelPageInner() {
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                className="text-[13px] md:text-sm"
+                className="text-[15px] md:text-base"
                 style={{
                   padding: "6px 16px",
                   borderRadius: "8px 8px 0 0",
@@ -493,8 +493,8 @@ function IntelPageInner() {
             {circuitChar ? (
               <Card style={{ marginBottom: "16px" }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[15px] md:text-lg" style={{ fontWeight: 800, color: "var(--foreground)" }}>{race.circuit}</span>
-                  <span className="text-[11px] md:text-xs" style={{ background: circuitChar.trackType === "Street" ? "rgba(99,102,241,0.15)" : "rgba(34,197,94,0.12)", color: circuitChar.trackType === "Street" ? "#818cf8" : "#22c55e", border: `1px solid ${circuitChar.trackType === "Street" ? "rgba(99,102,241,0.4)" : "rgba(34,197,94,0.3)"}`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
+                  <span className="text-lg md:text-xl" style={{ fontWeight: 800, color: "var(--foreground)" }}>{race.circuit}</span>
+                  <span className="text-[13px] md:text-sm" style={{ background: circuitChar.trackType === "Street" ? "rgba(99,102,241,0.15)" : "rgba(34,197,94,0.12)", color: circuitChar.trackType === "Street" ? "#818cf8" : "#22c55e", border: `1px solid ${circuitChar.trackType === "Street" ? "rgba(99,102,241,0.4)" : "rgba(34,197,94,0.3)"}`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
                     {circuitChar.trackType}
                   </span>
                 </div>
@@ -502,28 +502,28 @@ function IntelPageInner() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
-                      <span className="text-xs md:text-sm" style={{ color: "var(--muted)", minWidth: "110px" }}>Overtaking</span>
+                      <span className="text-sm md:text-base" style={{ color: "var(--muted)", minWidth: "110px" }}>Overtaking</span>
                       <OvertakingPill value={circuitChar.overtaking} />
                     </div>
-                    <p className="text-xs md:text-sm" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.overtakingNote}</p>
+                    <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.overtakingNote}</p>
                   </div>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
-                      <span className="text-xs md:text-sm" style={{ color: "var(--muted)", minWidth: "110px" }}>Safety Car</span>
+                      <span className="text-sm md:text-base" style={{ color: "var(--muted)", minWidth: "110px" }}>Safety Car</span>
                       <SCPill value={circuitChar.safetyCarLikelihood} />
                     </div>
-                    <p className="text-xs md:text-sm" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.safetyCarNote}</p>
+                    <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.safetyCarNote}</p>
                   </div>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
-                      <span className="text-xs md:text-sm" style={{ color: "var(--muted)", minWidth: "110px" }}>Pole → Win</span>
+                      <span className="text-sm md:text-base" style={{ color: "var(--muted)", minWidth: "110px" }}>Pole → Win</span>
                       <PoleWinPill pct={circuitChar.poleToWinPct} />
                     </div>
-                    <p className="text-xs md:text-sm" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.poleToWinNote}</p>
+                    <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.poleToWinNote}</p>
                   </div>
                 </div>
 
-                <p className="text-xs md:text-sm" style={{ fontStyle: "italic", color: "rgba(255,255,255,0.45)", marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)", lineHeight: 1.5 }}>
+                <p className="text-sm md:text-base" style={{ fontStyle: "italic", color: "rgba(255,255,255,0.45)", marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)", lineHeight: 1.5 }}>
                   {circuitChar.insight}
                 </p>
               </Card>
@@ -534,11 +534,11 @@ function IntelPageInner() {
               <ResultCard result={result2024} raceName="2024" newCircuit={circuitChar?.hasHistory === false} />
               <ResultCard result={result2025} raceName="2025" newCircuit={circuitChar?.hasHistory === false} />
               {loadingCircuit ? (
-                <div className="text-[13px] md:text-sm" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "120px", color: "var(--muted)", background: "rgba(10,10,18,0.85)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "14px" }}>
+                <div className="text-[15px] md:text-base" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "120px", color: "var(--muted)", background: "rgba(10,10,18,0.85)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "14px" }}>
                   Loading 2026…
                 </div>
               ) : loadError ? (
-                <div className="text-[13px] md:text-sm" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "120px", color: "#ef4444", background: "rgba(10,10,18,0.85)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "14px", padding: "16px", textAlign: "center" }}>
+                <div className="text-[15px] md:text-base" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "120px", color: "#ef4444", background: "rgba(10,10,18,0.85)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "14px", padding: "16px", textAlign: "center" }}>
                   Could not load 2026 results.
                 </div>
               ) : result2026 ? (
