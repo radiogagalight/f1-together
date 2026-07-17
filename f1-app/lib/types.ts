@@ -108,3 +108,49 @@ export interface LeaderboardEntry {
   scoresByRound: Record<number, number>;
   breakdownsByRound: Record<number, ScoreBreakdown>;
 }
+
+/** Official F1 race or sprint finishing order (not prediction-shaped). */
+export type ClassificationSession = "race" | "sprint";
+
+export type ClassificationStatus = "classified" | "dnf" | "dns" | "dsq" | "unknown";
+
+export interface ClassificationEntry {
+  position: number;
+  driverId: string;
+  pointsAwarded: number;
+  status: ClassificationStatus;
+}
+
+export interface RaceClassification {
+  round: number;
+  session: ClassificationSession;
+  entries: ClassificationEntry[];
+  /** True when the grid is partial (e.g. only top 6 from prediction results). */
+  incomplete: boolean;
+  fetchedAt: string | null;
+  manuallyOverridden: boolean;
+  updatedAt: string;
+}
+
+export interface ChampionshipStanding {
+  id: string;
+  name: string;
+  points: number;
+  wins: number;
+  podiums: number;
+  poles: number;
+  /** Driver standings only: constructor id */
+  constructorId?: string;
+  /** Finish position by round (race session). Null = DNF/DNS or no result. */
+  finishesByRound?: Record<number, number | null>;
+  /** Championship points earned by round (race + sprint). */
+  pointsByRound?: Record<number, number>;
+}
+
+export interface SeasonResultsPayload {
+  classifications: RaceClassification[];
+  driverStandings: ChampionshipStanding[];
+  constructorStandings: ChampionshipStanding[];
+  completedRounds: number[];
+  raceResults: RaceResult[];
+}

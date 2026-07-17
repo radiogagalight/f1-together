@@ -10,7 +10,8 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { apiFetch } from "@/lib/api/fetch";
 import { CONSTRUCTORS, DRIVERS } from "@/lib/data";
 import { TEAM_COLORS, hexToRgb } from "@/lib/teamColors";
-import { checkIsAdmin } from "@/lib/adminAccess";
+import { checkIsAdminUser, collectUserEmails } from "@/lib/adminAccess";
+import { debugLog } from "@/lib/debugLog";
 
 const RANK_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"];
 const RANK_LABELS = ["#1", "#2", "#3"];
@@ -186,9 +187,24 @@ export default function SettingsPage() {
   // Check admin status (profile flag or allowlisted email)
   useEffect(() => {
     if (!user) return;
-    getDoc(doc(db, "profiles", user.uid)).then((snap) =>
-      setIsAdmin(checkIsAdmin(user.email, snap.data()?.is_admin === true))
-    );
+    getDoc(doc(db, "profiles", user.uid)).then((snap) => {
+      const profileIsAdmin = snap.data()?.is_admin === true;
+      const emails = collectUserEmails(
+        user.email,
+        user.providerData.map((provider) => provider.email)
+      );
+      const nextIsAdmin = checkIsAdminUser(user, profileIsAdmin);
+      void debugLog("pre-fix", "H2", "app/settings/page.tsx:215", "settings admin evaluated", {
+        hasUser: true,
+        emailPresent: Boolean(user.email),
+        emailDomain: user.email?.split("@")[1] ?? emails[0]?.split("@")[1] ?? null,
+        providerEmailCount: emails.length,
+        profileExists: snap.exists(),
+        profileIsAdmin,
+        nextIsAdmin,
+      });
+      setIsAdmin(nextIsAdmin);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid, user?.email]);
 

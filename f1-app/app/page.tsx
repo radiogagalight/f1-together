@@ -9,11 +9,15 @@ import { RACE_FACTS } from "@/lib/raceFacts";
 import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 import { DRIVER_IMAGES } from "@/lib/driverImages";
 import PredictionsWidget from "@/components/PredictionsWidget";
+import SpaHeroScene, { SPA_PALETTE, SPA_SPEED_LINES } from "@/components/SpaHeroScene";
 import { getDb } from "@/lib/firebase/db";
 import { loadRaceResult } from "@/lib/resultsStorage";
 import { loadRacePick } from "@/lib/raceStorage";
 import { scoreRound } from "@/lib/scoring";
 import type { RacePrediction, RaceResult, ScoreBreakdown } from "@/lib/types";
+
+const BELGIAN_GP_ROUND = 10;
+const SPA_CIRCUIT_FACT = "Longest lap on the calendar — 7.004 km through the Ardennes.";
 
 function WeekendResultsCard({
   result,
@@ -396,15 +400,28 @@ function NextRaceHero({
   const winnerName = !raceStarted && predictions.winner ? (DRIVERS.find(d => d.id === predictions.winner)?.name ?? null) : null;
   const hasPredictions   = !!(poleName || winnerName);
 
+  const spaCelebration = race.r === BELGIAN_GP_ROUND;
+  const liveBorder = spaCelebration ? SPA_PALETTE.liveBorder : "rgba(225,6,0,0.55)";
+  const liveGlow = spaCelebration
+    ? `0 0 0 1px ${SPA_PALETTE.liveGlow}, 0 0 40px oklch(0.45 0.1 155 / 0.35)`
+    : "0 0 0 1px rgba(225,6,0,0.2), 0 0 40px rgba(225,6,0,0.3)";
+  const dayLabelColor = spaCelebration ? SPA_PALETTE.mistySage : "#e10600";
+  const dayLabelShadow = spaCelebration
+    ? "0 0 24px oklch(0.55 0.1 148 / 0.55), 0 2px 12px rgba(0,0,0,0.9)"
+    : "0 0 24px rgba(225,6,0,0.7), 0 2px 12px rgba(0,0,0,0.9), 0 1px 3px #000, 0 0 6px #000";
+  const nextDotColor = spaCelebration ? SPA_PALETTE.mistySage : "#e10600";
+
   return (
     <div
       className="relative rounded-xl overflow-hidden min-h-[360px] md:min-h-[520px]"
       style={{
-        border: isLive ? "1px solid rgba(225,6,0,0.55)" : "1px solid transparent",
-        boxShadow: isLive ? "0 0 0 1px rgba(225,6,0,0.2), 0 0 40px rgba(225,6,0,0.3)" : "none",
+        border: isLive ? `1px solid ${liveBorder}` : "1px solid transparent",
+        boxShadow: isLive ? liveGlow : "none",
       }}
     >
-      {heroImage ? (
+      {spaCelebration ? (
+        <SpaHeroScene />
+      ) : heroImage ? (
         <Image
           src={heroImage} alt="" fill
           style={{ objectFit: "cover", objectPosition: "center", opacity: isLive ? 0.65 : 0.45 }}
@@ -417,7 +434,9 @@ function NextRaceHero({
         position: "absolute", inset: 0,
         background: isLive
           ? "linear-gradient(to bottom, rgba(8,8,16,0.05) 0%, rgba(8,8,16,0.50) 45%, rgba(8,8,16,0.85) 100%)"
-          : "linear-gradient(to bottom, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.85) 55%, rgba(8,8,16,0.98) 100%)",
+          : spaCelebration
+            ? "linear-gradient(to bottom, oklch(0.12 0.02 155 / 0.1) 0%, oklch(0.12 0.02 155 / 0.55) 50%, oklch(0.1 0.02 155 / 0.96) 100%)"
+            : "linear-gradient(to bottom, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.85) 55%, rgba(8,8,16,0.98) 100%)",
       }} />
 
       {under1h && (
@@ -428,10 +447,12 @@ function NextRaceHero({
         {/* Scrolling live ticker banner */}
         {isLive && (
           <div style={{
-            background: "rgba(0,0,0,0.35)",
+            background: spaCelebration ? "oklch(0.12 0.03 155 / 0.55)" : "rgba(0,0,0,0.35)",
             overflow: "hidden",
             padding: "13px 0",
-            borderBottom: "1px solid rgba(255,255,255,0.12)",
+            borderBottom: spaCelebration
+              ? `1px solid ${SPA_PALETTE.badgeBorder}`
+              : "1px solid rgba(255,255,255,0.12)",
           }}>
             <div style={{
               display: "inline-flex",
@@ -449,7 +470,7 @@ function NextRaceHero({
                   }}
                 >
                   {race.name} Race Weekend --{" "}
-                  <span style={{ color: "#00e05a" }}>Live Now</span>
+                  <span style={{ color: spaCelebration ? SPA_PALETTE.mistySage : "#00e05a" }}>Live Now</span>
                 </span>
               ))}
             </div>
@@ -460,13 +481,25 @@ function NextRaceHero({
         <div className="flex flex-col justify-between flex-1 p-4">
         {/* Top badges + chat button */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
               style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}
             >
               Round {race.r}
             </span>
+            {spaCelebration && (
+              <span
+                className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: SPA_PALETTE.badgeBg,
+                  color: SPA_PALETTE.mistySage,
+                  border: `1px solid ${SPA_PALETTE.badgeBorder}`,
+                }}
+              >
+                Spa Week
+              </span>
+            )}
             {race.sprint && (
               <span
                 className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
@@ -487,19 +520,31 @@ function NextRaceHero({
               style={{
                 fontFamily: "var(--font-orbitron)",
                 fontSize: "clamp(20px, 5.5vw, 30px)",
-                color: "#e10600",
+                color: dayLabelColor,
                 letterSpacing: "0.06em",
-                textShadow: "0 0 24px rgba(225,6,0,0.7), 0 2px 12px rgba(0,0,0,0.9), 0 1px 3px #000, 0 0 6px #000",
+                textShadow: dayLabelShadow,
               }}
             >
               {dayLabel}
             </p>
           )}
 
+          {spaCelebration && (
+            <div
+              className="mb-2 flex overflow-hidden rounded-sm"
+              style={{ height: 3, width: 56 }}
+              aria-hidden
+            >
+              <span style={{ flex: 1, backgroundColor: SPA_PALETTE.belgianBlack }} />
+              <span style={{ flex: 1, backgroundColor: SPA_PALETTE.belgianYellow }} />
+              <span style={{ flex: 1, backgroundColor: SPA_PALETTE.belgianRed }} />
+            </div>
+          )}
+
           <p className="text-sm font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
             {race.circuit}
           </p>
-          <h2 className="font-black leading-none mb-3" style={{ fontFamily: "var(--font-orbitron)", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>
+          <h2 className="font-black leading-none mb-2" style={{ fontFamily: "var(--font-orbitron)", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>
             <span className="block text-3xl" style={{ color: "#ffffff" }}>
               {race.name.replace(" Grand Prix", "")}
             </span>
@@ -507,6 +552,21 @@ function NextRaceHero({
               Grand Prix
             </span>
           </h2>
+
+          {spaCelebration && (
+            <p
+              className="mb-3"
+              style={{
+                fontSize: "12px",
+                fontWeight: 500,
+                lineHeight: 1.4,
+                color: "oklch(0.78 0.03 155 / 0.65)",
+                maxWidth: "36ch",
+              }}
+            >
+              {SPA_CIRCUIT_FACT}
+            </p>
+          )}
 
           {/* Session timeline strip — live only */}
           {isLive && (
@@ -519,13 +579,13 @@ function NextRaceHero({
                     <div className="flex flex-col items-center gap-1">
                       <div style={{
                         width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0,
-                        backgroundColor: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)",
-                        boxShadow: sNext ? "0 0 8px 2px rgba(225,6,0,0.7)" : "none",
+                        backgroundColor: sNext ? nextDotColor : sPast ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.35)",
+                        boxShadow: sNext ? `0 0 8px 2px ${spaCelebration ? "oklch(0.55 0.1 148 / 0.55)" : "rgba(225,6,0,0.7)"}` : "none",
                       }} />
                       <span style={{
                         fontSize: "10px", fontWeight: 700, letterSpacing: "0.05em",
                         textTransform: "uppercase", whiteSpace: "nowrap",
-                        color: sNext ? "#e10600" : sPast ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.4)",
+                        color: sNext ? nextDotColor : sPast ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.4)",
                         textShadow: sNext ? "0 1px 3px #000, 0 0 6px #000" : "none",
                       }}>
                         {s.short}
@@ -669,6 +729,8 @@ export default function HomePage() {
   const { user, authReady, displayName, teamAccent, timezoneName, favTeams } = useAuth();
 
   const nextRaceIdx = getNextRaceIndex();
+  const spaCelebration = RACES[nextRaceIdx]?.r === BELGIAN_GP_ROUND;
+  const atmosphereLines = spaCelebration ? SPA_SPEED_LINES : SPEED_LINES;
   const [page, setPage] = useState(Math.floor(nextRaceIdx / PAGE_SIZE));
 
   // Fetch user's pole + winner predictions for the next race
@@ -756,7 +818,7 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen pb-28 md:pb-6" style={{ backgroundColor: "var(--background)" }}>
       {/* ── Speed lines background ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        {SPEED_LINES.map((line, i) => (
+        {atmosphereLines.map((line, i) => (
           <div
             key={i}
             className="absolute left-0"
@@ -777,6 +839,20 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)", opacity: authReady ? 1 : 0, transition: "opacity 0.15s ease", fontFamily: "var(--font-orbitron)" }}>
           Hi, {displayName ?? "driver"}
         </h1>
+        {spaCelebration && (
+          <p
+            className="text-sm mt-1.5"
+            style={{
+              color: SPA_PALETTE.mistySage,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              opacity: authReady ? 1 : 0,
+              transition: "opacity 0.15s ease",
+            }}
+          >
+            It&apos;s Spa week. Mist, elevation, and the longest lap of the year.
+          </p>
+        )}
         {currentTeamName && currentTeamColor ? (
           <div className="flex flex-col mt-5" style={{ gap: "1px" }}>
             <span className="inline-block h-px w-8 rounded-full mb-2" style={{ backgroundColor: currentTeamColor }} />
@@ -858,6 +934,13 @@ export default function HomePage() {
             {pageRaces.map((race) => {
               const isPast = new Date(race.startUtc).getTime() < Date.now();
               const isNext = race.r === RACES[nextRaceIdx].r;
+              const nextBorder = spaCelebration ? SPA_PALETTE.liveBorder : "var(--f1-red)";
+              const nextBg = spaCelebration
+                ? "linear-gradient(to right, oklch(0.35 0.07 152 / 0.35) 0%, oklch(0.3 0.05 155 / 0.12) 60%, transparent 100%)"
+                : "linear-gradient(to right, rgba(225,6,0,0.28) 0%, rgba(225,6,0,0.09) 60%, transparent 100%)";
+              const nextShadow = spaCelebration
+                ? `0 0 0 1px ${SPA_PALETTE.badgeBorder}, inset 0 0 60px oklch(0.4 0.06 152 / 0.12)`
+                : "0 0 0 1px rgba(225,6,0,0.22), inset 0 0 60px rgba(225,6,0,0.09)";
               return (
                 <Link
                   key={race.r}
@@ -866,11 +949,9 @@ export default function HomePage() {
                   style={{
                     minHeight: isNext ? "96px" : "44px",
                     borderBottom: "1px solid rgba(255,255,255,0.07)",
-                    borderLeft: isNext ? "5px solid var(--f1-red)" : "3px solid transparent",
-                    background: isNext
-                      ? "linear-gradient(to right, rgba(225,6,0,0.28) 0%, rgba(225,6,0,0.09) 60%, transparent 100%)"
-                      : "transparent",
-                    boxShadow: isNext ? "0 0 0 1px rgba(225,6,0,0.22), inset 0 0 60px rgba(225,6,0,0.09)" : "none",
+                    borderLeft: isNext ? `5px solid ${nextBorder}` : "3px solid transparent",
+                    background: isNext ? nextBg : "transparent",
+                    boxShadow: isNext ? nextShadow : "none",
                   }}
                 >
                   {/* Round */}
@@ -917,7 +998,21 @@ export default function HomePage() {
                       {isNext && (
                         <span
                           className="text-[11px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"
-                          style={{ backgroundColor: "rgba(225,6,0,0.55)", color: "#ffffff", border: "1px solid rgba(225,6,0,0.9)", boxShadow: "0 0 8px rgba(225,6,0,0.4)" }}
+                          style={
+                            spaCelebration
+                              ? {
+                                  backgroundColor: SPA_PALETTE.badgeBg,
+                                  color: SPA_PALETTE.mistySage,
+                                  border: `1px solid ${SPA_PALETTE.badgeBorder}`,
+                                  boxShadow: `0 0 8px oklch(0.55 0.08 148 / 0.3)`,
+                                }
+                              : {
+                                  backgroundColor: "rgba(225,6,0,0.55)",
+                                  color: "#ffffff",
+                                  border: "1px solid rgba(225,6,0,0.9)",
+                                  boxShadow: "0 0 8px rgba(225,6,0,0.4)",
+                                }
+                          }
                         >
                           Next Race
                         </span>

@@ -35,6 +35,11 @@
   to   { transform: translateX(200%); }
 }
 
+@keyframes mist-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(12%); }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

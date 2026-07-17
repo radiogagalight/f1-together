@@ -1,5 +1,11 @@
 import { DRIVERS } from "./data";
-import type { RaceResult } from "./types";
+import { pointsForSession } from "./f1Points";
+import type {
+  ClassificationEntry,
+  ClassificationSession,
+  RaceClassification,
+  RaceResult,
+} from "./types";
 
 // ─── Name helpers ─────────────────────────────────────────────────────────────
 
@@ -20,12 +26,12 @@ function slugToDriverId(slug: string): string | null {
 // ─── Circuit keyword map ──────────────────────────────────────────────────────
 
 const CIRCUIT_KEYWORDS: Record<number, string> = {
-  1: "melbourne", 2: "shanghai",   3: "suzuka",    4: "sakhir",
-  5: "jeddah",    6: "miami",      7: "montreal",  8: "monte",
-  9: "catalunya", 10: "spielberg", 11: "silverstone",12: "spa",
-  13: "hungaroring",14: "zandvoort",15: "monza",   16: "madring",
-  17: "baku",    18: "singapore",  19: "austin",   20: "mexico",
-  21: "interlagos",22: "las vegas",23: "lusail",   24: "yas",
+  1: "melbourne", 2: "shanghai", 3: "suzuka", 4: "miami",
+  5: "montreal", 6: "monte", 7: "catalunya", 8: "spielberg",
+  9: "silverstone", 10: "spa", 11: "hungaroring", 12: "zandvoort",
+  13: "monza", 14: "madring", 15: "baku", 16: "singapore",
+  17: "austin", 18: "mexico", 19: "interlagos", 20: "vegas",
+  21: "lusail", 22: "yas",
 };
 
 const BASE = "https://api.openf1.org/v1";
@@ -234,4 +240,92 @@ export async function fetchFullRaceResult(
   } catch (e) { console.error("[openf1] top-level error", e); }
 
   return result;
+}
+
+/** Fetch full finishing order for a race or sprint session (up to 20). */
+export async function fetchSessionClassification(
+  round: number,
+  session: ClassificationSession
+): Promise<RaceClassification | null> {
+  try {
+    const meetingKey = await getMeetingKey(round);
+    if (!meetingKey) return null;
+
+    const sessions = await apiFetch<{ session_key: number; session_name: string }>(
+      `/sessions?meeting_key=${meetingKey}`
+    );
+    const sessionName = session === "sprint" ? "Sprint" : "Race";
+    const sessionKey =
+      sessions.find((s) => s.session_name.toLowerCase() === sessionName.toLowerCase())
+        ?.session_key ?? null;
+    if (!sessionKey) return null;
+
+    const [positions, drivers] = await Promise.all([
+      apiFetch<{ driver_number: number; position: number; date: string }>(
+        `/position?session_key=${sessionKey}`
+      ),
+      apiFetch<{ driver_number: number; full_name: string }>(
+        `/drivers?session_key=${sessionKey}`
+      ),
+    ]);
+
+    const nameMap = new Map<number, string | null>();
+    for (const d of drivers) {
+      if (!nameMap.has(d.driver_number) && d.full_name) {
+        nameMap.set(d.driver_number, slugToDriverId(fullNameToSlug(d.full_name)));
+      }
+    }
+
+    const latest = new Map<number, { position: number; date: string }>();
+    for (const row of positions) {
+      const existing = latest.get(row.driver_number);
+      if (!existing || row.date > existing.date) {
+        latest.set(row.driver_number, { position: row.position, date: row.date });
+      }
+    }
+
+    const sorted = [...latest.entries()].sort((a, b) => a[1].position - b[1].position);
+    const entries: ClassificationEntry[] = [];
+    for (const [num, { position }] of sorted) {
+      const driverId = nameMap.get(num) ?? null;
+      if (!driverId || position < 1) continue;
+      entries.push({
+        position,
+        driverId,
+        pointsAwarded: pointsForSession(session, position, "classified"),
+        status: "classified",
+      });
+    }
+
+    if (entries.length === 0) return null;
+
+    const now = new Date().toISOString();
+    return {
+      round,
+      session,
+      entries,
+      incomplete: entries.length < 15,
+      fetchedAt: now,
+      manuallyOverridden: false,
+      updatedAt: now,
+    };
+  } catch (e) {
+    console.error("[openf1] fetchSessionClassification error", e);
+    return null;
+  }
+}
+
+/** Fetch race (+ sprint if applicable) classifications for a round. */
+export async function fetchRoundClassifications(
+  round: number,
+  isSprint: boolean
+): Promise<RaceClassification[]> {
+  const race = await fetchSessionClassification(round, "race");
+  const out: RaceClassification[] = [];
+  if (race) out.push(race);
+  if (isSprint) {
+    const sprint = await fetchSessionClassification(round, "sprint");
+    if (sprint) out.push(sprint);
+  }
+  return out;
 }

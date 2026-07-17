@@ -36,6 +36,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /race_classifications/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
     match /race_picks/{docId} {
       allow read: if signedIn();
       allow create, update: if signedIn()
@@ -90,6 +95,11 @@ service cloud.firestore {
 
     match /push_subscriptions/{userId} {
       allow read, write: if isOwner(userId);
+    }
+
+    match /agent_debug_logs/{docId} {
+      allow create: if signedIn();
+      allow read: if isAdmin();
     }
   }
 }

@@ -3,10 +3,26 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { getDb } from "@/lib/firebase/db";
+import { doc, getDoc } from "firebase/firestore";
 import { RACES, DRIVERS, CONSTRUCTORS } from "@/lib/data";
-import { checkIsAdmin } from "@/lib/adminAccess";
+import { checkIsAdminUser, collectUserEmails, getAdminEmails } from "@/lib/adminAccess";
+import { debugLog } from "@/lib/debugLog";
 import { loadRaceResult, saveRaceResult } from "@/lib/resultsStorage";
-import type { RaceResult, RaceWildcard, WildcardQuestionType } from "@/lib/types";
+import {
+  saveClassification,
+  loadClassification,
+} from "@/lib/classificationStorage";
+import {
+  classificationFromRaceResult,
+  sprintClassificationFromRaceResult,
+} from "@/lib/f1Points";
+import { apiFetch } from "@/lib/api/fetch";
+import type {
+  RaceClassification,
+  RaceResult,
+  RaceWildcard,
+  WildcardQuestionType,
+} from "@/lib/types";
 import {
   loadWildcards as loadWildcardsFromStorage,
   createWildcard,
@@ -116,7 +132,9 @@ export default function AdminResultsPage() {
   const [selectedRound, setSelectedRound] = useState(1);
   const [result, setResult] = useState<Partial<RaceResult>>({});
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [classificationSummary, setClassificationSummary] = useState<string | null>(null);
 
   // Wildcard state
   const [wildcards, setWildcards] = useState<RaceWildcard[]>([]);
@@ -132,15 +150,71 @@ export default function AdminResultsPage() {
   useEffect(() => {
     if (!authReady) return;
     if (!user) {
+      void debugLog("pre-fix", "H1", "app/admin/results/page.tsx:176", "admin page auth resolved without user", {
+        authReady,
+      });
       setIsAdmin(false);
       return;
     }
-    setIsAdmin(checkIsAdmin(user.email));
+
+    void getDoc(doc(getDb(), "profiles", user.uid)).then((snap) => {
+      const profileIsAdmin = snap.data()?.is_admin === true;
+      const emails = collectUserEmails(
+        user.email,
+        user.providerData.map((provider) => provider.email)
+      );
+      const nextIsAdmin = checkIsAdminUser(user, profileIsAdmin);
+      void debugLog("pre-fix", "H1", "app/admin/results/page.tsx:182", "admin page auth evaluated", {
+        authReady,
+        hasUser: true,
+        emailPresent: Boolean(user.email),
+        emailDomain: user.email?.split("@")[1] ?? emails[0]?.split("@")[1] ?? null,
+        providerEmailCount: emails.length,
+        profileExists: snap.exists(),
+        profileIsAdmin,
+        nextIsAdmin,
+      });
+      setIsAdmin(nextIsAdmin);
+    });
   }, [authReady, user]);
 
   const loadResult = useCallback(async (round: number) => {
-    const data = await loadRaceResult(round, getDb());
-    setResult(data ?? {});
+    try {
+      const data = await loadRaceResult(round, getDb());
+      debugLog("pre-fix", "H4", "app/admin/results/page.tsx:193", "loadRaceResult completed", {
+        round,
+        found: Boolean(data),
+      });
+      setResult(data ?? {});
+    } catch (error) {
+      debugLog("pre-fix", "H4", "app/admin/results/page.tsx:199", "loadRaceResult failed", {
+        round,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+      throw error;
+    }
+  }, []);
+
+  const loadClassificationMeta = useCallback(async (round: number) => {
+    const db = getDb();
+    const [raceClas, sprintClas] = await Promise.all([
+      loadClassification(round, "race", db),
+      loadClassification(round, "sprint", db),
+    ]);
+    const parts: string[] = [];
+    if (raceClas) {
+      parts.push(
+        `Race: ${raceClas.entries.length} drivers${raceClas.incomplete ? " (partial)" : ""}`
+      );
+    }
+    if (sprintClas) {
+      parts.push(
+        `Sprint: ${sprintClas.entries.length} drivers${sprintClas.incomplete ? " (partial)" : ""}`
+      );
+    }
+    setClassificationSummary(
+      parts.length ? parts.join(" · ") : "No full classification stored"
+    );
   }, []);
 
   const loadWildcards = useCallback(async (round: number) => {
@@ -148,8 +222,12 @@ export default function AdminResultsPage() {
   }, []);
 
   useEffect(() => {
-    if (isAdmin) { loadResult(selectedRound); loadWildcards(selectedRound); }
-  }, [isAdmin, selectedRound, loadResult, loadWildcards]);
+    if (isAdmin) {
+      loadResult(selectedRound);
+      loadWildcards(selectedRound);
+      loadClassificationMeta(selectedRound);
+    }
+  }, [isAdmin, selectedRound, loadResult, loadWildcards, loadClassificationMeta]);
 
   if (!authReady) {
     return (
@@ -160,11 +238,20 @@ export default function AdminResultsPage() {
   }
 
   if (!isAdmin) {
+    const signedInEmail = user?.email ?? user?.providerData[0]?.email ?? null;
     return (
       <div className="max-w-lg mx-auto px-4 pt-10 text-center">
         <p className="text-lg font-bold" style={{ color: "#e10600" }}>Not authorised</p>
         <p className="text-sm mt-2" style={{ color: "var(--muted)" }}>
           This page is for admins only.
+        </p>
+        {signedInEmail && (
+          <p className="text-xs mt-3" style={{ color: "var(--muted)" }}>
+            Signed in as {signedInEmail}
+          </p>
+        )}
+        <p className="text-[11px] mt-2 leading-relaxed" style={{ color: "var(--muted)" }}>
+          Admin access is granted to: {getAdminEmails().join(", ")}
         </p>
       </div>
     );
@@ -176,18 +263,101 @@ export default function AdminResultsPage() {
     setResult((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function seedPartialClassifications(saved: RaceResult) {
+    const db = getDb();
+    const existingRace = await loadClassification(saved.round, "race", db);
+    const derived = classificationFromRaceResult(saved);
+    // Never replace a fuller OpenF1 grid with prediction top-6
+    if (
+      derived &&
+      (!existingRace ||
+        (existingRace.incomplete &&
+          existingRace.entries.length <= derived.entries.length))
+    ) {
+      await saveClassification(derived, db, true);
+    }
+    const existingSprint = await loadClassification(saved.round, "sprint", db);
+    const derivedSprint = sprintClassificationFromRaceResult(saved);
+    if (
+      derivedSprint &&
+      (!existingSprint ||
+        (existingSprint.incomplete &&
+          existingSprint.entries.length <= derivedSprint.entries.length))
+    ) {
+      await saveClassification(derivedSprint, db, true);
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     setStatusMsg(null);
     try {
+      debugLog("pre-fix", "H3", "app/admin/results/page.tsx:291", "saveRaceResult starting", {
+        round: selectedRound,
+        keys: Object.keys(result).sort(),
+      });
       await saveRaceResult(selectedRound, result, true, getDb());
       const saved = await loadRaceResult(selectedRound, getDb());
+      debugLog("pre-fix", "H3", "app/admin/results/page.tsx:297", "saveRaceResult completed", {
+        round: selectedRound,
+        saved: Boolean(saved),
+      });
       setResult(saved ?? result);
+      if (saved) {
+        await seedPartialClassifications(saved);
+        await loadClassificationMeta(selectedRound);
+      }
       setStatusMsg("Overrides saved.");
-    } catch {
+    } catch (error) {
+      debugLog("pre-fix", "H3", "app/admin/results/page.tsx:307", "saveRaceResult failed", {
+        round: selectedRound,
+        error: error instanceof Error ? error.message : "unknown",
+      });
       setStatusMsg("Save failed. Try again.");
     }
     setSaving(false);
+  }
+
+  async function handleSyncClassification() {
+    setSyncing(true);
+    setStatusMsg(null);
+    try {
+      debugLog("pre-fix", "H5", "app/admin/results/page.tsx:318", "sync classification request starting", {
+        round: selectedRound,
+      });
+      const res = await apiFetch("/api/classifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ round: selectedRound }),
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        classifications?: RaceClassification[];
+      };
+      if (!res.ok) {
+        debugLog("pre-fix", "H5", "app/admin/results/page.tsx:329", "sync classification request failed", {
+          round: selectedRound,
+          status: res.status,
+          error: json.error ?? "unknown",
+        });
+        setStatusMsg(json.error ?? "OpenF1 sync failed.");
+      } else {
+        const n = json.classifications?.length ?? 0;
+        debugLog("pre-fix", "H5", "app/admin/results/page.tsx:336", "sync classification request completed", {
+          round: selectedRound,
+          classifications: n,
+        });
+        setStatusMsg(
+          n > 0
+            ? `Synced ${n} classification${n === 1 ? "" : "s"} from OpenF1.`
+            : "OpenF1 returned no data."
+        );
+        await loadClassificationMeta(selectedRound);
+      }
+    } catch {
+      setStatusMsg("OpenF1 sync failed.");
+    }
+    setSyncing(false);
   }
 
   return (
@@ -573,10 +743,38 @@ export default function AdminResultsPage() {
         </section>
       )}
 
+      {/* Championship classification */}
+      <section className="mb-6">
+        <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>
+          Season results grid
+        </h2>
+        <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>
+          {classificationSummary ?? "…"}
+        </p>
+        <p className="text-[11px] mb-3 leading-relaxed" style={{ color: "var(--muted)" }}>
+          Saving prediction slots also seeds a partial grid for Results. Sync from OpenF1 for the
+          full finishing order and accurate championship points.
+        </p>
+        <button
+          type="button"
+          onClick={() => void handleSyncClassification()}
+          disabled={syncing}
+          className="w-full py-2.5 text-sm font-semibold rounded-xl mb-2"
+          style={{
+            backgroundColor: syncing ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.1)",
+            color: "var(--foreground)",
+            border: "1px solid rgba(255,255,255,0.14)",
+          }}
+        >
+          {syncing ? "Syncing from OpenF1…" : "Sync classification from OpenF1"}
+        </button>
+      </section>
+
       {/* Actions */}
       <div className="flex gap-3 mb-4">
         <button
-          onClick={handleSave}
+          type="button"
+          onClick={() => void handleSave()}
           disabled={saving}
           className="flex-1 py-3 text-sm font-semibold rounded-xl"
           style={{
@@ -589,7 +787,17 @@ export default function AdminResultsPage() {
       </div>
 
       {statusMsg && (
-        <p className="text-sm text-center mb-4" style={{ color: statusMsg.includes("fail") || statusMsg.includes("Failed") ? "#ef4444" : "#22c55e" }}>
+        <p
+          className="text-sm text-center mb-4"
+          style={{
+            color:
+              statusMsg.toLowerCase().includes("fail") ||
+              statusMsg.toLowerCase().includes("no data") ||
+              statusMsg.toLowerCase().includes("returned no")
+                ? "#ef4444"
+                : "#22c55e",
+          }}
+        >
           {statusMsg}
         </p>
       )}

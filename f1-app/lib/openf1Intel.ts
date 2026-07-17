@@ -6,12 +6,12 @@ import { fullNameToSlug } from "./openf1";
 // Keywords matched against BOTH circuit_short_name AND meeting_name (case-insensitive).
 // Verified against OpenF1 2024 + 2025 meeting data.
 const CIRCUIT_KEYWORDS: Record<number, string> = {
-  1: "australia", 2: "shanghai",    3: "suzuka",    4: "bahrain",
-  5: "jeddah",   6: "miami",       7: "montreal",  8: "monaco",
-  9: "catalu",   10: "spielberg",  11: "silverstone",12: "spa",
-  13: "hungaroring",14: "zandvoort",15: "monza",   16: "madring",
-  17: "baku",    18: "singapore",  19: "austin",   20: "mexico",
-  21: "interlagos",22: "las vegas",23: "lusail",   24: "yas",
+  1: "australia", 2: "shanghai", 3: "suzuka", 4: "miami",
+  5: "montreal", 6: "monaco", 7: "catalu", 8: "spielberg",
+  9: "silverstone", 10: "spa", 11: "hungaroring", 12: "zandvoort",
+  13: "monza", 14: "madring", 15: "baku", 16: "singapore",
+  17: "austin", 18: "mexico", 19: "interlagos", 20: "vegas",
+  21: "lusail", 22: "yas",
 };
 
 const BASE = "https://api.openf1.org/v1";
