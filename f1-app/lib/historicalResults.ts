@@ -71,6 +71,8 @@ function unavailable(year: number): HistoricalResult {
 // ─── Data — indexed by 2026 round number ──────────────────────────────────────
 // SC = true means full physical Safety Car deployed (not VSC/Virtual).
 // Sprint fields present only when that year's race at that circuit was a sprint weekend.
+// Note: the 2026 calendar drops Bahrain and Saudi Arabia, so round numbers here
+// are aligned directly to the 2026 RACES list in data.ts (not to 2024/2025 round numbers).
 
 const DATA: Record<number, { 2024: HistoricalResult; 2025: HistoricalResult }> = {
 
@@ -98,20 +100,8 @@ const DATA: Record<number, { 2024: HistoricalResult; 2025: HistoricalResult }> =
     2025: r(2025, [MV, LN, OP], [MV, LN, OP], KA,   false),
   },
 
-  // ── R4 Bahrain ───────────────────────────────────────────────────────────────
+  // ── R4 Miami (Sprint in 2024 & 2025) ─────────────────────────────────────────
   4: {
-    2024: r(2024, [MV, CL, GR], [MV, SP, CS], MV,   false),
-    2025: r(2025, [OP, CL, GR], [OP, GR, LN], null, true),
-  },
-
-  // ── R5 Saudi Arabia ──────────────────────────────────────────────────────────
-  5: {
-    2024: r(2024, [MV, CL, SP], [MV, SP, CL], CL,   true),
-    2025: r(2025, [MV, OP, GR], [OP, MV, CL], null, true),
-  },
-
-  // ── R6 Miami (Sprint in 2024 & 2025) ─────────────────────────────────────────
-  6: {
     2024: r(2024, [MV, CL, CS], [LN, MV, CL], OP, true, {
       sprintQualPole: MV, sprintQualP2: CL, sprintQualP3: SP,
       sprintWinner:   MV, sprintP2:     CL, sprintP3:     SP,
@@ -122,26 +112,26 @@ const DATA: Record<number, { 2024: HistoricalResult; 2025: HistoricalResult }> =
     }),
   },
 
-  // ── R7 Canada (not a sprint in 2024 or 2025) ─────────────────────────────────
-  7: {
+  // ── R5 Canada (not a sprint in 2024 or 2025) ─────────────────────────────────
+  5: {
     2024: r(2024, [GR, MV, LN], [MV, LN, GR], LH,   true),
     2025: r(2025, [GR, MV, OP], [GR, MV, KA], null, true),
   },
 
-  // ── R8 Monaco ────────────────────────────────────────────────────────────────
-  8: {
+  // ── R6 Monaco ────────────────────────────────────────────────────────────────
+  6: {
     2024: r(2024, [CL, OP, CS], [CL, OP, CS], LH,   true),
     2025: r(2025, [LN, CL, OP], [LN, CL, OP], LN,   false),
   },
 
-  // ── R9 Spain ─────────────────────────────────────────────────────────────────
-  9: {
+  // ── R7 Spain / Barcelona ──────────────────────────────────────────────────────
+  7: {
     2024: r(2024, [LN, MV, LH], [MV, LN, LH], MV,   false),
     2025: r(2025, [OP, LN, MV], [OP, LN, CL], null, true),
   },
 
-  // ── R10 Austria (Sprint in 2024 only) ────────────────────────────────────────
-  10: {
+  // ── R8 Austria (Sprint in 2024 only) ────────────────────────────────────────
+  8: {
     2024: r(2024, [MV, LN, GR], [GR, OP, CS], FA, false, {
       sprintQualPole: MV, sprintQualP2: LN, sprintQualP3: OP,
       sprintWinner:   MV, sprintP2:     OP, sprintP3:     LN,
@@ -149,59 +139,59 @@ const DATA: Record<number, { 2024: HistoricalResult; 2025: HistoricalResult }> =
     2025: r(2025, [LN, CL, OP], [LN, OP, CL], null, true),
   },
 
-  // ── R11 Britain (not a sprint in 2024 or 2025) ───────────────────────────────
-  11: {
+  // ── R9 Britain (not a sprint in 2024 or 2025) ───────────────────────────────
+  9: {
     2024: r(2024, [GR, LH, LN],     [LH, MV, LN], CS,   true),
     2025: r(2025, [MV, null, null],  [LN, OP, NH], null, true),
   },
 
-  // ── R12 Belgium (Sprint in 2025 only) ────────────────────────────────────────
-  12: {
+  // ── R10 Belgium (Sprint in 2025 only) ────────────────────────────────────────
+  10: {
     2024: r(2024, [CL, SP, LH], [LH, OP, CL], SP,   false),
-    2025: r(2025, [LN, OP, CL], [OP, LN, CL], null, true, {
+    2025: r(2025, [LN, OP, CL], [OP, LN, CL], KA,   true, {
       sprintQualPole: OP, sprintQualP2: MV, sprintQualP3: LN,
       sprintWinner:   MV, sprintP2:     OP, sprintP3:     LN,
     }),
   },
 
-  // ── R13 Hungary ──────────────────────────────────────────────────────────────
-  13: {
+  // ── R11 Hungary ──────────────────────────────────────────────────────────────
+  11: {
     2024: r(2024, [LN, OP, MV], [OP, LN, LH], GR,   false),
     2025: r(2025, [CL, OP, LN], [LN, OP, GR], null, false),
   },
 
-  // ── R14 Netherlands (not a sprint in 2024 or 2025) ───────────────────────────
-  14: {
+  // ── R12 Netherlands (not a sprint in 2024 or 2025) ───────────────────────────
+  12: {
     2024: r(2024, [LN, MV, OP], [LN, MV, CL], LN,   false),
     2025: r(2025, [OP, LN, MV], [OP, MV, IH], null, true),
   },
 
-  // ── R15 Italy / Monza ────────────────────────────────────────────────────────
-  15: {
+  // ── R13 Italy / Monza ────────────────────────────────────────────────────────
+  13: {
     2024: r(2024, [LN, OP, GR], [CL, OP, LN], LN,   false),
     2025: r(2025, [MV, LN, OP], [MV, LN, OP], null, false),
   },
 
-  // ── R16 Madrid (new 2026 circuit — no history) ───────────────────────────────
-  16: {
+  // ── R14 Madrid (new 2026 circuit — no history) ───────────────────────────────
+  14: {
     2024: unavailable(2024),
     2025: unavailable(2025),
   },
 
-  // ── R17 Azerbaijan ───────────────────────────────────────────────────────────
-  17: {
+  // ── R15 Azerbaijan ───────────────────────────────────────────────────────────
+  15: {
     2024: r(2024, [CL, OP, CS], [OP, CL, GR], LN,   false),
     2025: r(2025, [MV, CS, LL], [MV, GR, CS], MV,   true),
   },
 
-  // ── R18 Singapore (not a sprint in 2024 or 2025) ─────────────────────────────
-  18: {
+  // ── R16 Singapore (not a sprint in 2024 or 2025) ─────────────────────────────
+  16: {
     2024: r(2024, [LN, MV, LH], [LN, MV, OP], DRI,  false),
     2025: r(2025, [GR, MV, OP], [GR, MV, LN], LH,   true),
   },
 
-  // ── R19 USA / COTA (Sprint in 2024 & 2025) ───────────────────────────────────
-  19: {
+  // ── R17 USA / COTA (Sprint in 2024 & 2025) ───────────────────────────────────
+  17: {
     2024: r(2024, [LN, MV, CS], [CL, CS, MV], EO, true, {
       sprintQualPole: MV, sprintQualP2: GR, sprintQualP3: CL,
       sprintWinner:   MV, sprintP2:     CS, sprintP3:     LN,
@@ -212,14 +202,14 @@ const DATA: Record<number, { 2024: HistoricalResult; 2025: HistoricalResult }> =
     }),
   },
 
-  // ── R20 Mexico ───────────────────────────────────────────────────────────────
-  20: {
+  // ── R18 Mexico ───────────────────────────────────────────────────────────────
+  18: {
     2024: r(2024, [CS, MV, LN], [CS, LN, CL], CL,   false),
     2025: r(2025, [LN, CL, LH], [LN, CL, MV], null, false),
   },
 
-  // ── R21 Brazil (Sprint in 2024 & 2025) ───────────────────────────────────────
-  21: {
+  // ── R19 Brazil (Sprint in 2024 & 2025) ───────────────────────────────────────
+  19: {
     2024: r(2024, [LN, GR, YT], [MV, EO, PG], MV, true, {
       sprintQualPole: OP, sprintQualP2: LN, sprintQualP3: CL,
       sprintWinner:   LN, sprintP2:     OP, sprintP3:     CL,
@@ -230,14 +220,14 @@ const DATA: Record<number, { 2024: HistoricalResult; 2025: HistoricalResult }> =
     }),
   },
 
-  // ── R22 Las Vegas ────────────────────────────────────────────────────────────
-  22: {
+  // ── R20 Las Vegas ────────────────────────────────────────────────────────────
+  20: {
     2024: r(2024, [GR, CS, PG], [GR, LH, CS], LN,   false),
     2025: r(2025, [LN, MV, CS], [MV, GR, KA], MV,   false),
   },
 
-  // ── R23 Qatar (Sprint in 2024 & 2025) ────────────────────────────────────────
-  23: {
+  // ── R21 Qatar (Sprint in 2024 & 2025) ────────────────────────────────────────
+  21: {
     2024: r(2024, [GR, MV, LN], [MV, CL, OP], MV, true, {
       sprintQualPole: LN, sprintQualP2: GR, sprintQualP3: OP,
       sprintWinner:   OP, sprintP2:     LN, sprintP3:     GR,
@@ -248,8 +238,8 @@ const DATA: Record<number, { 2024: HistoricalResult; 2025: HistoricalResult }> =
     }),
   },
 
-  // ── R24 Abu Dhabi ────────────────────────────────────────────────────────────
-  24: {
+  // ── R22 Abu Dhabi ────────────────────────────────────────────────────────────
+  22: {
     2024: r(2024, [LN, OP, CS], [LN, CS, CL], KMG,  true),
     2025: r(2025, [MV, LN, OP], [MV, OP, LN], null, false),
   },
@@ -260,4 +250,3 @@ const DATA: Record<number, { 2024: HistoricalResult; 2025: HistoricalResult }> =
 export function getStaticHistoricalResult(round: number, year: 2024 | 2025): HistoricalResult {
   return DATA[round]?.[year] ?? unavailable(year);
 }
-

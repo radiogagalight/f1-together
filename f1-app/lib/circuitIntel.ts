@@ -50,30 +50,6 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
   },
   {
     round: 4,
-    trackType: "Permanent",
-    overtaking: "Occasional",
-    overtakingNote: "Turn 4 and Turn 11 see most passes, aided by DRS, but clean air advantage limits battles.",
-    safetyCarLikelihood: "Low",
-    safetyCarNote: "Wide run-off areas and a smooth surface mean most mistakes end in the gravel rather than a safety car.",
-    poleToWinPct: 65,
-    poleToWinNote: "Pole is useful but not decisive — tyre management and strategy can reshuffle the order.",
-    insight: "Bahrain was the first Middle-Eastern country to host a Formula 1 Grand Prix, starting in 2004.",
-    hasHistory: true,
-  },
-  {
-    round: 5,
-    trackType: "Street",
-    overtaking: "Occasional",
-    overtakingNote: "The long front straight rewards DRS, but narrow sections and barriers limit most other attack zones.",
-    safetyCarLikelihood: "High",
-    safetyCarNote: "Jeddah's barriers are millimetres from the racing line — any contact immediately brings out the safety car.",
-    poleToWinPct: 75,
-    poleToWinNote: "Qualifying position is critical here; passing is genuinely difficult so track position is everything.",
-    insight: "Jeddah is the fastest street circuit in F1 history, with average lap speeds above 250 km/h.",
-    hasHistory: true,
-  },
-  {
-    round: 6,
     trackType: "Street",
     overtaking: "Occasional",
     overtakingNote: "Two DRS zones help, but the tight infield limits overtaking to Turn 1 and the final hairpin.",
@@ -85,7 +61,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 7,
+    round: 5,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Multiple hairpins and a long pit straight with DRS create consistent overtaking opportunities.",
@@ -97,7 +73,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 8,
+    round: 6,
     trackType: "Street",
     overtaking: "Rare",
     overtakingNote: "Monaco is the hardest circuit in the world to overtake on — strategy and qualifying almost entirely decide it.",
@@ -109,10 +85,10 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 9,
+    round: 7,
     trackType: "Permanent",
     overtaking: "Occasional",
-    overtakingNote: "Long lap 1 into Turn 1, plus the final chicane, are the main passing spots on this technical circuit.",
+    overtakingNote: "The long DRS run down to Turn 1 and the final chicane are the main passing spots on this technical circuit.",
     safetyCarLikelihood: "Low",
     safetyCarNote: "Wide run-off areas and modern barriers keep incidents contained — safety cars are genuinely rare here.",
     poleToWinPct: 65,
@@ -121,7 +97,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 10,
+    round: 8,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "The short layout and multiple DRS zones make overtaking common, especially after safety-car restarts.",
@@ -133,7 +109,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 11,
+    round: 9,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Copse, Maggotts and the Hangar straight all provide overtaking chances; British fans are treated to great racing.",
@@ -145,7 +121,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 12,
+    round: 10,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Raidillon-Kemmel and the Bus Stop chicane are both overtaking hotspots on this mega-fast circuit.",
@@ -157,7 +133,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 13,
+    round: 11,
     trackType: "Permanent",
     overtaking: "Rare",
     overtakingNote: "The twisty, narrow Hungaroring offers very few clean passing opportunities — it's called the Monaco of permanent tracks.",
@@ -169,7 +145,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 14,
+    round: 12,
     trackType: "Permanent",
     overtaking: "Occasional",
     overtakingNote: "Tarzanbocht hairpin and the final chicane see most passes, though wind direction can change everything.",
@@ -181,7 +157,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 15,
+    round: 13,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Monza has the highest top speeds in F1; the long straights and chicanes generate huge slipstreaming battles.",
@@ -193,7 +169,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 16,
+    round: 14,
     trackType: "Street",
     overtaking: "Occasional",
     overtakingNote: "Early indications suggest the Madrid layout has long straights with DRS zones to promote overtaking.",
@@ -205,7 +181,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: false,
   },
   {
-    round: 17,
+    round: 15,
     trackType: "Street",
     overtaking: "Occasional",
     overtakingNote: "The long front straight and castle section hairpin are the prime overtaking zones under DRS.",
@@ -217,7 +193,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 18,
+    round: 16,
     trackType: "Street",
     overtaking: "Rare",
     overtakingNote: "Narrow sections and slow corners limit passing; strategy and tyre management decide most outcomes.",
@@ -229,7 +205,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 19,
+    round: 17,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Long straights and Turn 1 / Turn 12 hairpins offer repeated passing opportunities each lap.",
@@ -241,7 +217,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 20,
+    round: 18,
     trackType: "Permanent",
     overtaking: "Occasional",
     overtakingNote: "The long main straight and Peraltada give DRS a boost, but the stadium section limits passing.",
@@ -253,7 +229,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 21,
+    round: 19,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Interlagos is a short, flowing circuit; lapped traffic and DRS zones create frequent action.",
@@ -265,7 +241,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 22,
+    round: 20,
     trackType: "Street",
     overtaking: "Frequent",
     overtakingNote: "The 1.9 km Strip straight gives cars one of the longest DRS runs in F1 — overtaking is common.",
@@ -277,7 +253,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 23,
+    round: 21,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Lusail's smooth surface and multiple long straights give DRS maximum effect for passing.",
@@ -289,7 +265,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     hasHistory: true,
   },
   {
-    round: 24,
+    round: 22,
     trackType: "Permanent",
     overtaking: "Occasional",
     overtakingNote: "DRS on the long main straight helps, but the tight hairpin and narrow sections limit other opportunities.",
