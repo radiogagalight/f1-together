@@ -9,6 +9,17 @@ export interface CircuitCharacter {
   poleToWinNote: string;
   insight: string;
   hasHistory: boolean;
+  // ── Extended prediction intel (populated for remaining 2026 rounds) ──
+  /** Short tyre-strategy badge, e.g. "1-stop", "1–2 stop", "2–3 stop". */
+  tyreStops?: string;
+  /** How tyres behave here and what it means for strategy. */
+  tyreNote?: string;
+  /** Typical conditions and rain/temperature risk for the weekend. */
+  weatherNote?: string;
+  /** What kind of car/driver this circuit rewards — the DNA of a winner here. */
+  trackFavours?: string;
+  /** Bottom-line takeaway: the single biggest factor to weigh when predicting. */
+  predictionAngle?: string;
 }
 
 export const CIRCUIT_INTEL: CircuitCharacter[] = [
@@ -143,6 +154,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Overtaking is so difficult that qualifying position can define the entire race outcome.",
     insight: "Hungary hosted the first F1 race behind the Iron Curtain in 1986, drawing 200,000 spectators.",
     hasHistory: true,
+    tyreStops: "1–2 stop",
+    tyreNote: "Relentless slow-to-medium corners load the front-left hard, and midsummer track temps push thermal degradation high. Teams often gamble on a 1-stop to protect track position, but a well-timed undercut is devastating here.",
+    weatherNote: "Peak-summer heat with track temps regularly above 50°C, which amplifies deg. Isolated afternoon thunderstorms are the main wildcard and have flipped results before.",
+    trackFavours: "Cars with strong high-downforce balance and gentle front-tyre usage. Qualifying one-lap pace matters more than raw race speed because clean air is gold.",
+    predictionAngle: "Track position is everything — start from your quali prediction. Whoever takes pole is the strong favourite, and the undercut means the driver stopping first often jumps those ahead. Rain is the only realistic script-flipper.",
   },
   {
     round: 12,
@@ -155,6 +171,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Zandvoort is tight and fast; once settled, leading cars rarely face serious pressure.",
     insight: "Zandvoort was absent from the F1 calendar for 35 years before returning as the Dutch GP home in 2021.",
     hasHistory: true,
+    tyreStops: "1–2 stop",
+    tyreNote: "The banked final corner and Turn 3 put huge lateral energy through the tyres, so degradation is higher than the short lap suggests. Most run a 1-stop, but a Sprint weekend eats into practice data and can force reactive strategy.",
+    weatherNote: "A North Sea coastal circuit — wind direction swings lap times and balance, and sea-fog or sudden rain showers are a genuine risk. Sand blown onto the racing line hurts early-session grip.",
+    trackFavours: "Well-balanced, high-downforce cars that can put temperature into the tyres quickly. Confidence through the banked corners separates the front-runners.",
+    predictionAngle: "This is a Sprint weekend, so points and grid slots come from two races with minimal practice — expect strategy noise. The track is narrow and passing is hard, so weight qualifying heavily, then factor a real chance of weather chaos.",
   },
   {
     round: 13,
@@ -167,6 +188,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Slipstreaming means the lead changes multiple times per lap; qualifying matters but race pace and strategy rule.",
     insight: "Monza is the fastest circuit in F1, regularly seeing average race speeds above 260 km/h.",
     hasHistory: true,
+    tyreStops: "1-stop",
+    tyreNote: "Skinny low-downforce wings mean low cornering loads and one of the gentlest tyre-wear circuits of the year — a straightforward 1-stop is the norm, so strategy variance is low unless a safety car intervenes.",
+    weatherNote: "Early-September northern Italy is usually warm and dry, but the Monza area is prone to sharp thunderstorms that have repeatedly thrown qualifying and races into chaos.",
+    trackFavours: "Low-drag, powerful cars with strong straight-line speed and stable braking into the chicanes. Engine mode and DRS efficiency matter more than downforce here.",
+    predictionAngle: "The slipstream makes qualifying a lottery and the lead genuinely changeable, so don't over-trust pole (only ~55% convert). Look for the strongest race-pace car and remember a chicane-triggered safety car can reshuffle the podium.",
   },
   {
     round: 14,
@@ -179,6 +205,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "No historical data — track position is usually key on debut street circuits.",
     insight: "Madrid joins the F1 calendar in 2026 for the first time, replacing the old Valencia Street Circuit that ran 2008–2012.",
     hasHistory: false,
+    tyreStops: "Unknown",
+    tyreNote: "A brand-new hybrid street/permanent layout with no historical tyre data, plus a banked corner unlike anything else on the calendar. Practice pace and long-run deg from Friday will be the only reliable guide — treat any strategy read as provisional.",
+    weatherNote: "Mid-September Madrid is typically hot and dry with low rain risk, so high track temperatures and tyre warm-up should be the bigger factor than precipitation.",
+    trackFavours: "Impossible to call precisely on debut, but the mix of long straights and a technical middle sector should reward an adaptable, well-rounded car and drivers quick to learn the limits.",
+    predictionAngle: "No historical data means high uncertainty — lean on Friday practice pace rather than the form book. On unfamiliar circuits track position and clean weekends dominate, so favour whoever qualifies well and keeps it off the walls.",
   },
   {
     round: 15,
@@ -191,6 +222,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Safety-car restarts frequently create chaos and can promote back-of-grid runners to surprise podiums.",
     insight: "Baku's castle section is the tightest part of any F1 circuit at just 7.6 m wide — a single car's width.",
     hasHistory: true,
+    tyreStops: "1-stop",
+    tyreNote: "Smooth surface and long full-throttle sections mean low tyre degradation and a comfortable 1-stop, but a near-inevitable safety car often gifts a 'free' pit stop that rewards whoever gambles on staying out or boxing early.",
+    weatherNote: "Late-September Baku is warm and dry, with Caspian Sea crosswinds the main variable — gusts down the 2.2 km straight unsettle braking into Turn 1 and cause lock-ups.",
+    trackFavours: "Low-drag setups with strong straight-line speed and traction out of the 90-degree corners. A brave, precise driver through the castle section is worth several tenths.",
+    predictionAngle: "Expect drama: a safety car is almost a certainty and the enormous slipstream makes both qualifying and the race unpredictable. Pole converts only ~60% of the time, and surprise poles or podiums from midfield cars are a recurring Baku theme.",
   },
   {
     round: 16,
@@ -203,6 +239,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Qualifying lap is almost as decisive as Monaco — track position is the race strategy.",
     insight: "Singapore is the only night race in Formula 1, with over 1,500 lights illuminating the 5.063 km circuit.",
     hasHistory: true,
+    tyreStops: "1–2 stop",
+    tyreNote: "Constant traction events and stifling humidity load the tyres and the drivers, keeping degradation on the higher side. A safety car is so likely that teams plan around a cheap stop, which pushes many toward a reactive 1-stop.",
+    weatherNote: "Hot and extremely humid even at night, and tropical downpours are a real evening threat — rain on this walled circuit would massively raise the chaos factor.",
+    trackFavours: "High-downforce cars with strong traction and good braking stability, plus physically resilient drivers — Singapore is the most demanding race of the year on fitness and concentration.",
+    predictionAngle: "It's a Sprint weekend AND a track where overtaking is brutally hard, so qualifying position (pole wins ~75%) is the dominant signal for both races. Bank on a safety car, and treat any rain forecast as a green light for an upset.",
   },
   {
     round: 17,
@@ -215,6 +256,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Multiple DRS zones make overtaking easier than most circuits; strategy is often the decider.",
     insight: "The circuit's layout was inspired by multiple famous F1 corners — Turn 1 mimics Istanbul Park's Turn 8.",
     hasHistory: true,
+    tyreStops: "1–2 stop",
+    tyreNote: "A famously bumpy, subsidence-affected surface combined with fast direction changes in the esses produces medium-to-high degradation, so both 1- and 2-stop strategies are viable and can diverge between the front-runners.",
+    weatherNote: "Late-October Texas is unpredictable — warm and dry one year, cold and stormy the next. Big temperature swings between sessions change tyre warm-up and the strategy picture.",
+    trackFavours: "Cars with a compliant ride over bumps and strong high-speed change of direction through the Sector 1 esses. Good traction out of the Sector 3 hairpins also pays off under DRS.",
+    predictionAngle: "Real overtaking is possible here, so pole is less decisive (~60%) and strategy frequently decides it — look for the best race-pace car rather than just the fastest qualifier. The bumps punish stiff setups, occasionally catching out a favourite.",
   },
   {
     round: 18,
@@ -227,6 +273,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Pole sitter takes a very clean line into Turn 1 — the bumpy track punishes those who lose that early position.",
     insight: "Mexico City sits at 2,240 m above sea level — the highest altitude of any F1 circuit.",
     hasHistory: true,
+    tyreStops: "1-stop",
+    tyreNote: "Thin air means low aero grip and low tyre-energy loading, so degradation is genuinely low and a 1-stop is standard. The bigger challenge is getting tyres up to temperature and managing brake and engine cooling in the altitude.",
+    weatherNote: "Usually mild and dry in early November, so weather rarely intervenes. The altitude, not the sky, is the defining condition — it saps power and cooling all weekend.",
+    trackFavours: "Cars with efficient cooling and strong downforce that works in thin air, plus good traction. Teams that nail the enormous run to Turn 1 gain places off the line.",
+    predictionAngle: "The long, wide sprint to Turn 1 makes the start pivotal and rewards pole (~65%), but low grip means overtaking into the stadium section is tough. Watch for cooling struggles — a car marginal on temperatures can quietly fade.",
   },
   {
     round: 19,
@@ -239,6 +290,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Brazilian GPs have high safety-car frequency, rain risk, and short straights — anything can happen.",
     insight: "Interlagos runs anticlockwise — one of only four circuits on the calendar to do so.",
     hasHistory: true,
+    tyreStops: "1–2 stop",
+    tyreNote: "A short, flowing anticlockwise lap gives moderate degradation, but the real strategy driver is weather — teams must stay flexible because a shower can turn a 1-stop into a scramble for intermediates at any moment.",
+    weatherNote: "The single most changeable forecast on the calendar. Sudden São Paulo downpours arrive with little warning and have decided championships — high rain risk is baked into every prediction here.",
+    trackFavours: "Wet-weather aces and cars with strong mechanical grip and traction for the twisty final sector. Bravery and adaptability matter more than outright dry-lap pace.",
+    predictionAngle: "The highest chaos factor of the year — pole converts only ~50%, safety cars are frequent, and rain can strike at any time. Favour proven wet-weather drivers, expect surprises, and treat safety-car picks as strong value.",
   },
   {
     round: 20,
@@ -251,6 +307,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "The sheer length of the straight means faster cars can attack from well behind under DRS.",
     insight: "Las Vegas returns to F1 for the first time since the 1982 Caesars Palace Grand Prix, which used a car park layout.",
     hasHistory: true,
+    tyreStops: "1-stop",
+    tyreNote: "The story here is cold, not wear — very low track temperatures on the long straights make tyre warm-up and graining the dominant concern. Degradation is low, so it's a 1-stop, but getting heat into the tyres for a qualifying lap or a restart is the real puzzle.",
+    weatherNote: "A cold desert night with track temps that can drop into single digits. No rain concern, but the cold makes warm-up, braking, and out-lap tyre prep decisive.",
+    trackFavours: "Low-drag cars with strong straight-line speed that can also switch tyres on quickly in the cold. Traction out of the slow corners onto the long straights is key.",
+    predictionAngle: "The 1.9 km straight makes overtaking easy, so pole is worth less than usual (~55%) and a fast car can win from off the front row. The wildcard is tyre warm-up in the cold — whoever masters it in qualifying and on restarts holds the edge.",
   },
   {
     round: 21,
@@ -263,6 +324,11 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Pole sitters have a clear track and rarely face pressure in the opening phase of the race.",
     insight: "Qatar's Losail circuit was a motorbike venue for 20 years before Formula 1 visited for the first time in 2021.",
     hasHistory: true,
+    tyreStops: "2–3 stop",
+    tyreNote: "The wall of fast, flowing corners puts extreme energy through the tyres — so much that the FIA has previously imposed maximum stint lengths, forcing a mandatory multi-stop. Expect a busy, strategy-heavy race rather than a one-stop cruise.",
+    weatherNote: "A warm, dry desert night under lights — rain is a non-factor. Track temperature drop through the evening and wind-blown sand are the only real variables.",
+    trackFavours: "Cars that are kind to their tyres through sustained high-speed loading, with strong aero through medium-fast corners. Tyre management discipline is worth more here than at almost any other track.",
+    predictionAngle: "Forget the usual conservative strategy — enforced short stints mean 2–3 stops and plenty of on-track movement, so race pace and tyre life matter more than pure qualifying position. Favour cars that historically look after their rubber.",
   },
   {
     round: 22,
@@ -275,5 +341,10 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     poleToWinNote: "Pole is useful, but softer compounds under Abu Dhabi's lights often produce engaging strategy battles.",
     insight: "The Abu Dhabi GP is always the final race of the season — its floodlit circuit was designed by Hermann Tilke.",
     hasHistory: true,
+    tyreStops: "1-stop",
+    tyreNote: "A smooth surface and moderate corner loads keep degradation low, making a 1-stop the default. Softer compound allocations in recent years have occasionally opened the door to a two-stop offset, but strategy variance stays modest.",
+    weatherNote: "A warm, dry evening race that starts in daylight and finishes under lights, so track temperature falls through the race — a stable, low-risk forecast with no rain concern.",
+    trackFavours: "Well-balanced cars with good traction out of the slow final sector and efficient braking into the hairpins. A clean, controlled weekend beats gambling on this predictable layout.",
+    predictionAngle: "The lowest-variance race on the calendar and the season finale — track position holds up well (pole ~65%) and safety cars are rare. Trust the form book and qualifying order here more than almost anywhere; big upsets are uncommon.",
   },
 ];

@@ -73,6 +73,15 @@ function PoleWinPill({ pct }: { pct: number }) {
   );
 }
 
+function StopsPill({ value }: { value: string }) {
+  const color = "#38bdf8";
+  return (
+    <span className="text-sm md:text-base" style={{ background: `${color}22`, color, border: `1px solid ${color}55`, borderRadius: "999px", padding: "2px 10px", fontWeight: 700 }}>
+      {value}
+    </span>
+  );
+}
+
 function DriverPill({ ref: dRef }: { ref: DriverRef | null }) {
   const color = driverColor(dRef);
   const name = driverDisplay(dRef);
@@ -238,10 +247,43 @@ function TipsTab({
     );
   }
 
+  function WeekendOutlook() {
+    if (!circuitChar?.predictionAngle && !circuitChar?.tyreNote && !circuitChar?.weatherNote) return null;
+    return (
+      <Card style={{ marginBottom: "14px" }}>
+        <div className="text-base md:text-lg" style={{ fontWeight: 700, color: "var(--foreground)", marginBottom: "10px" }}>Weekend Outlook</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {circuitChar?.tyreNote && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
+                <span className="text-[13px] md:text-sm" style={{ fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)" }}>Tyres</span>
+                {circuitChar.tyreStops && <StopsPill value={circuitChar.tyreStops} />}
+              </div>
+              <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.45 }}>{circuitChar.tyreNote}</p>
+            </div>
+          )}
+          {circuitChar?.weatherNote && (
+            <div>
+              <div className="text-[13px] md:text-sm" style={{ fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: "3px" }}>Weather</div>
+              <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.45 }}>{circuitChar.weatherNote}</p>
+            </div>
+          )}
+        </div>
+        {circuitChar?.predictionAngle && (
+          <div style={{ marginTop: "12px", padding: "12px 14px", borderRadius: "10px", background: "rgba(225,6,0,0.08)", border: "1px solid rgba(225,6,0,0.3)" }}>
+            <div className="text-xs md:text-sm" style={{ fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#e10600", marginBottom: "6px" }}>Prediction angle</div>
+            <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>{circuitChar.predictionAngle}</p>
+          </div>
+        )}
+      </Card>
+    );
+  }
+
   if (noHistory) {
     const noDataHint = "Not enough historical data for this circuit. Check the Drivers tab for current form.";
     return (
       <div>
+        <WeekendOutlook />
         <TipCard label="Qualifying Pole" pts={PICK_POINTS.qualPole} hint={noDataHint} />
         <TipCard label="Race Winner" pts={PICK_POINTS.raceWinner} hint={noDataHint} />
         <TipCard label="Race P2" pts={PICK_POINTS.raceP2} hint={noDataHint} />
@@ -277,6 +319,7 @@ function TipsTab({
 
   return (
     <div>
+      <WeekendOutlook />
       <TipCard
         label="Qualifying Pole"
         pts={PICK_POINTS.qualPole}
@@ -521,7 +564,39 @@ function IntelPageInner() {
                     </div>
                     <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.poleToWinNote}</p>
                   </div>
+                  {circuitChar.tyreNote && (
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+                        <span className="text-sm md:text-base" style={{ color: "var(--muted)", minWidth: "110px" }}>Tyres</span>
+                        {circuitChar.tyreStops && <StopsPill value={circuitChar.tyreStops} />}
+                      </div>
+                      <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.tyreNote}</p>
+                    </div>
+                  )}
+                  {circuitChar.weatherNote && (
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+                        <span className="text-sm md:text-base" style={{ color: "var(--muted)", minWidth: "110px" }}>Weather</span>
+                      </div>
+                      <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.weatherNote}</p>
+                    </div>
+                  )}
+                  {circuitChar.trackFavours && (
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+                        <span className="text-sm md:text-base" style={{ color: "var(--muted)", minWidth: "110px" }}>Track favours</span>
+                      </div>
+                      <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.55)", marginLeft: "118px", lineHeight: 1.4 }}>{circuitChar.trackFavours}</p>
+                    </div>
+                  )}
                 </div>
+
+                {circuitChar.predictionAngle && (
+                  <div style={{ marginTop: "14px", padding: "12px 14px", borderRadius: "10px", background: "rgba(225,6,0,0.08)", border: "1px solid rgba(225,6,0,0.3)" }}>
+                    <div className="text-xs md:text-sm" style={{ fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#e10600", marginBottom: "6px" }}>Prediction angle</div>
+                    <p className="text-sm md:text-base" style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>{circuitChar.predictionAngle}</p>
+                  </div>
+                )}
 
                 <p className="text-sm md:text-base" style={{ fontStyle: "italic", color: "rgba(255,255,255,0.45)", marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)", lineHeight: 1.5 }}>
                   {circuitChar.insight}
