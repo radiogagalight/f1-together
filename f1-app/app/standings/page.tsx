@@ -356,16 +356,31 @@ export default function StandingsPage() {
   const myLastRoundPts = latestResultRound != null ? (myEntry?.scoresByRound[latestResultRound] ?? 0) : 0;
   const myLastRace = latestResultRound != null ? RACES.find((r) => r.r === latestResultRound) : null;
 
-  // Who scored the most points in the most recent race
-  const roundWinner: { entry: LeaderboardEntry; pts: number; accent: string } | null =
-    latestResultRound != null
-      ? leaderboard.reduce<{ entry: LeaderboardEntry; pts: number; accent: string } | null>((best, entry) => {
-          const pts = entry.scoresByRound[latestResultRound] ?? 0;
-          const accent = entry.favTeam1 ? TEAM_COLORS[entry.favTeam1] ?? "#888888" : "#888888";
-          if (pts > 0 && (best === null || pts > best.pts)) return { entry, pts, accent };
-          return best;
-        }, null)
-      : null;
+  // Who scored the most points in the most recent race (all users tied at the top)
+  type RoundWinner = { entry: LeaderboardEntry; pts: number; accent: string };
+  const roundWinners: RoundWinner[] = (() => {
+    if (latestResultRound == null) return [];
+    let maxPts = 0;
+    const winners: RoundWinner[] = [];
+    for (const entry of leaderboard) {
+      const pts = entry.scoresByRound[latestResultRound] ?? 0;
+      if (pts <= 0) continue;
+      const accent = entry.favTeam1 ? TEAM_COLORS[entry.favTeam1] ?? "#888888" : "#888888";
+      if (pts > maxPts) {
+        maxPts = pts;
+        winners.length = 0;
+        winners.push({ entry, pts, accent });
+      } else if (pts === maxPts) {
+        winners.push({ entry, pts, accent });
+      }
+    }
+    return winners;
+  })();
+  const roundWinnerAccent = roundWinners.length === 1
+    ? roundWinners[0].accent
+    : roundWinners.length > 1
+      ? "#C9A84C"
+      : "#888888";
 
   type PredRow = { key: keyof RacePrediction; label: string; isBool?: boolean };
   type PredGroup = { label: string; rows: PredRow[] };
@@ -487,16 +502,24 @@ export default function StandingsPage() {
                     </h2>
                   </div>
                 </div>
-                {roundWinner && (
+                {roundWinners.length > 0 && (
                   <div className="flex items-center gap-2.5 px-4 py-2 rounded-full shrink-0" style={{
-                    backgroundColor: `rgba(${hexToRgb(roundWinner.accent)},0.12)`,
-                    border: `1px solid rgba(${hexToRgb(roundWinner.accent)},0.3)`,
+                    backgroundColor: `rgba(${hexToRgb(roundWinnerAccent)},0.12)`,
+                    border: `1px solid rgba(${hexToRgb(roundWinnerAccent)},0.3)`,
                   }}>
                     <span className="text-base leading-none">🏆</span>
                     <div className="flex flex-col leading-none gap-0.5">
-                      <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Round Winner</span>
-                      <span className="text-sm font-black" style={{ color: roundWinner.accent }}>
-                        {roundWinner.entry.displayName?.split(" ")[0] ?? "?"} · +{roundWinner.pts} pts
+                      <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        {roundWinners.length > 1 ? "Round Tie" : "Round Winner"}
+                      </span>
+                      <span className="text-sm font-black">
+                        {roundWinners.map((w, i) => (
+                          <span key={w.entry.userId}>
+                            {i > 0 && <span style={{ color: "rgba(255,255,255,0.45)" }}> & </span>}
+                            <span style={{ color: w.accent }}>{w.entry.displayName?.split(" ")[0] ?? "?"}</span>
+                          </span>
+                        ))}
+                        <span style={{ color: roundWinnerAccent }}> · +{roundWinners[0].pts} pts</span>
                       </span>
                     </div>
                   </div>
