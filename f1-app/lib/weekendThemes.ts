@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import SpaHeroScene, { SPA_PALETTE, SPA_SPEED_LINES } from "@/components/SpaHeroScene";
 import HungaryHeroScene, { HUNGARY_PALETTE, HUNGARY_SPEED_LINES } from "@/components/HungaryHeroScene";
+import DutchHeroScene, { DUTCH_PALETTE, DUTCH_SPEED_LINES } from "@/components/DutchHeroScene";
 
 export type SpeedLine = {
   top: number;
@@ -94,9 +95,37 @@ const HUNGARY_THEME: WeekendTheme = {
   HeroScene: HungaryHeroScene,
 };
 
+const DUTCH_THEME: WeekendTheme = {
+  round: 12,
+  badgeLabel: "Dutch GP Week",
+  subtitle: "It's Dutch GP week. Dunes, banking, and a sea of Oranje at Zandvoort.",
+  circuitFact: "Zandvoort was absent from the F1 calendar for 35 years before returning as the Dutch GP home in 2021.",
+  palette: {
+    accent: DUTCH_PALETTE.vibrantOrange,
+    liveGlow: DUTCH_PALETTE.liveGlow,
+    liveBorder: DUTCH_PALETTE.liveBorder,
+    badgeBg: DUTCH_PALETTE.badgeBg,
+    badgeBorder: DUTCH_PALETTE.badgeBorder,
+    liveGlowBoxShadow: `0 0 0 1px ${DUTCH_PALETTE.liveGlow}, 0 0 40px oklch(0.55 0.18 42 / 0.35)`,
+    dayLabelShadow: "0 0 24px oklch(0.65 0.18 45 / 0.55), 0 2px 12px rgba(0,0,0,0.9)",
+    nextDotGlow: "oklch(0.65 0.18 45 / 0.55)",
+    tickerBg: "oklch(0.16 0.03 55 / 0.55)",
+    scrimGradient:
+      "linear-gradient(to bottom, oklch(0.18 0.03 55 / 0.12) 0%, oklch(0.16 0.03 55 / 0.55) 50%, oklch(0.12 0.03 55 / 0.96) 100%)",
+    factColor: "oklch(0.82 0.05 55 / 0.7)",
+    scheduleBg:
+      "linear-gradient(to right, oklch(0.42 0.12 45 / 0.38) 0%, oklch(0.34 0.08 50 / 0.14) 60%, transparent 100%)",
+    scheduleInsetShadow: `0 0 0 1px ${DUTCH_PALETTE.badgeBorder}, inset 0 0 60px oklch(0.45 0.1 48 / 0.12)`,
+    tricolor: [DUTCH_PALETTE.dutchRed, DUTCH_PALETTE.dutchWhite, DUTCH_PALETTE.dutchBlue],
+  },
+  speedLines: DUTCH_SPEED_LINES,
+  HeroScene: DutchHeroScene,
+};
+
 const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [SPA_THEME.round]: SPA_THEME,
   [HUNGARY_THEME.round]: HUNGARY_THEME,
+  [DUTCH_THEME.round]: DUTCH_THEME,
 };
 
 export function getWeekendTheme(round: number): WeekendTheme | null {
