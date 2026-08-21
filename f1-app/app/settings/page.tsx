@@ -20,13 +20,26 @@ const DRIVERS_BY_TEAM = CONSTRUCTORS.map((c) => ({
   drivers: DRIVERS.filter((d) => d.team === c.name),
 }));
 
+// Safari requires a Uint8Array for applicationServerKey; Chrome accepts a raw
+// string but that's non-standard, so convert for every browser.
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 async function subscribeToPush(): Promise<PushSubscription | null> {
   const reg = await navigator.serviceWorker.ready;
   const existing = await reg.pushManager.getSubscription();
   if (existing) return existing;
   return reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as BufferSource,
   });
 }
 
