@@ -16,7 +16,7 @@ const GROUPS: { label: string; keys: (keyof SeasonPredictions)[] }[] = [
 export default function SeasonPredictions() {
   const { user } = useAuth();
   const { predictions, setPrediction, savedKey, loading } = useSeasonPredictions(user?.uid);
-  const isLocked = false;
+  const isLocked = true;
 
   const predictedCount = predictions
     ? Object.values(predictions).filter((v) => v !== null).length
@@ -55,7 +55,7 @@ export default function SeasonPredictions() {
           className="mb-6 rounded-xl px-4 py-3 text-sm"
           style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--muted)" }}
         >
-          🔒 Season predictions are locked — the Chinese GP weekend has begun.
+          🔒 Season predictions are locked.
         </div>
       )}
 

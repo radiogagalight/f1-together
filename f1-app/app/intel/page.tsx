@@ -233,6 +233,12 @@ function TipsTab({
 
   const noHistory = circuitChar?.hasHistory === false;
 
+  function hasSprintData(result: HistoricalResult | null | undefined): boolean {
+    return !!result && (result.sprintWinner !== null || result.sprintQualPole !== null);
+  }
+  const noSprintHistory = isSprint && !hasSprintData(result2024) && !hasSprintData(result2025);
+  const noSprintHint = "First Sprint weekend at this circuit — no historical sprint data. Check the Drivers tab for current form.";
+
   function TipCard({ label, pts, hint }: { label: string; pts: number; hint: string }) {
     return (
       <Card style={{ marginBottom: "10px" }}>
@@ -355,32 +361,32 @@ function TipsTab({
           <TipCard
             label="Sprint Qual Pole"
             pts={PICK_POINTS.sprintQualPole}
-            hint={`2024 SQ pole: ${name24(result2024?.sprintQualPole)}. 2025 SQ pole: ${name25(result2025?.sprintQualPole)}.`}
+            hint={noSprintHistory ? noSprintHint : `2024 SQ pole: ${name24(result2024?.sprintQualPole)}. 2025 SQ pole: ${name25(result2025?.sprintQualPole)}.`}
           />
           <TipCard
             label="Sprint Qual P2"
             pts={PICK_POINTS.sprintQualP2}
-            hint={`2024 SQ P2: ${name24(result2024?.sprintQualP2)}. 2025 SQ P2: ${name25(result2025?.sprintQualP2)}.`}
+            hint={noSprintHistory ? noSprintHint : `2024 SQ P2: ${name24(result2024?.sprintQualP2)}. 2025 SQ P2: ${name25(result2025?.sprintQualP2)}.`}
           />
           <TipCard
             label="Sprint Qual P3"
             pts={PICK_POINTS.sprintQualP3}
-            hint={`2024 SQ P3: ${name24(result2024?.sprintQualP3)}. 2025 SQ P3: ${name25(result2025?.sprintQualP3)}.`}
+            hint={noSprintHistory ? noSprintHint : `2024 SQ P3: ${name24(result2024?.sprintQualP3)}. 2025 SQ P3: ${name25(result2025?.sprintQualP3)}.`}
           />
           <TipCard
             label="Sprint Winner"
             pts={PICK_POINTS.sprintWinner}
-            hint={`2024 sprint winner: ${name24(result2024?.sprintWinner)}. 2025 sprint winner: ${name25(result2025?.sprintWinner)}.`}
+            hint={noSprintHistory ? noSprintHint : `2024 sprint winner: ${name24(result2024?.sprintWinner)}. 2025 sprint winner: ${name25(result2025?.sprintWinner)}.`}
           />
           <TipCard
             label="Sprint P2"
             pts={PICK_POINTS.sprintP2}
-            hint={`2024 sprint P2: ${name24(result2024?.sprintP2)}. 2025 sprint P2: ${name25(result2025?.sprintP2)}.`}
+            hint={noSprintHistory ? noSprintHint : `2024 sprint P2: ${name24(result2024?.sprintP2)}. 2025 sprint P2: ${name25(result2025?.sprintP2)}.`}
           />
           <TipCard
             label="Sprint P3"
             pts={PICK_POINTS.sprintP3}
-            hint={`2024 sprint P3: ${name24(result2024?.sprintP3)}. 2025 sprint P3: ${name25(result2025?.sprintP3)}.`}
+            hint={noSprintHistory ? noSprintHint : `2024 sprint P3: ${name24(result2024?.sprintP3)}. 2025 sprint P3: ${name25(result2025?.sprintP3)}.`}
           />
         </>
       )}
