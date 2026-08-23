@@ -5,7 +5,8 @@
       "name": "f1-app-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "f1-app", "run", "dev"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

@@ -230,6 +230,23 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
   },
   {
     round: 16,
+    trackType: "Permanent",
+    overtaking: "Frequent",
+    overtakingNote: "The long back straight into a hard-braking hairpin is a proven passing zone, backed up by two further DRS chances.",
+    safetyCarLikelihood: "High",
+    safetyCarNote: "Sudden tropical downpours are the defining feature of racing at Sepang — they've triggered red flags and safety cars for years.",
+    poleToWinPct: 55,
+    poleToWinNote: "No 2024/2025 form to lean on — Sepang last hosted F1 in 2017, before this grid's core lineup arrived.",
+    insight: "Malaysia hosts this race under the Bahrain Grand Prix name and branding after Bahrain's own event couldn't be held — Sepang last held an F1 race in 2017.",
+    hasHistory: false,
+    tyreStops: "Unknown",
+    tyreNote: "No recent tyre data from this compound generation. Historically Sepang's abrasive surface and heavy, sustained-load corners produced some of the highest degradation on the calendar — expect strategy to be reactive rather than pre-planned.",
+    weatherNote: "Equatorial heat and humidity, with a real chance of a violent afternoon thunderstorm interrupting the session — this was a recurring storyline in Sepang's earlier F1 years.",
+    trackFavours: "Cars with strong high-speed cornering stability and good cooling in oppressive heat and humidity. Confidence in mixed or drying conditions is a genuine advantage here.",
+    predictionAngle: "This is a genuine unknown on the 2026 calendar — no current-grid form, no recent tyre or setup data. Weight Friday practice heavily, and treat a weather-driven upset as a real possibility rather than a long shot.",
+  },
+  {
+    round: 17,
     trackType: "Street",
     overtaking: "Rare",
     overtakingNote: "Narrow sections and slow corners limit passing; strategy and tyre management decide most outcomes.",
@@ -246,7 +263,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     predictionAngle: "It's a Sprint weekend AND a track where overtaking is brutally hard, so qualifying position (pole wins ~75%) is the dominant signal for both races. Bank on a safety car, and treat any rain forecast as a green light for an upset.",
   },
   {
-    round: 17,
+    round: 18,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Long straights and Turn 1 / Turn 12 hairpins offer repeated passing opportunities each lap.",
@@ -263,7 +280,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     predictionAngle: "Real overtaking is possible here, so pole is less decisive (~60%) and strategy frequently decides it — look for the best race-pace car rather than just the fastest qualifier. The bumps punish stiff setups, occasionally catching out a favourite.",
   },
   {
-    round: 18,
+    round: 19,
     trackType: "Permanent",
     overtaking: "Occasional",
     overtakingNote: "The long main straight and Peraltada give DRS a boost, but the stadium section limits passing.",
@@ -280,7 +297,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     predictionAngle: "The long, wide sprint to Turn 1 makes the start pivotal and rewards pole (~65%), but low grip means overtaking into the stadium section is tough. Watch for cooling struggles — a car marginal on temperatures can quietly fade.",
   },
   {
-    round: 19,
+    round: 20,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Interlagos is a short, flowing circuit; lapped traffic and DRS zones create frequent action.",
@@ -297,7 +314,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     predictionAngle: "The highest chaos factor of the year — pole converts only ~50%, safety cars are frequent, and rain can strike at any time. Favour proven wet-weather drivers, expect surprises, and treat safety-car picks as strong value.",
   },
   {
-    round: 20,
+    round: 21,
     trackType: "Street",
     overtaking: "Frequent",
     overtakingNote: "The 1.9 km Strip straight gives cars one of the longest DRS runs in F1 — overtaking is common.",
@@ -314,7 +331,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     predictionAngle: "The 1.9 km straight makes overtaking easy, so pole is worth less than usual (~55%) and a fast car can win from off the front row. The wildcard is tyre warm-up in the cold — whoever masters it in qualifying and on restarts holds the edge.",
   },
   {
-    round: 21,
+    round: 22,
     trackType: "Permanent",
     overtaking: "Frequent",
     overtakingNote: "Lusail's smooth surface and multiple long straights give DRS maximum effect for passing.",
@@ -331,7 +348,7 @@ export const CIRCUIT_INTEL: CircuitCharacter[] = [
     predictionAngle: "Forget the usual conservative strategy — enforced short stints mean 2–3 stops and plenty of on-track movement, so race pace and tyre life matter more than pure qualifying position. Favour cars that historically look after their rubber.",
   },
   {
-    round: 22,
+    round: 23,
     trackType: "Permanent",
     overtaking: "Occasional",
     overtakingNote: "DRS on the long main straight helps, but the tight hairpin and narrow sections limit other opportunities.",

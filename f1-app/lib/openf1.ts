@@ -29,9 +29,9 @@ const CIRCUIT_KEYWORDS: Record<number, string> = {
   1: "melbourne", 2: "shanghai", 3: "suzuka", 4: "miami",
   5: "montreal", 6: "monte", 7: "catalunya", 8: "spielberg",
   9: "silverstone", 10: "spa", 11: "hungaroring", 12: "zandvoort",
-  13: "monza", 14: "madring", 15: "baku", 16: "singapore",
-  17: "austin", 18: "mexico", 19: "interlagos", 20: "vegas",
-  21: "lusail", 22: "yas",
+  13: "monza", 14: "madring", 15: "baku", 16: "sepang",
+  17: "singapore", 18: "austin", 19: "mexico", 20: "interlagos",
+  21: "vegas", 22: "lusail", 23: "yas",
 };
 
 const BASE = "https://api.openf1.org/v1";

@@ -178,6 +178,15 @@ export const RACE_FACTS: Record<number, RacePageData> = {
   },
   16: {
     sessions: [
+      { name: "Practice 1",     utc: "2026-10-02T04:30:00Z" },
+      { name: "Practice 2",     utc: "2026-10-02T08:00:00Z" },
+      { name: "Practice 3",     utc: "2026-10-03T04:30:00Z" },
+      { name: "Qualifying",     utc: "2026-10-03T08:00:00Z" },
+      { name: "Race",           utc: "2026-10-04T07:00:00Z" },
+    ],
+  },
+  17: {
+    sessions: [
       { name: "Practice 1",      utc: "2026-10-09T08:30:00Z" },
       { name: "Sprint Qualifying",utc: "2026-10-09T12:30:00Z" },
       { name: "Sprint Race",     utc: "2026-10-10T09:00:00Z" },
@@ -185,7 +194,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",            utc: "2026-10-11T12:00:00Z" },
     ],
   },
-  17: {
+  18: {
     sessions: [
       { name: "Practice 1",     utc: "2026-10-23T17:30:00Z" },
       { name: "Practice 2",     utc: "2026-10-23T21:00:00Z" },
@@ -194,7 +203,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-10-25T20:00:00Z" },
     ],
   },
-  18: {
+  19: {
     sessions: [
       { name: "Practice 1",     utc: "2026-10-30T18:30:00Z" },
       { name: "Practice 2",     utc: "2026-10-30T22:00:00Z" },
@@ -203,7 +212,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-11-01T20:00:00Z" },
     ],
   },
-  19: {
+  20: {
     sessions: [
       { name: "Practice 1",     utc: "2026-11-06T15:30:00Z" },
       { name: "Practice 2",     utc: "2026-11-06T19:00:00Z" },
@@ -212,7 +221,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-11-08T17:00:00Z" },
     ],
   },
-  20: {
+  21: {
     sessions: [
       { name: "Practice 1",     utc: "2026-11-20T00:30:00Z" },
       { name: "Practice 2",     utc: "2026-11-20T04:00:00Z" },
@@ -221,7 +230,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-11-22T04:00:00Z" },
     ],
   },
-  21: {
+  22: {
     sessions: [
       { name: "Practice 1",     utc: "2026-11-27T13:30:00Z" },
       { name: "Practice 2",     utc: "2026-11-27T17:00:00Z" },
@@ -230,7 +239,7 @@ export const RACE_FACTS: Record<number, RacePageData> = {
       { name: "Race",           utc: "2026-11-29T16:00:00Z" },
     ],
   },
-  22: {
+  23: {
     sessions: [
       { name: "Practice 1",     utc: "2026-12-04T09:30:00Z" },
       { name: "Practice 2",     utc: "2026-12-04T13:00:00Z" },
