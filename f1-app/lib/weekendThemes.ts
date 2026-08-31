@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import SpaHeroScene, { SPA_PALETTE, SPA_SPEED_LINES } from "@/components/SpaHeroScene";
 import HungaryHeroScene, { HUNGARY_PALETTE, HUNGARY_SPEED_LINES } from "@/components/HungaryHeroScene";
 import DutchHeroScene, { DUTCH_PALETTE, DUTCH_SPEED_LINES } from "@/components/DutchHeroScene";
+import MonzaHeroScene, { MONZA_PALETTE, MONZA_SPEED_LINES } from "@/components/MonzaHeroScene";
 
 export type SpeedLine = {
   top: number;
@@ -122,10 +123,38 @@ const DUTCH_THEME: WeekendTheme = {
   HeroScene: DutchHeroScene,
 };
 
+const MONZA_THEME: WeekendTheme = {
+  round: 13,
+  badgeLabel: "Monza GP Week",
+  subtitle: "It's Monza week. The Temple of Speed — flat-out through the Royal Park in a sea of tifosi red.",
+  circuitFact: "Monza has hosted the Italian GP in every F1 World Championship season but one (1980) — and its abandoned 1955 banking still curves through the woods.",
+  palette: {
+    accent: MONZA_PALETTE.brightRed,
+    liveGlow: MONZA_PALETTE.liveGlow,
+    liveBorder: MONZA_PALETTE.liveBorder,
+    badgeBg: MONZA_PALETTE.badgeBg,
+    badgeBorder: MONZA_PALETTE.badgeBorder,
+    liveGlowBoxShadow: `0 0 0 1px ${MONZA_PALETTE.liveGlow}, 0 0 40px oklch(0.55 0.2 28 / 0.35)`,
+    dayLabelShadow: "0 0 24px oklch(0.6 0.2 30 / 0.55), 0 2px 12px rgba(0,0,0,0.9)",
+    nextDotGlow: "oklch(0.62 0.2 30 / 0.55)",
+    tickerBg: "oklch(0.16 0.04 150 / 0.55)",
+    scrimGradient:
+      "linear-gradient(to bottom, oklch(0.18 0.04 150 / 0.12) 0%, oklch(0.15 0.035 150 / 0.55) 50%, oklch(0.11 0.03 150 / 0.96) 100%)",
+    factColor: "oklch(0.84 0.04 90 / 0.7)",
+    scheduleBg:
+      "linear-gradient(to right, oklch(0.42 0.16 28 / 0.38) 0%, oklch(0.32 0.09 40 / 0.14) 60%, transparent 100%)",
+    scheduleInsetShadow: `0 0 0 1px ${MONZA_PALETTE.badgeBorder}, inset 0 0 60px oklch(0.45 0.14 30 / 0.12)`,
+    tricolor: [MONZA_PALETTE.italianGreen, MONZA_PALETTE.italianWhite, MONZA_PALETTE.italianRed],
+  },
+  speedLines: MONZA_SPEED_LINES,
+  HeroScene: MonzaHeroScene,
+};
+
 const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [SPA_THEME.round]: SPA_THEME,
   [HUNGARY_THEME.round]: HUNGARY_THEME,
   [DUTCH_THEME.round]: DUTCH_THEME,
+  [MONZA_THEME.round]: MONZA_THEME,
 };
 
 export function getWeekendTheme(round: number): WeekendTheme | null {
