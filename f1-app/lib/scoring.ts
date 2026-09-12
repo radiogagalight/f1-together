@@ -128,6 +128,18 @@ export function scoreRound(
   return { round: result.round, userId, totalPoints, breakdown };
 }
 
+/** Whether a wildcard pick scores against the admin-entered answer, honoring numeric tolerance bands. */
+export function isWildcardCorrect(wc: RaceWildcard, pickValue: string): boolean {
+  if (wc.correctAnswer === null) return false;
+  if (wc.questionType === "numeric") {
+    const guess = Number(pickValue);
+    const actual = Number(wc.correctAnswer);
+    if (Number.isNaN(guess) || Number.isNaN(actual)) return false;
+    return Math.abs(guess - actual) <= (wc.tolerance ?? 0);
+  }
+  return pickValue === wc.correctAnswer;
+}
+
 /** Score a user's wildcard predictions against the admin-entered answers. */
 export function scoreWildcards(
   wildcardPredictions: WildcardPrediction[],
@@ -138,7 +150,7 @@ export function scoreWildcards(
     if (wc.correctAnswer === null) continue;
     const pick = wildcardPredictions.find((p) => p.wildcardId === wc.id);
     if (!pick) continue;
-    if (pick.pickValue === wc.correctAnswer) {
+    if (isWildcardCorrect(wc, pick.pickValue)) {
       total += wc.points * (pick.boosted ? 2 : 1);
     }
   }
@@ -187,7 +199,7 @@ export function buildLeaderboard(
     for (const wc of allWildcards) {
       if (wc.correctAnswer === null) continue;
       const pick = userWcPredictions.find((p) => p.wildcardId === wc.id);
-      if (!pick || pick.pickValue !== wc.correctAnswer) continue;
+      if (!pick || !isWildcardCorrect(wc, pick.pickValue)) continue;
       const pts = wc.points * (pick.boosted ? 2 : 1);
       if (!userMap.has(profile.id)) {
         userMap.set(profile.id, { totalPoints: 0, roundsScored: 0, scoresByRound: {}, breakdownsByRound: {} });

@@ -10,7 +10,7 @@ import type { RaceFact, RaceSession } from "@/lib/raceFacts";
 import { useRacePrediction } from "@/hooks/useRacePrediction";
 import DriverSelect from "@/components/DriverSelect";
 import type { RacePrediction, RaceResult, ScoreBreakdown, RaceWildcard, WildcardPrediction } from "@/lib/types";
-import { PICK_POINTS, scoreRound, scoreWildcards } from "@/lib/scoring";
+import { PICK_POINTS, scoreRound, scoreWildcards, isWildcardCorrect } from "@/lib/scoring";
 import { loadRaceResult } from "@/lib/resultsStorage";
 import {
   loadWildcards as loadWildcardsFromStorage,
@@ -432,6 +432,7 @@ export default function RaceDetailPage({
     if (wc.questionType === "boolean") return val === "yes" ? "Yes" : "No";
     if (wc.questionType === "driver") return DRIVERS.find((d) => d.id === val)?.name ?? val;
     if (wc.questionType === "constructor") return CONSTRUCTORS.find((c) => c.id === val)?.name ?? val;
+    if (wc.questionType === "numeric") return wc.unit ? `${val} ${wc.unit}` : val;
     return wc.options?.find((o) => o.id === val)?.name ?? val;
   }
 
@@ -1294,8 +1295,8 @@ export default function RaceDetailPage({
                     const isSaved = wcSavedId === wc.id;
                     const isBattle = wc.questionType === "battle";
                     const hasResult = wc.correctAnswer !== null && myPrediction !== undefined;
-                    const isCorrect = hasResult && myPrediction!.pickValue === wc.correctAnswer;
-                    const isWrong = hasResult && myPrediction!.pickValue !== wc.correctAnswer;
+                    const isCorrect = hasResult && isWildcardCorrect(wc, myPrediction!.pickValue);
+                    const isWrong = hasResult && !isCorrect;
                     const ptsEarned = isCorrect ? wc.points * (myPrediction!.boosted ? 2 : 1) : 0;
                     const resultBorderLeft = isCorrect
                       ? "3px solid rgba(34,197,94,0.8)"
@@ -1456,6 +1457,40 @@ export default function RaceDetailPage({
                                       </button>
                                     );
                                   })}
+                                </div>
+                              )}
+                              {wc.questionType === "numeric" && (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    key={myPrediction?.pickValue ?? "empty"}
+                                    type="number"
+                                    inputMode="numeric"
+                                    defaultValue={myPrediction?.pickValue ?? ""}
+                                    placeholder={wc.unit ? `Guess (${wc.unit})` : "Your guess"}
+                                    onBlur={(e) => {
+                                      const v = e.target.value.trim();
+                                      if (v === "") {
+                                        if (myPrediction) handleWildcardPick(wc.id, null);
+                                        return;
+                                      }
+                                      if (v !== myPrediction?.pickValue) handleWildcardPick(wc.id, v);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                    }}
+                                    className="rounded-lg text-sm font-semibold px-3 py-2"
+                                    style={{
+                                      backgroundColor: "rgba(255,255,255,0.06)",
+                                      border: "1px solid rgba(255,255,255,0.12)",
+                                      color: "var(--foreground)",
+                                      width: "120px",
+                                      minHeight: "40px",
+                                      outline: "none",
+                                    }}
+                                  />
+                                  {wc.unit && (
+                                    <span className="text-xs" style={{ color: "var(--muted)" }}>{wc.unit}</span>
+                                  )}
                                 </div>
                               )}
                             </div>

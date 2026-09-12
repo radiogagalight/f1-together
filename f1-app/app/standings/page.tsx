@@ -281,6 +281,8 @@ export default function StandingsPage() {
           points: row.points as number,
           correctAnswer: fsStr(row, "correct_answer"),
           displayOrder: row.display_order as number,
+          tolerance: (row.tolerance as number | null) ?? null,
+          unit: fsStr(row, "unit"),
         }));
         const allWildcardPredictions = wcPredictions.map((row) => {
           const r = row as Record<string, unknown>;

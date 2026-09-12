@@ -74,7 +74,7 @@ export interface ScoreBreakdown {
   sprintWinner: number; sprintP2: number; sprintP3: number;
 }
 
-export type WildcardQuestionType = 'driver' | 'constructor' | 'boolean' | 'battle';
+export type WildcardQuestionType = 'driver' | 'constructor' | 'boolean' | 'battle' | 'numeric';
 
 export interface RaceWildcard {
   id: string;
@@ -86,6 +86,10 @@ export interface RaceWildcard {
   points: number;
   correctAnswer: string | null;
   displayOrder: number;
+  /** For 'numeric' type: a pick within ±tolerance of the correct answer scores full points. Null/0 = exact match only. */
+  tolerance: number | null;
+  /** For 'numeric' type: display label, e.g. "pit stops", "laps". Null for other types. */
+  unit: string | null;
 }
 
 export interface WildcardPrediction {

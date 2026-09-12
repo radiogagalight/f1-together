@@ -3,6 +3,7 @@ import SpaHeroScene, { SPA_PALETTE, SPA_SPEED_LINES } from "@/components/SpaHero
 import HungaryHeroScene, { HUNGARY_PALETTE, HUNGARY_SPEED_LINES } from "@/components/HungaryHeroScene";
 import DutchHeroScene, { DUTCH_PALETTE, DUTCH_SPEED_LINES } from "@/components/DutchHeroScene";
 import MonzaHeroScene, { MONZA_PALETTE, MONZA_SPEED_LINES } from "@/components/MonzaHeroScene";
+import SpainHeroScene, { SPAIN_PALETTE, SPAIN_SPEED_LINES } from "@/components/SpainHeroScene";
 
 export type SpeedLine = {
   top: number;
@@ -150,11 +151,39 @@ const MONZA_THEME: WeekendTheme = {
   HeroScene: MonzaHeroScene,
 };
 
+const SPAIN_THEME: WeekendTheme = {
+  round: 14,
+  badgeLabel: "Spanish GP Week",
+  subtitle: "It's Spanish GP week. F1 debuts in Madrid at Madring — a bold new street circuit with the calendar's only banked corner.",
+  circuitFact: "Madring makes its F1 debut in 2026, replacing Valencia as Spain's second venue — a hybrid street layout with a raised banked corner found nowhere else on the calendar.",
+  palette: {
+    accent: SPAIN_PALETTE.brightGold,
+    liveGlow: SPAIN_PALETTE.liveGlow,
+    liveBorder: SPAIN_PALETTE.liveBorder,
+    badgeBg: SPAIN_PALETTE.badgeBg,
+    badgeBorder: SPAIN_PALETTE.badgeBorder,
+    liveGlowBoxShadow: `0 0 0 1px ${SPAIN_PALETTE.liveGlow}, 0 0 40px oklch(0.55 0.2 28 / 0.35)`,
+    dayLabelShadow: "0 0 24px oklch(0.65 0.18 45 / 0.55), 0 2px 12px rgba(0,0,0,0.9)",
+    nextDotGlow: "oklch(0.65 0.18 45 / 0.55)",
+    tickerBg: "oklch(0.16 0.035 55 / 0.55)",
+    scrimGradient:
+      "linear-gradient(to bottom, oklch(0.18 0.035 55 / 0.12) 0%, oklch(0.16 0.035 55 / 0.55) 50%, oklch(0.12 0.03 55 / 0.96) 100%)",
+    factColor: "oklch(0.83 0.06 80 / 0.7)",
+    scheduleBg:
+      "linear-gradient(to right, oklch(0.42 0.14 30 / 0.38) 0%, oklch(0.34 0.09 55 / 0.14) 60%, transparent 100%)",
+    scheduleInsetShadow: `0 0 0 1px ${SPAIN_PALETTE.badgeBorder}, inset 0 0 60px oklch(0.45 0.12 35 / 0.12)`,
+    tricolor: [SPAIN_PALETTE.spanishRed, SPAIN_PALETTE.spanishGold, SPAIN_PALETTE.spanishRed],
+  },
+  speedLines: SPAIN_SPEED_LINES,
+  HeroScene: SpainHeroScene,
+};
+
 const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [SPA_THEME.round]: SPA_THEME,
   [HUNGARY_THEME.round]: HUNGARY_THEME,
   [DUTCH_THEME.round]: DUTCH_THEME,
   [MONZA_THEME.round]: MONZA_THEME,
+  [SPAIN_THEME.round]: SPAIN_THEME,
 };
 
 export function getWeekendTheme(round: number): WeekendTheme | null {

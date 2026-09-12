@@ -27,6 +27,8 @@ function dbRowToWildcard(id: string, row: Record<string, unknown>): RaceWildcard
     points: row.points as number,
     correctAnswer: (row.correct_answer as string | null) ?? null,
     displayOrder: row.display_order as number,
+    tolerance: (row.tolerance as number | null) ?? null,
+    unit: (row.unit as string | null) ?? null,
   };
 }
 
@@ -45,20 +47,18 @@ export async function loadWildcardPredictions(
   round: number,
   db: Firestore
 ): Promise<WildcardPrediction[]> {
-  const wcSnap = await getDocs(
-    query(collection(db, "race_wildcards"), where("round", "==", round))
-  );
-  const ids = new Set(wcSnap.docs.map((d) => d.id));
   const picksSnap = await getDocs(
-    query(collection(db, "wildcard_picks"), where("user_id", "==", userId))
+    query(
+      collection(db, "wildcard_picks"),
+      where("user_id", "==", userId),
+      where("round", "==", round)
+    )
   );
   const out: WildcardPrediction[] = [];
   picksSnap.forEach((d) => {
     const row = d.data();
-    const wid = row.wildcard_id as string;
-    if (!ids.has(wid)) return;
     out.push({
-      wildcardId: wid,
+      wildcardId: row.wildcard_id as string,
       pickValue: row.pick_value as string,
       boosted: row.boosted as boolean,
     });
@@ -100,6 +100,8 @@ export async function createWildcard(
     options?: { id: string; name: string }[] | null;
     points?: number;
     displayOrder?: number;
+    tolerance?: number | null;
+    unit?: string | null;
   },
   db: Firestore
 ): Promise<RaceWildcard> {
@@ -111,6 +113,8 @@ export async function createWildcard(
     points: data.points ?? 10,
     display_order: data.displayOrder ?? 0,
     correct_answer: null,
+    tolerance: data.tolerance ?? null,
+    unit: data.unit ?? null,
     created_at: new Date().toISOString(),
   });
   return {
@@ -122,6 +126,8 @@ export async function createWildcard(
     points: data.points ?? 10,
     correctAnswer: null,
     displayOrder: data.displayOrder ?? 0,
+    tolerance: data.tolerance ?? null,
+    unit: data.unit ?? null,
   };
 }
 
@@ -134,6 +140,8 @@ export async function updateWildcard(
     points?: number;
     correctAnswer?: string | null;
     displayOrder?: number;
+    tolerance?: number | null;
+    unit?: string | null;
   },
   db: Firestore
 ): Promise<void> {
@@ -144,6 +152,8 @@ export async function updateWildcard(
   if (updates.points !== undefined) payload.points = updates.points;
   if (updates.correctAnswer !== undefined) payload.correct_answer = updates.correctAnswer;
   if (updates.displayOrder !== undefined) payload.display_order = updates.displayOrder;
+  if (updates.tolerance !== undefined) payload.tolerance = updates.tolerance;
+  if (updates.unit !== undefined) payload.unit = updates.unit;
   await updateDoc(doc(db, "race_wildcards", id), payload);
 }
 

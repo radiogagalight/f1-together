@@ -145,6 +145,8 @@ export default function AdminResultsPage() {
   const [newWcBattleA, setNewWcBattleA] = useState<string | null>(null);
   const [newWcBattleB, setNewWcBattleB] = useState<string | null>(null);
   const [newWcBattleTeam, setNewWcBattleTeam] = useState<string | null>(null);
+  const [newWcTolerance, setNewWcTolerance] = useState(0);
+  const [newWcUnit, setNewWcUnit] = useState("");
   const [creatingWc, setCreatingWc] = useState(false);
 
   useEffect(() => {
@@ -467,6 +469,7 @@ export default function AdminResultsPage() {
                     <p className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>
                       {wc.questionType} · {wc.points} pts
                       {wc.questionType === "battle" && wc.options && ` · ${wc.options[0]?.name} vs ${wc.options[1]?.name}`}
+                      {wc.questionType === "numeric" && ` · ±${wc.tolerance ?? 0}${wc.unit ? ` ${wc.unit}` : ""}`}
                     </p>
                   </div>
                   <button
@@ -542,6 +545,24 @@ export default function AdminResultsPage() {
                         loadWildcards(selectedRound);
                       }}
                     />
+                  ) : wc.questionType === "numeric" ? (
+                    <input
+                      key={wc.correctAnswer ?? "empty"}
+                      type="number"
+                      defaultValue={wc.correctAnswer ?? ""}
+                      placeholder="Actual value…"
+                      onBlur={async (e) => {
+                        const v = e.target.value.trim();
+                        if (v === "" || v === wc.correctAnswer) return;
+                        await updateWildcard(wc.id, { correctAnswer: v }, getDb());
+                        loadWildcards(selectedRound);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      }}
+                      className="px-3 py-2 text-sm rounded-lg"
+                      style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+                    />
                   ) : (
                     <DriverSelect
                       label=""
@@ -576,6 +597,8 @@ export default function AdminResultsPage() {
                       setNewWcBattleTeam(null);
                       setNewWcBattleA(null);
                       setNewWcBattleB(null);
+                      setNewWcTolerance(0);
+                      setNewWcUnit("");
                     }}
                     className="px-3 py-2 text-sm rounded-lg"
                     style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
@@ -584,6 +607,7 @@ export default function AdminResultsPage() {
                     <option value="constructor" style={{ backgroundColor: "#0c0810" }}>Constructor pick</option>
                     <option value="boolean" style={{ backgroundColor: "#0c0810" }}>Yes / No</option>
                     <option value="battle" style={{ backgroundColor: "#0c0810" }}>Teammate battle</option>
+                    <option value="numeric" style={{ backgroundColor: "#0c0810" }}>Numeric guess</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -668,6 +692,37 @@ export default function AdminResultsPage() {
                 />
               )}
 
+              {newWcType === "numeric" && (
+                <div className="flex gap-2">
+                  <div className="flex flex-col gap-1 flex-1">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+                      Tolerance (± for full credit)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={newWcTolerance}
+                      onChange={(e) => setNewWcTolerance(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="px-3 py-2 text-sm rounded-lg"
+                      style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+                      Unit (optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. pit stops"
+                      value={newWcUnit}
+                      onChange={(e) => setNewWcUnit(e.target.value)}
+                      className="px-3 py-2 text-sm rounded-lg"
+                      style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "var(--foreground)", border: "1px solid rgba(255,255,255,0.12)", outline: "none" }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={async () => {
                   if (newWcType === "battle") {
@@ -692,11 +747,14 @@ export default function AdminResultsPage() {
                         options: battleOptions,
                         points: newWcPoints,
                         displayOrder: wildcards.length,
+                        tolerance: newWcType === "numeric" ? newWcTolerance : null,
+                        unit: newWcType === "numeric" ? newWcUnit.trim() || null : null,
                       },
                       getDb()
                     );
                     setNewWcQuestion(""); setNewWcBattleA(null); setNewWcBattleB(null);
                     setNewWcBattleTeam(null); setNewWcPoints(10);
+                    setNewWcTolerance(0); setNewWcUnit("");
                     setWcStatus("Question added.");
                     loadWildcards(selectedRound);
                   } catch {
