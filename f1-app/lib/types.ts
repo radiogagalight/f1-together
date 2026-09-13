@@ -74,26 +74,30 @@ export interface ScoreBreakdown {
   sprintWinner: number; sprintP2: number; sprintP3: number;
 }
 
-export type WildcardQuestionType = 'driver' | 'constructor' | 'boolean' | 'battle' | 'numeric';
+export type WildcardQuestionType = 'driver' | 'constructor' | 'boolean' | 'battle' | 'numeric' | 'multiselect';
 
 export interface RaceWildcard {
   id: string;
   round: number;
   question: string;
   questionType: WildcardQuestionType;
-  /** For 'battle' type: the two drivers to choose between. Null for other types. */
+  /** For 'battle' (2 options) and 'multiselect' (admin-defined pool) types. Null for other types. */
   options: { id: string; name: string }[] | null;
   points: number;
+  /** For 'multiselect': a comma-joined list of the option ids that came true. Otherwise a single value. */
   correctAnswer: string | null;
   displayOrder: number;
   /** For 'numeric' type: a pick within ±tolerance of the correct answer scores full points. Null/0 = exact match only. */
   tolerance: number | null;
   /** For 'numeric' type: display label, e.g. "pit stops", "laps". Null for other types. */
   unit: string | null;
+  /** For 'multiselect' type: max options a user may pick. Null for other types. */
+  maxPicks: number | null;
 }
 
 export interface WildcardPrediction {
   wildcardId: string;
+  /** For 'multiselect' wildcards: a comma-joined list of chosen option ids. Otherwise a single value. */
   pickValue: string;
   boosted: boolean;
 }

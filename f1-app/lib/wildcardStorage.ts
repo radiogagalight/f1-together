@@ -29,6 +29,7 @@ function dbRowToWildcard(id: string, row: Record<string, unknown>): RaceWildcard
     displayOrder: row.display_order as number,
     tolerance: (row.tolerance as number | null) ?? null,
     unit: (row.unit as string | null) ?? null,
+    maxPicks: (row.max_picks as number | null) ?? null,
   };
 }
 
@@ -102,6 +103,7 @@ export async function createWildcard(
     displayOrder?: number;
     tolerance?: number | null;
     unit?: string | null;
+    maxPicks?: number | null;
   },
   db: Firestore
 ): Promise<RaceWildcard> {
@@ -115,6 +117,7 @@ export async function createWildcard(
     correct_answer: null,
     tolerance: data.tolerance ?? null,
     unit: data.unit ?? null,
+    max_picks: data.maxPicks ?? null,
     created_at: new Date().toISOString(),
   });
   return {
@@ -128,6 +131,7 @@ export async function createWildcard(
     displayOrder: data.displayOrder ?? 0,
     tolerance: data.tolerance ?? null,
     unit: data.unit ?? null,
+    maxPicks: data.maxPicks ?? null,
   };
 }
 
@@ -142,6 +146,7 @@ export async function updateWildcard(
     displayOrder?: number;
     tolerance?: number | null;
     unit?: string | null;
+    maxPicks?: number | null;
   },
   db: Firestore
 ): Promise<void> {
@@ -154,6 +159,7 @@ export async function updateWildcard(
   if (updates.displayOrder !== undefined) payload.display_order = updates.displayOrder;
   if (updates.tolerance !== undefined) payload.tolerance = updates.tolerance;
   if (updates.unit !== undefined) payload.unit = updates.unit;
+  if (updates.maxPicks !== undefined) payload.max_picks = updates.maxPicks;
   await updateDoc(doc(db, "race_wildcards", id), payload);
 }
 

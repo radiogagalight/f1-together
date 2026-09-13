@@ -706,7 +706,13 @@ const PAGE_SIZE = 6;
 const TOTAL_PAGES = Math.ceil(RACES.length / PAGE_SIZE);
 
 function getNextRaceIndex() {
-  const idx = RACES.findIndex(r => new Date(r.startUtc).getTime() > Date.now());
+  const now = Date.now();
+  const idx = RACES.findIndex(r => {
+    // Keep a race as "current" through its entire race day; only advance
+    // to the next race starting the day after it took place.
+    const dayAfterRaceUtc = new Date(`${r.date}T00:00:00Z`).getTime() + 24 * 60 * 60 * 1000;
+    return dayAfterRaceUtc > now;
+  });
   return idx === -1 ? RACES.length - 1 : idx;
 }
 

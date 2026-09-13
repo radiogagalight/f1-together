@@ -137,6 +137,11 @@ export function isWildcardCorrect(wc: RaceWildcard, pickValue: string): boolean 
     if (Number.isNaN(guess) || Number.isNaN(actual)) return false;
     return Math.abs(guess - actual) <= (wc.tolerance ?? 0);
   }
+  if (wc.questionType === "multiselect") {
+    const picks = pickValue.split(",").filter(Boolean);
+    const correct = new Set(wc.correctAnswer.split(",").filter(Boolean));
+    return picks.length > 0 && picks.every((id) => correct.has(id));
+  }
   return pickValue === wc.correctAnswer;
 }
 

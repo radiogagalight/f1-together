@@ -283,6 +283,7 @@ export default function StandingsPage() {
           displayOrder: row.display_order as number,
           tolerance: (row.tolerance as number | null) ?? null,
           unit: fsStr(row, "unit"),
+          maxPicks: (row.max_picks as number | null) ?? null,
         }));
         const allWildcardPredictions = wcPredictions.map((row) => {
           const r = row as Record<string, unknown>;

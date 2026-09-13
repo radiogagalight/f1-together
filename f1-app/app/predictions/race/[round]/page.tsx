@@ -433,6 +433,9 @@ export default function RaceDetailPage({
     if (wc.questionType === "driver") return DRIVERS.find((d) => d.id === val)?.name ?? val;
     if (wc.questionType === "constructor") return CONSTRUCTORS.find((c) => c.id === val)?.name ?? val;
     if (wc.questionType === "numeric") return wc.unit ? `${val} ${wc.unit}` : val;
+    if (wc.questionType === "multiselect") {
+      return val.split(",").filter(Boolean).map((id) => wc.options?.find((o) => o.id === id)?.name ?? id).join(", ");
+    }
     return wc.options?.find((o) => o.id === val)?.name ?? val;
   }
 
@@ -1491,6 +1494,41 @@ export default function RaceDetailPage({
                                   {wc.unit && (
                                     <span className="text-xs" style={{ color: "var(--muted)" }}>{wc.unit}</span>
                                   )}
+                                </div>
+                              )}
+                              {wc.questionType === "multiselect" && wc.options && (
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex gap-2 flex-wrap">
+                                    {wc.options.map((opt) => {
+                                      const picks = (myPrediction?.pickValue ?? "").split(",").filter(Boolean);
+                                      const isSelected = picks.includes(opt.id);
+                                      const disabled = !isSelected && picks.length >= (wc.maxPicks ?? 1);
+                                      return (
+                                        <button
+                                          key={opt.id}
+                                          disabled={disabled}
+                                          onClick={() => {
+                                            const next = isSelected ? picks.filter((id) => id !== opt.id) : [...picks, opt.id];
+                                            handleWildcardPick(wc.id, next.length > 0 ? next.join(",") : null);
+                                          }}
+                                          className="rounded-lg text-sm font-semibold transition-colors"
+                                          style={{
+                                            backgroundColor: isSelected ? "rgba(150,100,255,0.2)" : "rgba(255,255,255,0.06)",
+                                            border: isSelected ? "1px solid rgba(150,100,255,0.6)" : "1px solid rgba(255,255,255,0.12)",
+                                            color: isSelected ? "#9664ff" : disabled ? "rgba(255,255,255,0.2)" : "var(--muted)",
+                                            minHeight: "40px",
+                                            padding: "0 16px",
+                                            cursor: disabled ? "default" : "pointer",
+                                          }}
+                                        >
+                                          {opt.name}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  <span className="text-[10px]" style={{ color: "var(--muted)" }}>
+                                    {(myPrediction?.pickValue ?? "").split(",").filter(Boolean).length}/{wc.maxPicks ?? 1} selected
+                                  </span>
                                 </div>
                               )}
                             </div>
