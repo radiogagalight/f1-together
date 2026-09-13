@@ -4,6 +4,7 @@ import HungaryHeroScene, { HUNGARY_PALETTE, HUNGARY_SPEED_LINES } from "@/compon
 import DutchHeroScene, { DUTCH_PALETTE, DUTCH_SPEED_LINES } from "@/components/DutchHeroScene";
 import MonzaHeroScene, { MONZA_PALETTE, MONZA_SPEED_LINES } from "@/components/MonzaHeroScene";
 import SpainHeroScene, { SPAIN_PALETTE, SPAIN_SPEED_LINES } from "@/components/SpainHeroScene";
+import BakuHeroScene, { BAKU_PALETTE, BAKU_SPEED_LINES } from "@/components/BakuHeroScene";
 
 export type SpeedLine = {
   top: number;
@@ -178,12 +179,40 @@ const SPAIN_THEME: WeekendTheme = {
   HeroScene: SpainHeroScene,
 };
 
+const BAKU_THEME: WeekendTheme = {
+  round: 15,
+  badgeLabel: "Azerbaijan GP Week",
+  subtitle: "It's Azerbaijan GP week. Flame Towers, Caspian crosswinds, and the tightest corner in F1 through the Old City walls.",
+  circuitFact: "Baku's castle section is the tightest part of any F1 circuit at just 7.6 m wide — a single car's width, squeezed between medieval fortress walls.",
+  palette: {
+    accent: BAKU_PALETTE.flameOrange,
+    liveGlow: BAKU_PALETTE.liveGlow,
+    liveBorder: BAKU_PALETTE.liveBorder,
+    badgeBg: BAKU_PALETTE.badgeBg,
+    badgeBorder: BAKU_PALETTE.badgeBorder,
+    liveGlowBoxShadow: `0 0 0 1px ${BAKU_PALETTE.liveGlow}, 0 0 40px oklch(0.55 0.18 40 / 0.35)`,
+    dayLabelShadow: "0 0 24px oklch(0.65 0.18 45 / 0.55), 0 2px 12px rgba(0,0,0,0.9)",
+    nextDotGlow: "oklch(0.65 0.18 45 / 0.55)",
+    tickerBg: "oklch(0.16 0.04 240 / 0.55)",
+    scrimGradient:
+      "linear-gradient(to bottom, oklch(0.18 0.04 240 / 0.12) 0%, oklch(0.16 0.04 240 / 0.55) 50%, oklch(0.12 0.03 240 / 0.96) 100%)",
+    factColor: "oklch(0.82 0.05 60 / 0.7)",
+    scheduleBg:
+      "linear-gradient(to right, oklch(0.42 0.13 40 / 0.38) 0%, oklch(0.32 0.08 220 / 0.14) 60%, transparent 100%)",
+    scheduleInsetShadow: `0 0 0 1px ${BAKU_PALETTE.badgeBorder}, inset 0 0 60px oklch(0.42 0.1 230 / 0.12)`,
+    tricolor: [BAKU_PALETTE.azeriBlue, BAKU_PALETTE.azeriRed, BAKU_PALETTE.azeriGreen],
+  },
+  speedLines: BAKU_SPEED_LINES,
+  HeroScene: BakuHeroScene,
+};
+
 const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [SPA_THEME.round]: SPA_THEME,
   [HUNGARY_THEME.round]: HUNGARY_THEME,
   [DUTCH_THEME.round]: DUTCH_THEME,
   [MONZA_THEME.round]: MONZA_THEME,
   [SPAIN_THEME.round]: SPAIN_THEME,
+  [BAKU_THEME.round]: BAKU_THEME,
 };
 
 export function getWeekendTheme(round: number): WeekendTheme | null {
