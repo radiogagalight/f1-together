@@ -362,7 +362,8 @@ export default function RaceDetailPage({
 
   const isQualUnlockOverride = !!race.qualUnlockUntilUtc && new Date(race.qualUnlockUntilUtc).getTime() > now;
   const isQualLocked    = new Date(race.qualifyingUtc).getTime() < now && !isQualUnlockOverride;
-  const isRaceLocked    = new Date(race.startUtc).getTime() < now;
+  const isRaceUnlockOverride = !!race.raceUnlockUntilUtc && new Date(race.raceUnlockUntilUtc).getTime() > now;
+  const isRaceLocked    = new Date(race.startUtc).getTime() < now && !isRaceUnlockOverride;
   const isSprintQualLocked = race.sprintQualifyingUtc
     ? new Date(race.sprintQualifyingUtc).getTime() < now
     : false;
