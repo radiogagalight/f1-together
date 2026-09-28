@@ -19,6 +19,7 @@ const QUAL_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
 ];
 const RACE_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [
   { key: "raceWinner", label: "Race Win" }, { key: "raceP2", label: "Race P2" }, { key: "raceP3", label: "Race P3" },
+  { key: "raceP4", label: "Race P4" }, { key: "raceP5", label: "Race P5" }, { key: "raceP6", label: "Race P6" },
   { key: "fastestLap", label: "Fastest Lap" }, { key: "safetyCar", label: "Safety Car" },
 ];
 const SPRINT_QUAL_ROWS: { key: keyof ScoreBreakdown; label: string }[] = [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { getDb } from "@/lib/firebase/db";
 import { doc, getDoc } from "firebase/firestore";
@@ -127,10 +127,24 @@ function ConstructorSelect({ value, onChange, label }: { value: string | null; o
   );
 }
 
+// Treat a race as finished ~2h after lights out.
+const RACE_DURATION_MS = 2 * 60 * 60 * 1000;
+
+function latestCompletedRound(): number {
+  const now = Date.now();
+  const done = RACES.filter((r) => new Date(r.startUtc).getTime() + RACE_DURATION_MS <= now);
+  return done.length ? done[done.length - 1].r : RACES[0].r;
+}
+
 export default function AdminResultsPage() {
   const { user, authReady } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [selectedRound, setSelectedRound] = useState(1);
+  const [selectedRound, setSelectedRound] = useState(latestCompletedRound);
+  const selectedPillRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    selectedPillRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [isAdmin]);
   const [result, setResult] = useState<Partial<RaceResult>>({});
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -386,6 +400,7 @@ export default function AdminResultsPage() {
         {RACES.map((r) => (
           <button
             key={r.r}
+            ref={selectedRound === r.r ? selectedPillRef : undefined}
             onClick={() => { setSelectedRound(r.r); setStatusMsg(null); }}
             className="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full"
             style={{

@@ -9,7 +9,7 @@ const CIRCUIT_KEYWORDS: Record<number, string> = {
   1: "australia", 2: "shanghai", 3: "suzuka", 4: "miami",
   5: "montreal", 6: "monaco", 7: "catalu", 8: "spielberg",
   9: "silverstone", 10: "spa", 11: "hungaroring", 12: "zandvoort",
-  13: "monza", 14: "madring", 15: "baku", 16: "sepang",
+  13: "monza", 14: "madring", 15: "baku", 16: "kuala lumpur", // OpenF1 lists the 2026 Sepang round as "Kuala Lumpur"
   17: "singapore", 18: "austin", 19: "mexico", 20: "interlagos",
   21: "vegas", 22: "lusail", 23: "yas",
 };
