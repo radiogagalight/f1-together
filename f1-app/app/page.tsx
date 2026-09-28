@@ -10,6 +10,8 @@ import { hexToRgb, TEAM_COLORS } from "@/lib/teamColors";
 import { DRIVER_IMAGES } from "@/lib/driverImages";
 import PredictionsWidget from "@/components/PredictionsWidget";
 import { getWeekendTheme } from "@/lib/weekendThemes";
+import { useBirthdayActive } from "@/lib/birthday";
+import { BirthdayBanner, BirthdayBadge } from "@/components/BirthdayCelebration";
 import { getDb } from "@/lib/firebase/db";
 import { loadRaceResult } from "@/lib/resultsStorage";
 import { loadRacePick } from "@/lib/raceStorage";
@@ -408,6 +410,7 @@ function NextRaceHero({
     : "0 0 24px rgba(225,6,0,0.7), 0 2px 12px rgba(0,0,0,0.9), 0 1px 3px #000, 0 0 6px #000";
   const nextDotColor = theme ? theme.palette.accent : "#e10600";
   const HeroScene = theme?.HeroScene;
+  const showBirthday = useBirthdayActive();
 
   return (
     <div
@@ -480,6 +483,7 @@ function NextRaceHero({
         {/* Top badges + chat button */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 flex-wrap">
+            {showBirthday && <BirthdayBadge />}
             {race.sprint && (
               <span
                 className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
@@ -716,6 +720,7 @@ export default function HomePage() {
 
   const nextRaceIdx = getNextRaceIndex();
   const weekendTheme = getWeekendTheme(RACES[nextRaceIdx]?.r ?? -1);
+  const birthdayActive = useBirthdayActive();
   const atmosphereLines = weekendTheme ? weekendTheme.speedLines : SPEED_LINES;
   const [page, setPage] = useState(Math.floor(nextRaceIdx / PAGE_SIZE));
 
@@ -869,6 +874,7 @@ export default function HomePage() {
             Pick your races. Back the grid.
           </p>
         )}
+        {birthdayActive && <BirthdayBanner />}
       </header>
 
       {/* ── Main content: hero + schedule ── */}

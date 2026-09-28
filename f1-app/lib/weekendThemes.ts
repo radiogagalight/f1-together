@@ -5,6 +5,7 @@ import DutchHeroScene, { DUTCH_PALETTE, DUTCH_SPEED_LINES } from "@/components/D
 import MonzaHeroScene, { MONZA_PALETTE, MONZA_SPEED_LINES } from "@/components/MonzaHeroScene";
 import SpainHeroScene, { SPAIN_PALETTE, SPAIN_SPEED_LINES } from "@/components/SpainHeroScene";
 import BakuHeroScene, { BAKU_PALETTE, BAKU_SPEED_LINES } from "@/components/BakuHeroScene";
+import BahrainHeroScene, { BAHRAIN_PALETTE, BAHRAIN_SPEED_LINES } from "@/components/BahrainHeroScene";
 
 export type SpeedLine = {
   top: number;
@@ -206,6 +207,33 @@ const BAKU_THEME: WeekendTheme = {
   HeroScene: BakuHeroScene,
 };
 
+const BAHRAIN_THEME: WeekendTheme = {
+  round: 16,
+  badgeLabel: "Bahrain GP Week",
+  subtitle: "It's Bahrain GP week — relocated to Sepang. Tropical heat, afternoon storms, and two huge straights joined by one hairpin.",
+  circuitFact: "The 2026 Bahrain GP runs at Sepang in Malaysia, which last hosted F1 in 2017. It opened in 1999 as Hermann Tilke's first purpose-built F1 circuit.",
+  palette: {
+    accent: BAHRAIN_PALETTE.brightRed,
+    liveGlow: BAHRAIN_PALETTE.liveGlow,
+    liveBorder: BAHRAIN_PALETTE.liveBorder,
+    badgeBg: BAHRAIN_PALETTE.badgeBg,
+    badgeBorder: BAHRAIN_PALETTE.badgeBorder,
+    liveGlowBoxShadow: `0 0 0 1px ${BAHRAIN_PALETTE.liveGlow}, 0 0 40px oklch(0.55 0.2 22 / 0.35)`,
+    dayLabelShadow: "0 0 24px oklch(0.62 0.2 22 / 0.55), 0 2px 12px rgba(0,0,0,0.9)",
+    nextDotGlow: "oklch(0.62 0.2 22 / 0.55)",
+    tickerBg: "oklch(0.16 0.035 190 / 0.55)",
+    scrimGradient:
+      "linear-gradient(to bottom, oklch(0.18 0.03 190 / 0.12) 0%, oklch(0.16 0.03 190 / 0.55) 50%, oklch(0.12 0.03 190 / 0.96) 100%)",
+    factColor: "oklch(0.84 0.04 40 / 0.7)",
+    scheduleBg:
+      "linear-gradient(to right, oklch(0.42 0.15 22 / 0.38) 0%, oklch(0.3 0.06 180 / 0.14) 60%, transparent 100%)",
+    scheduleInsetShadow: `0 0 0 1px ${BAHRAIN_PALETTE.badgeBorder}, inset 0 0 60px oklch(0.42 0.12 22 / 0.12)`,
+    tricolor: [BAHRAIN_PALETTE.bahrainWhite, BAHRAIN_PALETTE.bahrainRed, BAHRAIN_PALETTE.bahrainRed],
+  },
+  speedLines: BAHRAIN_SPEED_LINES,
+  HeroScene: BahrainHeroScene,
+};
+
 const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [SPA_THEME.round]: SPA_THEME,
   [HUNGARY_THEME.round]: HUNGARY_THEME,
@@ -213,6 +241,7 @@ const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [MONZA_THEME.round]: MONZA_THEME,
   [SPAIN_THEME.round]: SPAIN_THEME,
   [BAKU_THEME.round]: BAKU_THEME,
+  [BAHRAIN_THEME.round]: BAHRAIN_THEME,
 };
 
 export function getWeekendTheme(round: number): WeekendTheme | null {
