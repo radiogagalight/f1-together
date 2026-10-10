@@ -368,8 +368,9 @@ export default function RaceDetailPage({
   const isSprintQualLocked = race.sprintQualifyingUtc
     ? new Date(race.sprintQualifyingUtc).getTime() < now && !isSprintQualUnlockOverride
     : false;
+  const isSprintUnlockOverride = !!race.sprintUnlockUntilUtc && new Date(race.sprintUnlockUntilUtc).getTime() > now;
   const isSprintLocked = race.sprintStartUtc
-    ? new Date(race.sprintStartUtc).getTime() < now
+    ? new Date(race.sprintStartUtc).getTime() < now && !isSprintUnlockOverride
     : false;
   const raceData = RACE_FACTS[round];
   const heroImage = raceData?.heroImage;

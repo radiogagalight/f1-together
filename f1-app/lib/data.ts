@@ -62,6 +62,8 @@ export interface Race {
   sprintQualUnlockUntilUtc?: string;
   /** Sprint weekends only: UTC start of the Sprint Race. */
   sprintStartUtc?: string;
+  /** Temporary admin override: sprint race predictions stay editable until this UTC time. */
+  sprintUnlockUntilUtc?: string;
 }
 
 // startUtc: approximate UTC race start time (based on historical patterns per circuit).
@@ -85,7 +87,7 @@ export const RACES: Race[] = [
   { r: 14, name: "Spanish Grand Prix",              circuit: "Madring, Madrid",                 flag: "🇪🇸", date: "2026-09-13", startUtc: "2026-09-13T13:00:00Z", qualifyingUtc: "2026-09-12T14:00:00Z", weekendStartUtc: "2026-09-11T11:30:00Z", sprint: false },
   { r: 15, name: "Azerbaijan Grand Prix",           circuit: "Baku City Circuit",               flag: "🇦🇿", date: "2026-09-26", startUtc: "2026-09-26T11:00:00Z", qualifyingUtc: "2026-09-25T12:00:00Z", raceUnlockUntilUtc: "2026-09-26T15:19:00Z", weekendStartUtc: "2026-09-24T08:30:00Z", sprint: false },
   { r: 16, name: "Bahrain Grand Prix",              circuit: "Sepang International Circuit",    flag: "🇲🇾", date: "2026-10-04", startUtc: "2026-10-04T07:00:00Z", qualifyingUtc: "2026-10-03T08:00:00Z", raceUnlockUntilUtc: "2026-10-04T16:11:00Z", weekendStartUtc: "2026-10-02T04:30:00Z", sprint: false },
-  { r: 17, name: "Singapore Grand Prix",            circuit: "Marina Bay Street Circuit",       flag: "🇸🇬", date: "2026-10-11", startUtc: "2026-10-11T12:00:00Z", qualifyingUtc: "2026-10-10T13:00:00Z", weekendStartUtc: "2026-10-09T08:30:00Z", sprint: true,  sprintQualifyingUtc: "2026-10-09T13:00:00Z", sprintStartUtc: "2026-10-10T08:00:00Z" },
+  { r: 17, name: "Singapore Grand Prix",            circuit: "Marina Bay Street Circuit",       flag: "🇸🇬", date: "2026-10-11", startUtc: "2026-10-11T12:00:00Z", qualifyingUtc: "2026-10-10T13:00:00Z", weekendStartUtc: "2026-10-09T08:30:00Z", sprint: true,  sprintQualifyingUtc: "2026-10-09T13:00:00Z", sprintStartUtc: "2026-10-10T08:00:00Z", sprintUnlockUntilUtc: "2026-10-10T14:24:00Z" },
   { r: 18, name: "United States Grand Prix",        circuit: "Circuit of the Americas",         flag: "🇺🇸", date: "2026-10-25", startUtc: "2026-10-25T20:00:00Z", qualifyingUtc: "2026-10-24T21:00:00Z", weekendStartUtc: "2026-10-23T17:30:00Z", sprint: false },
   { r: 19, name: "Mexico City Grand Prix",          circuit: "Autódromo Hermanos Rodríguez",    flag: "🇲🇽", date: "2026-11-01", startUtc: "2026-11-01T20:00:00Z", qualifyingUtc: "2026-10-31T21:00:00Z", weekendStartUtc: "2026-10-30T18:30:00Z", sprint: false },
   { r: 20, name: "Brazilian Grand Prix",            circuit: "Autódromo José Carlos Pace",      flag: "🇧🇷", date: "2026-11-08", startUtc: "2026-11-08T17:00:00Z", qualifyingUtc: "2026-11-07T18:00:00Z", weekendStartUtc: "2026-11-06T15:30:00Z", sprint: false },
