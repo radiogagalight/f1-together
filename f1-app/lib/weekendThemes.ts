@@ -6,6 +6,7 @@ import MonzaHeroScene, { MONZA_PALETTE, MONZA_SPEED_LINES } from "@/components/M
 import SpainHeroScene, { SPAIN_PALETTE, SPAIN_SPEED_LINES } from "@/components/SpainHeroScene";
 import BakuHeroScene, { BAKU_PALETTE, BAKU_SPEED_LINES } from "@/components/BakuHeroScene";
 import BahrainHeroScene, { BAHRAIN_PALETTE, BAHRAIN_SPEED_LINES } from "@/components/BahrainHeroScene";
+import UsaHeroScene, { USA_PALETTE, USA_SPEED_LINES } from "@/components/UsaHeroScene";
 
 export type SpeedLine = {
   top: number;
@@ -234,6 +235,33 @@ const BAHRAIN_THEME: WeekendTheme = {
   HeroScene: BahrainHeroScene,
 };
 
+const USA_THEME: WeekendTheme = {
+  round: 18,
+  badgeLabel: "USA GP Week",
+  subtitle: "IT'S USA WEEK! 🇺🇸 Fireworks over Austin, cowboy hats in the stands, and a full-send charge up the Turn 1 hill.",
+  circuitFact: "COTA's uphill blast into Turn 1 is one of the steepest climbs in F1 — part of 133 ft of elevation change, watched over by the 251-ft Observation Tower.",
+  palette: {
+    accent: USA_PALETTE.brightRed,
+    liveGlow: USA_PALETTE.liveGlow,
+    liveBorder: USA_PALETTE.liveBorder,
+    badgeBg: USA_PALETTE.badgeBg,
+    badgeBorder: USA_PALETTE.badgeBorder,
+    liveGlowBoxShadow: `0 0 0 1px ${USA_PALETTE.liveGlow}, 0 0 40px oklch(0.55 0.22 25 / 0.4), 0 0 80px oklch(0.5 0.2 262 / 0.3)`,
+    dayLabelShadow: "0 0 24px oklch(0.62 0.22 25 / 0.6), 0 0 40px oklch(0.55 0.2 262 / 0.4), 0 2px 12px rgba(0,0,0,0.9)",
+    nextDotGlow: "oklch(0.64 0.22 25 / 0.6)",
+    tickerBg: "oklch(0.2 0.09 264 / 0.65)",
+    scrimGradient:
+      "linear-gradient(to bottom, oklch(0.16 0.06 265 / 0.05) 0%, oklch(0.15 0.06 265 / 0.5) 50%, oklch(0.11 0.05 265 / 0.96) 100%)",
+    factColor: "oklch(0.86 0.04 250 / 0.75)",
+    scheduleBg:
+      "linear-gradient(to right, oklch(0.42 0.17 25 / 0.4) 0%, oklch(0.34 0.13 262 / 0.2) 60%, transparent 100%)",
+    scheduleInsetShadow: `0 0 0 1px ${USA_PALETTE.badgeBorder}, inset 0 0 60px oklch(0.42 0.15 262 / 0.16)`,
+    tricolor: [USA_PALETTE.usaRed, USA_PALETTE.usaWhite, USA_PALETTE.usaBlue],
+  },
+  speedLines: USA_SPEED_LINES,
+  HeroScene: UsaHeroScene,
+};
+
 const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [SPA_THEME.round]: SPA_THEME,
   [HUNGARY_THEME.round]: HUNGARY_THEME,
@@ -242,6 +270,7 @@ const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [SPAIN_THEME.round]: SPAIN_THEME,
   [BAKU_THEME.round]: BAKU_THEME,
   [BAHRAIN_THEME.round]: BAHRAIN_THEME,
+  [USA_THEME.round]: USA_THEME,
 };
 
 export function getWeekendTheme(round: number): WeekendTheme | null {
