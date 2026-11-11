@@ -69,6 +69,32 @@
   50%      { transform: translateX(3%) skewY(-2deg); }
 }
 
+@keyframes vegas-searchlight {
+  0%, 100% { transform: rotate(-22deg); }
+  50%      { transform: rotate(22deg); }
+}
+
+@keyframes vegas-flicker {
+  0%, 46%, 52%, 100% { opacity: 1; }
+  48%, 50%           { opacity: 0.35; }
+  70%                { opacity: 0.7; }
+}
+
+@keyframes vegas-sparkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.6); }
+  50%      { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes vegas-sphere {
+  0%, 100% { filter: hue-rotate(0deg) brightness(1); transform: scale(1); }
+  50%      { filter: hue-rotate(60deg) brightness(1.18); transform: scale(1.04); }
+}
+
+@keyframes vegas-bulb {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.18; }
+}
+
 .bday-spray {
   animation: champagne-spray 1.6s ease-out infinite;
 }
@@ -78,6 +104,10 @@
   .bday-confetti { display: none; }
   .usa-firework { animation: none !important; opacity: 0.6; }
   .usa-twinkle, .usa-wave { animation: none !important; }
+  [style*="vegas-searchlight"], [style*="vegas-flicker"],
+  [style*="vegas-sparkle"], [style*="vegas-sphere"], [style*="vegas-bulb"] {
+    animation: none !important;
+  }
 }
 
 body {

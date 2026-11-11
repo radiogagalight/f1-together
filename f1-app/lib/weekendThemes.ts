@@ -7,6 +7,7 @@ import SpainHeroScene, { SPAIN_PALETTE, SPAIN_SPEED_LINES } from "@/components/S
 import BakuHeroScene, { BAKU_PALETTE, BAKU_SPEED_LINES } from "@/components/BakuHeroScene";
 import BahrainHeroScene, { BAHRAIN_PALETTE, BAHRAIN_SPEED_LINES } from "@/components/BahrainHeroScene";
 import UsaHeroScene, { USA_PALETTE, USA_SPEED_LINES } from "@/components/UsaHeroScene";
+import VegasHeroScene, { VEGAS_PALETTE, VEGAS_SPEED_LINES } from "@/components/VegasHeroScene";
 
 export type SpeedLine = {
   top: number;
@@ -262,6 +263,36 @@ const USA_THEME: WeekendTheme = {
   HeroScene: UsaHeroScene,
 };
 
+const VEGAS_THEME: WeekendTheme = {
+  round: 21,
+  badgeLabel: "Vegas GP Week",
+  subtitle:
+    "IT'S VEGAS WEEK! 🎰 Neon on the Strip, searchlights over the Sphere, and a midnight full-send past the fountains. Place your bets.",
+  circuitFact:
+    "The Las Vegas Strip Circuit runs under the lights straight down the Strip — cars hit over 212 mph on the 1.2-mile Las Vegas Boulevard straight, one of the fastest stretches on the calendar.",
+  palette: {
+    accent: VEGAS_PALETTE.neonPink,
+    liveGlow: VEGAS_PALETTE.liveGlow,
+    liveBorder: VEGAS_PALETTE.liveBorder,
+    badgeBg: VEGAS_PALETTE.badgeBg,
+    badgeBorder: VEGAS_PALETTE.badgeBorder,
+    liveGlowBoxShadow: `0 0 0 1px ${VEGAS_PALETTE.liveGlow}, 0 0 40px oklch(0.68 0.28 340 / 0.45), 0 0 90px oklch(0.82 0.16 198 / 0.3)`,
+    dayLabelShadow:
+      "0 0 24px oklch(0.72 0.28 340 / 0.65), 0 0 44px oklch(0.84 0.18 86 / 0.4), 0 2px 12px rgba(0,0,0,0.9)",
+    nextDotGlow: "oklch(0.72 0.28 340 / 0.6)",
+    tickerBg: "oklch(0.2 0.1 322 / 0.65)",
+    scrimGradient:
+      "linear-gradient(to bottom, oklch(0.16 0.08 318 / 0.05) 0%, oklch(0.15 0.08 320 / 0.5) 50%, oklch(0.11 0.06 318 / 0.96) 100%)",
+    factColor: "oklch(0.88 0.06 320 / 0.78)",
+    scheduleBg:
+      "linear-gradient(to right, oklch(0.42 0.2 338 / 0.42) 0%, oklch(0.36 0.14 198 / 0.2) 60%, transparent 100%)",
+    scheduleInsetShadow: `0 0 0 1px ${VEGAS_PALETTE.badgeBorder}, inset 0 0 60px oklch(0.44 0.18 330 / 0.18)`,
+    tricolor: [VEGAS_PALETTE.vegasMagenta, VEGAS_PALETTE.vegasGold, VEGAS_PALETTE.vegasCyan],
+  },
+  speedLines: VEGAS_SPEED_LINES,
+  HeroScene: VegasHeroScene,
+};
+
 const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [SPA_THEME.round]: SPA_THEME,
   [HUNGARY_THEME.round]: HUNGARY_THEME,
@@ -271,6 +302,7 @@ const THEMES_BY_ROUND: Record<number, WeekendTheme> = {
   [BAKU_THEME.round]: BAKU_THEME,
   [BAHRAIN_THEME.round]: BAHRAIN_THEME,
   [USA_THEME.round]: USA_THEME,
+  [VEGAS_THEME.round]: VEGAS_THEME,
 };
 
 export function getWeekendTheme(round: number): WeekendTheme | null {
