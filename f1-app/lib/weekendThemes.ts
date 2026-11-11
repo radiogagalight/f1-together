@@ -268,8 +268,7 @@ const VEGAS_THEME: WeekendTheme = {
   badgeLabel: "Vegas GP Week",
   subtitle:
     "IT'S VEGAS WEEK! 🎰 Neon on the Strip, searchlights over the Sphere, and a midnight full-send past the fountains. Place your bets.",
-  circuitFact:
-    "The Las Vegas Strip Circuit runs under the lights straight down the Strip — cars hit over 212 mph on the 1.2-mile Las Vegas Boulevard straight, one of the fastest stretches on the calendar.",
+  circuitFact: "",
   palette: {
     accent: VEGAS_PALETTE.neonPink,
     liveGlow: VEGAS_PALETTE.liveGlow,

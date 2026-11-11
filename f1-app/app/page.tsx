@@ -537,7 +537,7 @@ function NextRaceHero({
             </span>
           </h2>
 
-          {theme && (
+          {theme && theme.circuitFact && (
             <p
               className="mb-3"
               style={{
